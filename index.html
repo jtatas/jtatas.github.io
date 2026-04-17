@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Julie | Personal Projects & Passions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage: #9CAF88;
+            --sage-light: #B7C9A8;
+            --sage-pale: #E8EDE4;
+            --sage-mist: #F4F7F1;
+            --cream: #FDFCF9;
+            --warm-white: #FFFEF9;
+            --text-dark: #3D4A3A;
+            --text-medium: #5C6B58;
+            --text-light: #8A9686;
+            --blush: #E8D5CE;
+            --blush-light: #F2E8E3;
+            --gold-muted: #C4AA7D;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Jost', sans-serif;
+            background-color: var(--cream);
+            color: var(--text-dark);
+            line-height: 1.7;
+            font-weight: 300;
+        }
+
+        /* Floral ornament SVG decorations */
+        .ornament {
+            display: block;
+            margin: 0 auto;
+            opacity: 0.4;
+        }
+
+        .ornament-sage { color: var(--sage); }
+        .ornament-blush { color: var(--blush); }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(180deg, var(--sage-mist) 0%, var(--cream) 60%, var(--warm-white) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(156, 175, 136, 0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 60%, rgba(232, 213, 206, 0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(156, 175, 136, 0.05) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, -1%) rotate(1deg); }
+            66% { transform: translate(-1%, 1%) rotate(-0.5deg); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .floral-top {
+            width: 120px;
+            margin-bottom: 2rem;
+            opacity: 0.5;
+        }
+
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .hero .tagline {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 2.5rem;
+        }
+
+        .divider {
+            width: 60px;
+            height: 1px;
+            background: var(--sage);
+            margin: 0 auto 2.5rem;
+            opacity: 0.6;
+        }
+
+        .hero .subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1.1rem, 2vw, 1.35rem);
+            font-style: italic;
+            color: var(--text-medium);
+            max-width: 500px;
+            font-weight: 300;
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.4;
+            animation: bobble 2s ease-in-out infinite;
+        }
+
+        .scroll-hint svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--sage);
+        }
+
+        @keyframes bobble {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* Sections */
+        section {
+            padding: 5rem 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 400;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        /* About Section */
+        .about {
+            background: var(--warm-white);
+        }
+
+        .about-text {
+            text-align: center;
+            font-size: 1.05rem;
+            color: var(--text-medium);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 2;
+        }
+
+        /* Interests Grid */
+        .interests {
+            background: linear-gradient(180deg, var(--warm-white) 0%, var(--sage-mist) 100%);
+        }
+
+        .interests-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .interest-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 2px 20px rgba(61, 74, 58, 0.04);
+            border: 1px solid rgba(156, 175, 136, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .interest-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(61, 74, 58, 0.08);
+        }
+
+        .interest-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .interest-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .interest-card p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* Contact Section */
+        .contact {
+            text-align: center;
+            background: var(--sage-mist);
+            padding: 5rem 2rem;
+        }
+
+        .contact-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--sage-light);
+            border-radius: 50px;
+            text-decoration: none;
+            color: var(--text-medium);
+            font-size: 0.95rem;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .contact-link:hover {
+            background: var(--sage);
+            color: white;
+            border-color: var(--sage);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            background: var(--sage-mist);
+            border-top: 1px solid rgba(156, 175, 136, 0.2);
+        }
+
+        .footer-ornament {
+            margin-bottom: 1rem;
+        }
+
+        /* Fade-in animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .interests-grid {
+                grid-template-columns: 1fr;
+            }
+            .contact-links {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="hero-content">
+            <svg class="floral-top" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M60 55 C60 55, 45 40, 30 35 C15 30, 5 35, 10 25 C15 15, 30 20, 40 25 C50 30, 55 35, 60 10 C65 35, 70 30, 80 25 C90 20, 105 15, 110 25 C115 35, 105 30, 90 35 C75 40, 60 55, 60 55Z" stroke="#9CAF88" stroke-width="1" fill="none" opacity="0.6"/>
+                <circle cx="60" cy="8" r="3" fill="#9CAF88" opacity="0.3"/>
+                <circle cx="35" cy="28" r="2" fill="#E8D5CE" opacity="0.5"/>
+                <circle cx="85" cy="28" r="2" fill="#E8D5CE" opacity="0.5"/>
+                <path d="M50 45 Q60 38 70 45" stroke="#9CAF88" stroke-width="0.5" fill="none" opacity="0.4"/>
+            </svg>
+            <h1>Julie</h1>
+            <p class="tagline">Personal Projects &amp; Passions</p>
+            <div class="divider"></div>
+            <p class="subtitle">A little corner of the internet for the things I love, the ideas I'm exploring, and the journey along the way.</p>
+        </div>
+        <div class="scroll-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+                <path d="M12 5v14M5 12l7 7 7-7"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- About -->
+    <section class="about">
+        <div class="section-header fade-in">
+            <svg width="40" height="20" viewBox="0 0 40 20" class="ornament ornament-sage">
+                <path d="M0 10 Q10 0 20 10 Q30 20 40 10" stroke="currentColor" stroke-width="1" fill="none"/>
+            </svg>
+            <h2>Hello & Welcome</h2>
+        </div>
+        <p class="about-text fade-in">
+            I'm Julie — a curious soul based in San Francisco with a love for learning, creating, and finding beauty in everyday moments. This is my space to share the things that bring me joy and the projects I'm pouring my heart into.
+        </p>
+    </section>
+
+    <!-- Interests -->
+    <section class="interests">
+        <div class="section-header fade-in">
+            <svg width="40" height="20" viewBox="0 0 40 20" class="ornament ornament-blush">
+                <path d="M0 10 Q10 0 20 10 Q30 20 40 10" stroke="currentColor" stroke-width="1" fill="none"/>
+            </svg>
+            <h2>Things I Love</h2>
+        </div>
+        <div class="interests-grid">
+            <div class="interest-card fade-in">
+                <div class="interest-icon">🌿</div>
+                <h3>Wellness</h3>
+                <p>Nurturing mind, body, and spirit through intentional living</p>
+            </div>
+            <div class="interest-card fade-in">
+                <div class="interest-icon">✨</div>
+                <h3>Creativity</h3>
+                <p>Exploring new ideas and bringing them to life</p>
+            </div>
+            <div class="interest-card fade-in">
+                <div class="interest-icon">📚</div>
+                <h3>Learning</h3>
+                <p>Always curious, always growing</p>
+            </div>
+            <div class="interest-card fade-in">
+                <div class="interest-icon">🌸</div>
+                <h3>Beauty</h3>
+                <p>Finding and celebrating the beautiful things in life</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact">
+        <div class="section-header fade-in">
+            <svg width="40" height="20" viewBox="0 0 40 20" class="ornament ornament-sage">
+                <path d="M0 10 Q10 0 20 10 Q30 20 40 10" stroke="currentColor" stroke-width="1" fill="none"/>
+            </svg>
+            <h2>Say Hello</h2>
+        </div>
+        <p class="fade-in" style="color: var(--text-medium); margin-bottom: 1.5rem;">I'd love to connect — feel free to reach out.</p>
+        <div class="contact-links fade-in">
+            <a href="mailto:julie.ta.0321@gmail.com" class="contact-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                Email
+            </a>
+            <a href="https://github.com/jtatas" class="contact-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                GitHub
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-ornament">
+            <svg width="60" height="20" viewBox="0 0 60 20" opacity="0.3">
+                <path d="M0 10 C10 10, 15 2, 20 10 C25 18, 30 10, 30 10 C30 10, 35 2, 40 10 C45 18, 50 10, 60 10" stroke="#9CAF88" stroke-width="1" fill="none"/>
+            </svg>
+        </div>
+        <p>&copy; 2026 Julie &middot; Made with love</p>
+    </footer>
+
+    <script>
+        // Fade-in on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
