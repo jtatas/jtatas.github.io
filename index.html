@@ -77,6 +77,34 @@
             margin: 0 auto 1rem;
             display: block;
             opacity: 0.55;
+            animation: sway 4s ease-in-out infinite;
+            transform-origin: bottom center;
+        }
+
+        @keyframes sway {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(4deg); }
+            75% { transform: rotate(-4deg); }
+        }
+
+        .hero-doodle .leaf-left {
+            animation: leaf-unfurl-left 3s ease-in-out infinite alternate;
+            transform-origin: 24px 26px;
+        }
+
+        .hero-doodle .leaf-right {
+            animation: leaf-unfurl-right 3.5s ease-in-out infinite alternate;
+            transform-origin: 24px 22px;
+        }
+
+        @keyframes leaf-unfurl-left {
+            0% { transform: rotate(0deg) scale(1); }
+            100% { transform: rotate(-3deg) scale(1.05); }
+        }
+
+        @keyframes leaf-unfurl-right {
+            0% { transform: rotate(0deg) scale(1); }
+            100% { transform: rotate(3deg) scale(1.05); }
         }
 
         .hero-welcome {
@@ -353,8 +381,8 @@
         <!-- small sprout doodle above title -->
         <svg class="hero-doodle" width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M24 42 C24 42 24 22 24 18" stroke="#8FA67A" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M24 26 C24 26 17 22 14 15 C20 13 26 18 24 26Z" fill="none" stroke="#8FA67A" stroke-width="1.5" stroke-linejoin="round"/>
-            <path d="M24 30 C24 30 31 26 34 19 C28 17 22 22 24 30Z" fill="none" stroke="#8FA67A" stroke-width="1.5" stroke-linejoin="round"/>
+            <path class="leaf-left" d="M24 26 C24 26 17 22 14 15 C20 13 26 18 24 26Z" fill="none" stroke="#8FA67A" stroke-width="1.5" stroke-linejoin="round"/>
+            <path class="leaf-right" d="M24 30 C24 30 31 26 34 19 C28 17 22 22 24 30Z" fill="none" stroke="#8FA67A" stroke-width="1.5" stroke-linejoin="round"/>
             <circle cx="24" cy="16" r="2.5" fill="none" stroke="#C4A882" stroke-width="1.3"/>
         </svg>
 
