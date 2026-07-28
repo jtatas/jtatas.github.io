@@ -1183,6 +1183,466 @@ window.RAK = {
 })();
 
 
+
+// ============================================================
+// MANSION & TREE DRAWING FUNCTIONS (restored)
+// ============================================================
+function px(ctx, x, y, s, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x), Math.round(y), Math.ceil(s), Math.ceil(s));
+}
+
+// ============================================================
+// 1. LYNDHURST MANSION — Gothic Revival, Tarrytown NY
+// ============================================================
+function drawMansion(ctx, cx, baseY, s, timeOfDay, W, H) {
+  // Time-of-day palettes
+  const palettes = {
+    golden: {
+      stone1: '#d0c8b0', stone2: '#c0b090', stone3: '#a09878', stone4: '#b0a488',
+      roof: '#4a4e54', window: '#ffd700', windowFrame: '#8a7a60', trim: '#9c9080',
+      door: '#5c4a30', coursing: '#a89878'
+    },
+    storm: {
+      stone1: '#8a8498', stone2: '#7a7488', stone3: '#5e586a', stone4: '#6e687a',
+      roof: '#3a3e44', window: '#6888a8', windowFrame: '#5a5468', trim: '#6e687a',
+      door: '#4a4050', coursing: '#686278'
+    },
+    clear: {
+      stone1: '#c0b8a8', stone2: '#b5a590', stone3: '#8a8278', stone4: '#9c9080',
+      roof: '#4a4e54', window: '#87ceeb', windowFrame: '#7a7268', trim: '#8a8278',
+      door: '#5c4a38', coursing: '#9a9280'
+    },
+    night: {
+      stone1: '#5a5850', stone2: '#4a4840', stone3: '#3a3830', stone4: '#484640',
+      roof: '#2a2e34', window: '#ffc830', windowFrame: '#3a3830', trim: '#484640',
+      door: '#2a2820', coursing: '#424038'
+    }
+  };
+  const p = palettes[timeOfDay] || palettes.clear;
+
+  // Dimensions scaled
+  const totalW = 280 * s;
+  const towerH = 140 * s;
+  const left = cx - totalW / 2;
+
+  // Helper for stone coursing lines
+  function drawCoursing(x0, y0, w, h, color) {
+    ctx.fillStyle = color;
+    for (let row = y0 + 4 * s; row < y0 + h; row += 5 * s) {
+      ctx.fillRect(x0, row, w, Math.max(1, s * 0.5));
+    }
+  }
+
+  // --- LEFT LOW WING (steep gable) ---
+  const lwX = left;
+  const lwW = 55 * s;
+  const lwH = 50 * s;
+  const lwTop = baseY - lwH;
+
+  // Gable roof (steep triangle)
+  ctx.fillStyle = p.roof;
+  ctx.beginPath();
+  ctx.moveTo(lwX, lwTop);
+  ctx.lineTo(lwX + lwW / 2, lwTop - 30 * s);
+  ctx.lineTo(lwX + lwW, lwTop);
+  ctx.fill();
+
+  // Wall
+  ctx.fillStyle = p.stone2;
+  ctx.fillRect(lwX, lwTop, lwW, lwH);
+  drawCoursing(lwX, lwTop, lwW, lwH, p.coursing);
+
+  // Windows on left wing
+  drawGothicWindow(ctx, lwX + 8 * s, lwTop + 10 * s, 10 * s, 18 * s, p.window, p.windowFrame);
+  drawGothicWindow(ctx, lwX + 28 * s, lwTop + 10 * s, 10 * s, 18 * s, p.window, p.windowFrame);
+
+  // --- LEFT TURRET (secondary, shorter) ---
+  const ltX = left + 50 * s;
+  const ltW = 30 * s;
+  const ltH = 90 * s;
+  const ltTop = baseY - ltH;
+
+  // Turret body
+  ctx.fillStyle = p.stone1;
+  ctx.fillRect(ltX, ltTop, ltW, ltH);
+  drawCoursing(ltX, ltTop, ltW, ltH, p.coursing);
+
+  // Turret crenellation / steep roof cap
+  ctx.fillStyle = p.roof;
+  ctx.beginPath();
+  ctx.moveTo(ltX - 2 * s, ltTop);
+  ctx.lineTo(ltX + ltW / 2, ltTop - 18 * s);
+  ctx.lineTo(ltX + ltW + 2 * s, ltTop);
+  ctx.fill();
+
+  // Pinnacles on left turret
+  drawPinnacle(ctx, ltX + 2 * s, ltTop - 18 * s, s, p.stone3);
+  drawPinnacle(ctx, ltX + ltW / 2, ltTop - 22 * s, s, p.stone3);
+  drawPinnacle(ctx, ltX + ltW - 4 * s, ltTop - 18 * s, s, p.stone3);
+
+  // Turret windows
+  drawGothicWindow(ctx, ltX + 8 * s, ltTop + 12 * s, 14 * s, 24 * s, p.window, p.windowFrame);
+  drawGothicWindow(ctx, ltX + 8 * s, ltTop + 50 * s, 14 * s, 20 * s, p.window, p.windowFrame);
+
+  // --- CENTRAL TOWER (tallest, signature element) ---
+  const ctX = left + 78 * s;
+  const ctW = 50 * s;
+  const ctTop = baseY - towerH;
+
+  // Tower body
+  ctx.fillStyle = p.stone1;
+  ctx.fillRect(ctX, ctTop, ctW, towerH);
+  drawCoursing(ctX, ctTop, ctW, towerH, p.coursing);
+
+  // Darker base band
+  ctx.fillStyle = p.stone3;
+  ctx.fillRect(ctX, baseY - 20 * s, ctW, 20 * s);
+
+  // Parapet at top
+  ctx.fillStyle = p.stone3;
+  ctx.fillRect(ctX - 3 * s, ctTop, ctW + 6 * s, 4 * s);
+
+  // Crenellation bumps
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = p.stone3;
+    ctx.fillRect(ctX - 3 * s + i * 9 * s, ctTop - 4 * s, 5 * s, 4 * s);
+  }
+
+  // PINNACLES — THE signature detail of Lyndhurst
+  drawPinnacle(ctx, ctX - 2 * s, ctTop - 8 * s, s * 1.2, p.stone3);
+  drawPinnacle(ctx, ctX + 10 * s, ctTop - 10 * s, s * 1.3, p.stone3);
+  drawPinnacle(ctx, ctX + ctW / 2 - 1 * s, ctTop - 14 * s, s * 1.5, p.stone4);
+  drawPinnacle(ctx, ctX + ctW - 12 * s, ctTop - 10 * s, s * 1.3, p.stone3);
+  drawPinnacle(ctx, ctX + ctW, ctTop - 8 * s, s * 1.2, p.stone3);
+
+  // Large Gothic tracery window (3 lancets)
+  const gwX = ctX + 6 * s;
+  const gwY = ctTop + 14 * s;
+  const gwW = 38 * s;
+  const gwH = 55 * s;
+
+  // Window frame (pointed arch outline)
+  ctx.fillStyle = p.windowFrame;
+  // Draw the outer arch
+  ctx.beginPath();
+  ctx.moveTo(gwX, gwY + gwH);
+  ctx.lineTo(gwX, gwY + gwH * 0.35);
+  ctx.quadraticCurveTo(gwX, gwY - 4 * s, gwX + gwW / 2, gwY - 8 * s);
+  ctx.quadraticCurveTo(gwX + gwW, gwY - 4 * s, gwX + gwW, gwY + gwH * 0.35);
+  ctx.lineTo(gwX + gwW, gwY + gwH);
+  ctx.fill();
+
+  // Window glass fill (3 lancets)
+  const lancetW = (gwW - 6 * s) / 3;
+  for (let i = 0; i < 3; i++) {
+    const lx = gwX + 2 * s + i * (lancetW + 1 * s);
+    ctx.fillStyle = p.window;
+    ctx.beginPath();
+    ctx.moveTo(lx, gwY + gwH - 2 * s);
+    ctx.lineTo(lx, gwY + gwH * 0.3);
+    ctx.quadraticCurveTo(lx + lancetW / 2, gwY + 2 * s, lx + lancetW, gwY + gwH * 0.3);
+    ctx.lineTo(lx + lancetW, gwY + gwH - 2 * s);
+    ctx.fill();
+  }
+
+  // Horizontal mullion
+  ctx.fillStyle = p.windowFrame;
+  ctx.fillRect(gwX, gwY + gwH * 0.55, gwW, 2 * s);
+
+  // More windows below the tracery
+  drawGothicWindow(ctx, ctX + 10 * s, ctTop + 80 * s, 12 * s, 22 * s, p.window, p.windowFrame);
+  drawGothicWindow(ctx, ctX + 28 * s, ctTop + 80 * s, 12 * s, 22 * s, p.window, p.windowFrame);
+
+  // --- RIGHT CONNECTING BODY ---
+  const rbX = left + 128 * s;
+  const rbW = 60 * s;
+  const rbH = 70 * s;
+  const rbTop = baseY - rbH;
+
+  ctx.fillStyle = p.stone2;
+  ctx.fillRect(rbX, rbTop, rbW, rbH);
+  drawCoursing(rbX, rbTop, rbW, rbH, p.coursing);
+
+  // Steep gable roof
+  ctx.fillStyle = p.roof;
+  ctx.beginPath();
+  ctx.moveTo(rbX - 2 * s, rbTop);
+  ctx.lineTo(rbX + rbW / 2, rbTop - 28 * s);
+  ctx.lineTo(rbX + rbW + 2 * s, rbTop);
+  ctx.fill();
+
+  // Gothic arched doorway (main entrance)
+  const doorW = 18 * s;
+  const doorH = 32 * s;
+  const doorX = rbX + (rbW - doorW) / 2;
+  const doorY = baseY - doorH;
+  ctx.fillStyle = p.door;
+  ctx.fillRect(doorX, doorY + 8 * s, doorW, doorH - 8 * s);
+  // Arch top of door
+  ctx.beginPath();
+  ctx.moveTo(doorX, doorY + 8 * s);
+  ctx.quadraticCurveTo(doorX + doorW / 2, doorY - 4 * s, doorX + doorW, doorY + 8 * s);
+  ctx.fill();
+
+  // Door trim
+  ctx.fillStyle = p.trim;
+  ctx.fillRect(doorX - 2 * s, doorY + 6 * s, 2 * s, doorH - 6 * s);
+  ctx.fillRect(doorX + doorW, doorY + 6 * s, 2 * s, doorH - 6 * s);
+
+  // Windows above door
+  drawGothicWindow(ctx, rbX + 6 * s, rbTop + 10 * s, 14 * s, 22 * s, p.window, p.windowFrame);
+  drawGothicWindow(ctx, rbX + 38 * s, rbTop + 10 * s, 14 * s, 22 * s, p.window, p.windowFrame);
+
+  // --- RIGHT LOW WING (porte-cochere) ---
+  const rwX = left + 188 * s;
+  const rwW = 60 * s;
+  const rwH = 40 * s;
+  const rwTop = baseY - rwH;
+
+  ctx.fillStyle = p.stone4;
+  ctx.fillRect(rwX, rwTop, rwW, rwH);
+  drawCoursing(rwX, rwTop, rwW, rwH, p.coursing);
+
+  // Flat-ish roof with slight gable
+  ctx.fillStyle = p.roof;
+  ctx.beginPath();
+  ctx.moveTo(rwX - 1 * s, rwTop);
+  ctx.lineTo(rwX + rwW / 2, rwTop - 12 * s);
+  ctx.lineTo(rwX + rwW + 1 * s, rwTop);
+  ctx.fill();
+
+  // Porte-cochere arches (3 arches)
+  for (let i = 0; i < 3; i++) {
+    const ax = rwX + 4 * s + i * 18 * s;
+    const aw = 14 * s;
+    const ah = 26 * s;
+    // Dark arch opening
+    ctx.fillStyle = (timeOfDay === 'night') ? '#1a1a20' : '#3a3830';
+    ctx.fillRect(ax, rwTop + rwH - ah + 8 * s, aw, ah - 8 * s);
+    ctx.beginPath();
+    ctx.moveTo(ax, rwTop + rwH - ah + 8 * s);
+    ctx.quadraticCurveTo(ax + aw / 2, rwTop + rwH - ah - 2 * s, ax + aw, rwTop + rwH - ah + 8 * s);
+    ctx.fill();
+    // Arch trim
+    ctx.strokeStyle = p.trim;
+    ctx.lineWidth = s;
+    ctx.beginPath();
+    ctx.moveTo(ax, rwTop + rwH - ah + 8 * s);
+    ctx.quadraticCurveTo(ax + aw / 2, rwTop + rwH - ah - 3 * s, ax + aw, rwTop + rwH - ah + 8 * s);
+    ctx.stroke();
+  }
+
+  // Far right extension / chimney
+  const chX = left + 250 * s;
+  ctx.fillStyle = p.stone3;
+  ctx.fillRect(chX, baseY - 55 * s, 12 * s, 55 * s);
+  // Chimney cap
+  ctx.fillStyle = p.roof;
+  ctx.fillRect(chX - 1 * s, baseY - 58 * s, 14 * s, 4 * s);
+
+  // --- GROUND LINE ---
+  ctx.fillStyle = p.stone3;
+  ctx.fillRect(left - 5 * s, baseY, totalW + 10 * s, 3 * s);
+}
+
+// ============================================================
+// 2. GOTHIC WINDOW — pointed arch with mullion cross
+// ============================================================
+function drawGothicWindow(ctx, x, y, w, h, color, trimColor) {
+  const archH = h * 0.3;
+
+  // Trim outline
+  ctx.fillStyle = trimColor;
+  ctx.fillRect(x - 1, y + archH, w + 2, h - archH + 1);
+  // Arch outline
+  ctx.beginPath();
+  ctx.moveTo(x - 1, y + archH);
+  ctx.quadraticCurveTo(x + w / 2, y - archH * 0.5, x + w + 1, y + archH);
+  ctx.fill();
+
+  // Glass fill
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 1, y + archH + 1, w - 2, h - archH - 2);
+  // Glass arch
+  ctx.beginPath();
+  ctx.moveTo(x + 1, y + archH);
+  ctx.quadraticCurveTo(x + w / 2, y - archH * 0.3, x + w - 1, y + archH);
+  ctx.fill();
+
+  // Vertical mullion
+  ctx.fillStyle = trimColor;
+  ctx.fillRect(x + w / 2 - 0.5, y + archH * 0.5, Math.max(1, w * 0.06), h - archH * 0.5);
+
+  // Horizontal mullion
+  ctx.fillRect(x + 1, y + h * 0.55, w - 2, Math.max(1, h * 0.04));
+}
+
+// ============================================================
+// 3. PINNACLE — thin stone spike
+// ============================================================
+function drawPinnacle(ctx, x, y, s, color) {
+  // Thin vertical spike: 2px wide base tapering to 1px point, ~10px tall
+  const h = 10 * s;
+  const baseW = 3 * s;
+  ctx.fillStyle = color;
+
+  // Draw tapered spike pixel by pixel
+  for (let row = 0; row < h; row++) {
+    const t = row / h; // 0 at top, 1 at bottom
+    const w = Math.max(1, Math.round(baseW * t));
+    ctx.fillRect(x + (baseW - w) / 2, y + row - h, w, Math.ceil(s * 0.8));
+  }
+
+  // Bright tip
+  ctx.fillStyle = '#d0c8b8';
+  ctx.fillRect(x + baseW / 2 - 0.5, y - h, Math.max(1, s * 0.5), Math.max(1, s));
+
+  // Small finial ball at very top
+  ctx.fillRect(x + baseW / 2 - s * 0.3, y - h - s, Math.max(1, s * 0.8), Math.max(1, s * 0.8));
+}
+
+// ============================================================
+// 4. CHERRY BLOSSOM TREE
+// ============================================================
+function drawCherryBlossomTree(ctx, x, baseY, s) {
+  const trunkH = 50 * s;
+  const trunkW = 8 * s;
+  const trunkColors = ['#5c3a1a', '#7a5030', '#6b4528'];
+
+  // Trunk
+  ctx.fillStyle = trunkColors[1];
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW, trunkH);
+  // Trunk shading
+  ctx.fillStyle = trunkColors[0];
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW * 0.3, trunkH);
+  ctx.fillStyle = trunkColors[2];
+  ctx.fillRect(x + trunkW * 0.2, baseY - trunkH, trunkW * 0.3, trunkH);
+
+  // Branches (angled thick lines)
+  ctx.fillStyle = trunkColors[1];
+  // Left branch
+  for (let i = 0; i < 20 * s; i++) {
+    ctx.fillRect(x - i * 1.2, baseY - trunkH + 10 * s - i * 0.6, 3 * s, 2 * s);
+  }
+  // Right branch
+  for (let i = 0; i < 18 * s; i++) {
+    ctx.fillRect(x + i * 1.1, baseY - trunkH + 8 * s - i * 0.5, 3 * s, 2 * s);
+  }
+  // Upper branch
+  for (let i = 0; i < 12 * s; i++) {
+    ctx.fillRect(x - i * 0.8, baseY - trunkH - i * 0.8, 2 * s, 2 * s);
+  }
+
+  // Blossom clusters
+  const blossomColors = ['#f4a7bb', '#ffd4e0', '#fff0f5', '#f8b4c8', '#ffccd8'];
+  const leafGreen = ['#5a8a4a', '#6ea05a', '#88b870'];
+  const canopyCX = x;
+  const canopyCY = baseY - trunkH - 15 * s;
+  const canopyRX = 45 * s;
+  const canopyRY = 35 * s;
+
+  // Use seeded random for consistent look
+  const seed = Math.round(x * 100 + baseY * 7);
+  function seededRand(i) {
+    const v = Math.sin(seed + i * 127.1) * 43758.5453;
+    return v - Math.floor(v);
+  }
+
+  for (let i = 0; i < 300; i++) {
+    const angle = seededRand(i) * Math.PI * 2;
+    const r = Math.sqrt(seededRand(i + 500)) * 0.95;
+    const bx = canopyCX + Math.cos(angle) * canopyRX * r;
+    const by = canopyCY + Math.sin(angle) * canopyRY * r * 0.8;
+    const sz = (1 + seededRand(i + 1000)) * 2 * s;
+
+    if (seededRand(i + 200) < 0.15) {
+      // Green leaf
+      ctx.fillStyle = leafGreen[Math.floor(seededRand(i + 300) * 3)];
+    } else {
+      ctx.fillStyle = blossomColors[Math.floor(seededRand(i + 400) * blossomColors.length)];
+    }
+    ctx.fillRect(bx, by, sz, sz);
+  }
+}
+
+// ============================================================
+// 5. EVERGREEN TREE — tall conifer
+// ============================================================
+function drawEvergreenTree(ctx, x, baseY, s) {
+  const treeH = 60 * s;
+  const trunkH = 12 * s;
+  const trunkW = 6 * s;
+
+  // Trunk
+  ctx.fillStyle = '#5c3a1a';
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW, trunkH);
+
+  // Triangular layers (4 tiers, overlapping)
+  const greens = ['#1a4a1a', '#2a5a2a', '#1e4e20', '#2e6030'];
+  const tiers = [
+    { y: baseY - trunkH, w: 30 * s, h: 20 * s },
+    { y: baseY - trunkH - 14 * s, w: 25 * s, h: 18 * s },
+    { y: baseY - trunkH - 26 * s, w: 20 * s, h: 16 * s },
+    { y: baseY - trunkH - 36 * s, w: 14 * s, h: 14 * s },
+  ];
+
+  tiers.forEach((t, idx) => {
+    ctx.fillStyle = greens[idx % greens.length];
+    ctx.beginPath();
+    ctx.moveTo(x - t.w / 2, t.y);
+    ctx.lineTo(x, t.y - t.h);
+    ctx.lineTo(x + t.w / 2, t.y);
+    ctx.fill();
+
+    // Lighter highlight on right side
+    ctx.fillStyle = greens[(idx + 1) % greens.length];
+    ctx.beginPath();
+    ctx.moveTo(x, t.y - t.h);
+    ctx.lineTo(x + t.w / 2, t.y);
+    ctx.lineTo(x + t.w * 0.15, t.y);
+    ctx.fill();
+  });
+}
+
+// ============================================================
+// 6. DECIDUOUS TREE — rounded canopy
+// ============================================================
+function drawDeciduousTree(ctx, x, baseY, s) {
+  const trunkH = 30 * s;
+  const trunkW = 7 * s;
+
+  // Trunk
+  ctx.fillStyle = '#6b4528';
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW, trunkH);
+  ctx.fillStyle = '#5c3a1a';
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW * 0.35, trunkH);
+
+  // Rounded canopy using overlapping circles of green pixels
+  const greens = ['#3a7a30', '#4a8a40', '#5a9a50', '#6aaa60', '#358030'];
+  const canopyCY = baseY - trunkH - 10 * s;
+  const canopyR = 28 * s;
+
+  const seed = Math.round(x * 73 + baseY * 13);
+  function srand(i) {
+    const v = Math.sin(seed + i * 91.3) * 43758.5453;
+    return v - Math.floor(v);
+  }
+
+  // Fill a roughly circular area with green pixels
+  for (let i = 0; i < 250; i++) {
+    const angle = srand(i) * Math.PI * 2;
+    const r = Math.sqrt(srand(i + 600)) * canopyR;
+    const px2 = x + Math.cos(angle) * r;
+    const py = canopyCY + Math.sin(angle) * r * 0.75;
+    const sz = (1.5 + srand(i + 800)) * 2.5 * s;
+    ctx.fillStyle = greens[Math.floor(srand(i + 100) * greens.length)];
+    ctx.fillRect(px2, py, sz, sz);
+  }
+}
+
+
+
 // Character drawing using Retro Antlitz Kartei
 var rakConfig = RAK.normalizeConfig({});
 var _rakCanvas = null;
