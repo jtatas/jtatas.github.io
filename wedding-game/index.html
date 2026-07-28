@@ -52,6 +52,8 @@ input[type="text"]:focus{border-color:var(--pink)}
 <div id="screenFinale" class="screen" style="background:#1a1a2e;overflow-y:auto;z-index:20"></div>
 </div>
 <script>
+initSpriteLoader();
+
 // ===== ART FUNCTIONS =====
 // ============================================================
 // PIXEL ART DRAWING FUNCTIONS — Wedding Game at Lyndhurst Mansion
@@ -518,346 +520,136 @@ function drawDeciduousTree(ctx, x, baseY, s) {
 //    16px wide × 22px tall grid. x,y = CENTER of sprite.
 //    ps = pixel size (each grid cell = ps×ps screen pixels)
 // ============================================================
+// ============================================================
+// SPRITE IMAGE LOADER & COMPOSITOR
+// Pre-loads all PNG sprite layers, draws them composited on canvas
+// ============================================================
+
+var spriteImages = {};
+var spritesLoaded = false;
+var spritesToLoad = 0;
+var spritesLoadedCount = 0;
+
+function loadSprite(name, path) {
+  spritesToLoad++;
+  var img = new Image();
+  img.onload = function() {
+    spriteImages[name] = img;
+    spritesLoadedCount++;
+    if (spritesLoadedCount >= spritesToLoad) {
+      spritesLoaded = true;
+      console.log('All ' + spritesLoadedCount + ' sprites loaded');
+    }
+  };
+  img.onerror = function() {
+    console.warn('Failed to load sprite: ' + path);
+    spritesLoadedCount++;
+    if (spritesLoadedCount >= spritesToLoad) spritesLoaded = true;
+  };
+  img.src = path;
+}
+
+function initSpriteLoader() {
+  var base = 'sprites/';
+  loadSprite('base_body', base + 'base_body.png');
+
+  // Hair: 7 styles x 7 colors
+  for (var s = 0; s < 7; s++) {
+    for (var c = 0; c < 7; c++) {
+      loadSprite('hair_' + s + '_' + c, base + 'hair_' + s + '_' + c + '.png');
+    }
+  }
+
+  // Tops: 8
+  for (var t = 0; t < 8; t++) {
+    loadSprite('top_' + t, base + 'top_' + t + '.png');
+  }
+
+  // Bottoms: 6
+  for (var b = 0; b < 6; b++) {
+    loadSprite('bottom_' + b, base + 'bottom_' + b + '.png');
+  }
+
+  // Shoes: 5
+  for (var sh = 0; sh < 5; sh++) {
+    loadSprite('shoes_' + sh, base + 'shoes_' + sh + '.png');
+  }
+}
+
+// The native sprite size is 132x180 (22x30 grid * 6px per art-pixel)
+var SPRITE_W = 132;
+var SPRITE_H = 180;
+
 function drawChibiSprite(ctx, cx, cy, ps, options) {
-  // Emmadreamstar pixel art chibi — pixel-perfect trace from reference.
-  // 22w x 30h grid. ps = pixel size. cx,cy = center of sprite.
   var o = options || {};
-  var hair = o.hair || 0;
-  var hc = o.hairColor || 0;
+  var hairStyle = o.hair || 0;
+  var hairColor = o.hairColor || 0;
   var topIdx = o.top || 0;
   var botIdx = o.bottom || 0;
   var shoeIdx = o.shoes || 0;
   var accIdx = o.acc || 0;
 
-  var W = 22, H = 30;
-  var ox = Math.round(cx - W/2 * ps);
-  var oy = Math.round(cy - H/2 * ps);
+  // Calculate draw size. Old ps was per art-pixel (6px native).
+  // To match old scaling: total height = 30 * ps. Native = 180.
+  // Scale factor = (30 * ps) / 180 = ps / 6
+  var targetH = 30 * ps;
+  var targetW = 22 * ps;
+  var dx = cx - targetW / 2;
+  var dy = cy - targetH / 2;
+
+  ctx.imageSmoothingEnabled = false;
+
+  // Layer order: hair_back (for long styles), base_body, top, bottom, shoes, hair_front
+  // For simplicity, just draw hair once on top (front layer covers back anyway for short styles)
+
+  // 1. Hair (back layer for long styles — draw first)
+  var hairKey = 'hair_' + hairStyle + '_' + hairColor;
+  if (spriteImages[hairKey] && (hairStyle === 1 || hairStyle === 2 || hairStyle === 6)) {
+    ctx.drawImage(spriteImages[hairKey], dx, dy, targetW, targetH);
+  }
+
+  // 2. Base body
+  if (spriteImages['base_body']) {
+    ctx.drawImage(spriteImages['base_body'], dx, dy, targetW, targetH);
+  }
+
+  // 3. Top
+  var topKey = 'top_' + topIdx;
+  if (spriteImages[topKey]) {
+    ctx.drawImage(spriteImages[topKey], dx, dy, targetW, targetH);
+  }
+
+  // 4. Bottom
+  var botKey = 'bottom_' + botIdx;
+  if (spriteImages[botKey]) {
+    ctx.drawImage(spriteImages[botKey], dx, dy, targetW, targetH);
+  }
+
+  // 5. Shoes
+  var shoeKey = 'shoes_' + shoeIdx;
+  if (spriteImages[shoeKey]) {
+    ctx.drawImage(spriteImages[shoeKey], dx, dy, targetW, targetH);
+  }
+
+  // 6. Hair (front layer — always on top)
+  if (spriteImages[hairKey]) {
+    ctx.drawImage(spriteImages[hairKey], dx, dy, targetW, targetH);
+  }
+
+  // 7. Accessories (still drawn in code for now — small details)
+  // These are simple enough that code works fine
+  var ox = Math.round(dx);
+  var oy = Math.round(dy);
+  var aps = targetW / 22; // art pixel size in screen pixels
 
   function p(gx, gy, c) {
-    if (c === 0) return;
     ctx.fillStyle = c;
-    ctx.fillRect(ox + gx * ps, oy + gy * ps, ps, ps);
-  }
-  function hLine(y, x1, x2, c) {
-    for (var x = x1; x <= x2; x++) p(x, y, c);
-  }
-  function fillR(x, y, w, h, c) {
-    ctx.fillStyle = c;
-    ctx.fillRect(ox + x * ps, oy + y * ps, w * ps, h * ps);
+    ctx.fillRect(ox + gx * aps, oy + gy * aps, Math.ceil(aps), Math.ceil(aps));
   }
 
-  // --- PALETTES ---
-  var BK = '#1a1018';
-  var SK = '#f5d5a8'; // skin base (warmer, matching ref)
-  var SL = '#fae0c0'; // skin highlight
-  var SD = '#dbb888'; // skin shadow
-  var SO = '#c89868'; // skin outline
-  var BH = '#e88898'; // blush
-  var MP = '#d86878'; // mouth/lip pink
-  var TH = '#f8f0e8'; // teeth white
-  var WT = '#ffffff';
+  var EC2 = '#2898a0';
+  var BK2 = '#1a1018';
 
-  // Hair palettes [darkest, dark, mid, light]
-  var hPals = [
-    ['#2a1808','#4a2810','#7a4828','#a06838'], // brown
-    ['#080810','#141420','#222230','#303040'], // black
-    ['#685820','#907830','#b89840','#d0b858'], // blonde
-    ['#481810','#702818','#984030','#b85840'], // red
-    ['#102848','#183860','#285880','#3878a0'], // blue
-    ['#481838','#702858','#a04080','#c858a0'], // pink
-    ['#484858','#686878','#888898','#a8a8b8'], // silver
-  ];
-  var HC = hPals[hc % hPals.length];
-  var EC = '#2898a0'; // eye teal
-
-  // Tops [dark, mid, light]
-  var topPals = [
-    ['#101830','#182848','#283860'], // navy suit
-    ['#c07088','#e090a8','#f0b0c0'], // pink dress top
-    ['#080808','#121212','#1c1c1c'], // black tux
-    ['#083020','#104838','#186050'], // emerald
-    ['#c8c0b0','#e0d8c8','#f0e8e0'], // ivory shirt
-    ['#380818','#581828','#782838'], // burgundy
-    ['#b09860','#c8b078','#e0c898'], // champagne
-    ['#685888','#8878a0','#a898b8'], // lavender
-  ];
-  var TC = topPals[topIdx % topPals.length];
-
-  var botPals = [
-    {d:'#080808',m:'#141414',l:'#202020',sk:false},
-    {d:'#c07088',m:'#e090a8',l:'#f0b0c0',sk:true},
-    {d:'#101830',m:'#182848',l:'#283860',sk:false},
-    {d:'#a88020',m:'#c89830',l:'#e0b848',sk:true},
-    {d:'#202020',m:'#303030',l:'#404040',sk:false},
-    {d:'#405830',m:'#587048',l:'#708860',sk:true},
-  ];
-  var BC = botPals[botIdx % botPals.length];
-
-  var shoPals = [
-    ['#080808','#181818'],
-    ['#c0a080','#d8b898'],
-    ['#a88020','#c89830'],
-    ['#481020','#681830'],
-    ['#808088','#a0a0a8'],
-  ];
-  var ShC = shoPals[shoeIdx % shoPals.length];
-
-  // ===== DRAW (back to front) =====
-
-  // 1. HAIR BACK (behind body for long/curly/braids)
-  if (hair === 1 || hair === 2 || hair === 6) {
-    var hExt = hair === 2 ? 22 : 18;
-    for (var hby = 4; hby < 4 + hExt; hby++) {
-      var shade = hby < 8 ? HC[2] : (hby < 13 ? HC[1] : HC[0]);
-      p(2, hby, HC[0]); p(3, hby, shade);
-      p(18, hby, shade); p(19, hby, HC[0]);
-      if (hair === 2) {
-        p(1, hby, HC[0]); p(20, hby, HC[0]);
-        if (hby % 2 === 0) { p(0, hby, HC[0]); p(21, hby, HC[0]); }
-      }
-    }
-    if (hair === 1) {
-      for (var wy = 8; wy < 20; wy += 3) {
-        p(1, wy, HC[1]); p(20, wy, HC[1]);
-      }
-    }
-  }
-
-  // 2. HEAD — rounded oval with tapering jaw
-  // Wide forehead, full cheeks, narrowing jaw, small chin
-  //
-  //  Row 2:    ████████ (cols 7-14, 8px)
-  //  Row 3:  ████████████ (cols 5-16, 12px)
-  //  Row 4: ██████████████ (cols 4-17, 14px)
-  //  Rows 5-11: ██████████████ (cols 4-17, 14px)
-  //  Row 12: ████████████ (cols 5-16, 12px) jaw narrows
-  //  Row 13:  ██████████ (cols 6-15, 10px)
-  //  Row 14:   ████████ (cols 7-14, 8px)
-  //  Row 15:    ██████ (cols 8-13, 6px) chin
-
-  // Outline
-  hLine(2, 7, 14, SO);
-  p(6, 3, SO); hLine(3, 7, 14, SO); p(15, 3, SO);
-  p(5, 4, SO); p(16, 4, SO);
-  for (var sy = 5; sy <= 11; sy++) {
-    p(4, sy, SO); p(17, sy, SO);
-  }
-  p(5, 12, SO); p(16, 12, SO);
-  p(6, 13, SO); p(15, 13, SO);
-  p(7, 14, SO); p(14, 14, SO);
-  hLine(15, 8, 13, SO);
-
-  // Fill skin
-  hLine(2, 7, 14, SL);
-  hLine(3, 7, 14, SL);
-  hLine(4, 6, 15, SL);
-  for (var fy = 5; fy <= 9; fy++) {
-    hLine(fy, 5, 16, SK);
-  }
-  hLine(10, 5, 16, SK);
-  hLine(11, 5, 16, SD);
-  hLine(12, 6, 15, SD);
-  hLine(13, 7, 14, SD);
-  hLine(14, 8, 13, SD);
-
-  // Forehead highlight
-  hLine(3, 8, 13, WT);
-  hLine(4, 7, 14, SL);
-
-  // 3. EYEBROWS (row 7) — 2px each, slight inward angle
-  p(6, 7, BK); p(7, 7, BK);
-  p(14, 7, BK); p(15, 7, BK);
-
-  // 4. LASH pixel (row 8) — 1px extending up from outer corner of each eye
-  p(9, 8, BK);  // left eye outer lash
-  p(12, 8, BK); // right eye outer lash
-
-  // 5. EYES (rows 9-12) — 3 wide × 4 tall, traced from reference
-  // Left eye: cols 6-8. Right eye: cols 13-15.
-  // Gap: cols 9-12 (4 skin pixels = nose bridge)
-
-  // Left eye
-  // Row 9: eyelid (3px)
-  p(6, 9, BK); p(7, 9, BK); p(8, 9, BK);
-  // Row 10: white sclera + black edge
-  p(6, 10, WT); p(7, 10, WT); p(8, 10, BK);
-  // Row 11: white + teal iris + black
-  p(6, 11, WT); p(7, 11, EC); p(8, 11, BK);
-  // Row 12: bottom (2px, inner portion)
-  p(6, 12, BK); p(7, 12, BK);
-
-  // Right eye (mirrored)
-  // Row 9: eyelid
-  p(13, 9, BK); p(14, 9, BK); p(15, 9, BK);
-  // Row 10: black edge + white sclera
-  p(13, 10, BK); p(14, 10, WT); p(15, 10, WT);
-  // Row 11: black + teal iris + white
-  p(13, 11, BK); p(14, 11, EC); p(15, 11, WT);
-  // Row 12: bottom
-  p(14, 12, BK); p(15, 12, BK);
-
-  // 6. BLUSH (row 12) — 2 pink pixels each cheek
-  p(5, 12, BH); p(6, 12, BH);
-  p(15, 12, BH); p(16, 12, BH);
-
-  // 7. MOUTH (rows 14-15) — 6 wide × 2 tall, centered cols 8-13
-  // Top row: pink edges, 3 white teeth, pink edges (5px wide)
-  p(8, 14, MP); p(9, 14, TH); p(10, 14, TH); p(11, 14, TH); p(12, 14, MP);
-  // Bottom row: pink lip smile (5px wide)
-  p(8, 15, MP); p(9, 15, MP); p(10, 15, MP); p(11, 15, MP); p(12, 15, MP);
-
-  // 8. NECK (rows 16-17)
-  p(9, 16, SK); p(10, 16, SK); p(11, 16, SK); p(12, 16, SK);
-  p(9, 17, SD); p(10, 17, SK); p(11, 17, SK); p(12, 17, SD);
-
-  // 9. BODY — TOP (rows 17-21)
-  hLine(17, 5, 16, TC[1]);
-  p(5, 17, TC[0]); p(16, 17, TC[0]);
-  for (var ty = 18; ty <= 21; ty++) {
-    hLine(ty, 6, 15, TC[1]);
-    p(6, ty, TC[0]); p(15, ty, TC[0]);
-    p(7, ty, TC[2]); p(8, ty, TC[2]);
-  }
-  // Collar V-shape
-  p(9, 17, SK); p(10, 17, TC[2]); p(11, 17, TC[2]); p(12, 17, SK);
-  p(10, 18, SK); p(11, 18, SK);
-
-  // Tie/buttons for suit styles
-  if (topIdx === 2 || topIdx === 0) {
-    p(10, 19, '#d0a030'); p(11, 19, '#d0a030');
-    p(10, 20, '#c89028'); p(11, 20, '#c89028');
-    p(10, 21, '#b88020'); p(11, 21, '#b88020');
-  }
-
-  // Arms
-  p(4, 17, TC[1]); p(3, 18, TC[0]); p(4, 18, TC[1]);
-  p(3, 19, TC[0]); p(4, 19, TC[1]);
-  p(3, 20, SK); p(4, 20, SK);
-  p(3, 21, SD); p(4, 21, SK);
-  p(17, 17, TC[1]); p(17, 18, TC[0]); p(18, 18, TC[1]);
-  p(17, 19, TC[0]); p(18, 19, TC[1]);
-  p(17, 20, SD); p(18, 20, SK);
-  p(17, 21, SD); p(18, 21, SD);
-
-  // 10. BODY — BOTTOM (rows 22-26)
-  if (BC.sk) {
-    for (var sky = 22; sky <= 25; sky++) {
-      var sw = 5 + (sky - 22);
-      var sx1 = 11 - sw, sx2 = 10 + sw;
-      hLine(sky, sx1, sx2, BC.m);
-      p(sx1, sky, BC.d); p(sx2, sky, BC.d);
-      p(sx1 + 2, sky, BC.l); p(sx1 + 3, sky, BC.l);
-    }
-    p(9, 26, SK); p(10, 26, SK); p(11, 26, SK); p(12, 26, SK);
-    p(8, 27, ShC[0]); p(9, 27, ShC[1]); p(10, 27, ShC[0]);
-    p(11, 27, ShC[0]); p(12, 27, ShC[1]); p(13, 27, ShC[0]);
-  } else {
-    for (var py2 = 22; py2 <= 26; py2++) {
-      p(7, py2, BC.d); p(8, py2, BC.m); p(9, py2, BC.m); p(10, py2, BC.l);
-      p(11, py2, BC.l); p(12, py2, BC.m); p(13, py2, BC.m); p(14, py2, BC.d);
-    }
-    p(6, 27, ShC[0]); p(7, 27, ShC[0]); p(8, 27, ShC[1]); p(9, 27, ShC[1]); p(10, 27, ShC[0]);
-    p(11, 27, ShC[0]); p(12, 27, ShC[1]); p(13, 27, ShC[1]); p(14, 27, ShC[0]); p(15, 27, ShC[0]);
-  }
-
-  // 11. HAIR FRONT — voluminous, V-parted bangs, side framing
-  var drawHairTop = function() {
-    // Dome shape on top (rows -1 to 4)
-    hLine(-1, 7, 14, HC[2]);
-    hLine(0, 5, 16, HC[2]); p(5, 0, HC[1]); p(16, 0, HC[1]);
-    hLine(1, 4, 17, HC[2]); p(4, 1, HC[0]); p(17, 1, HC[0]);
-    p(8, 1, HC[3]); p(9, 1, HC[3]); p(10, 1, HC[3]); // highlight streak
-    hLine(2, 4, 17, HC[1]); p(4, 2, HC[0]); p(17, 2, HC[0]);
-    p(7, 2, HC[2]); p(8, 2, HC[3]); p(9, 2, HC[2]);
-    // V-parted bangs (rows 3-6) — hair on sides, skin peek in center
-    // Row 3: hair on outer, V opening starts
-    p(4, 3, HC[0]); p(5, 3, HC[1]); p(6, 3, HC[2]); p(7, 3, HC[2]);
-    p(14, 3, HC[2]); p(15, 3, HC[2]); p(16, 3, HC[1]); p(17, 3, HC[0]);
-    // Row 4: V opens wider
-    p(4, 4, HC[0]); p(5, 4, HC[1]); p(6, 4, HC[2]);
-    p(15, 4, HC[2]); p(16, 4, HC[1]); p(17, 4, HC[0]);
-    // Row 5: side framing only
-    p(4, 5, HC[0]); p(5, 5, HC[1]);
-    p(16, 5, HC[1]); p(17, 5, HC[0]);
-    // Row 6: thin side framing
-    p(4, 6, HC[0]); p(5, 6, HC[1]);
-    p(16, 6, HC[1]); p(17, 6, HC[0]);
-  };
-
-  if (hair === 0) { // short crop
-    drawHairTop();
-    p(4, 7, HC[0]); p(5, 7, HC[1]);
-    p(16, 7, HC[1]); p(17, 7, HC[0]);
-  } else if (hair === 1) { // long flowing
-    drawHairTop();
-    for (var ly = 7; ly <= 16; ly++) {
-      p(3, ly, HC[0]); p(4, ly, HC[1]); p(5, ly, HC[2]);
-      p(16, ly, HC[2]); p(17, ly, HC[1]); p(18, ly, HC[0]);
-      if (ly % 3 === 0) { p(2, ly, HC[0]); p(19, ly, HC[0]); }
-    }
-    p(4, 17, HC[0]); p(5, 17, HC[1]);
-    p(16, 17, HC[1]); p(17, 17, HC[0]);
-    p(5, 18, HC[0]); p(16, 18, HC[0]);
-  } else if (hair === 2) { // curly/big — extra volume (reference style!)
-    // Extra dome height
-    hLine(-2, 6, 15, HC[1]);
-    hLine(-1, 4, 17, HC[2]); p(4, -1, HC[0]); p(17, -1, HC[0]);
-    hLine(0, 3, 18, HC[2]); p(3, 0, HC[0]); p(18, 0, HC[0]);
-    p(8, 0, HC[3]); p(9, 0, HC[3]); p(10, 0, HC[3]);
-    hLine(1, 3, 18, HC[1]); p(3, 1, HC[0]); p(18, 1, HC[0]);
-    hLine(2, 3, 18, HC[1]); p(3, 2, HC[0]); p(18, 2, HC[0]);
-    // V-parted bangs
-    p(3, 3, HC[0]); p(4, 3, HC[1]); p(5, 3, HC[2]); p(6, 3, HC[2]);
-    p(15, 3, HC[2]); p(16, 3, HC[2]); p(17, 3, HC[1]); p(18, 3, HC[0]);
-    p(3, 4, HC[0]); p(4, 4, HC[1]); p(5, 4, HC[2]);
-    p(16, 4, HC[2]); p(17, 4, HC[1]); p(18, 4, HC[0]);
-    // Curly sides (alternating shade bumps)
-    for (var cy2 = 5; cy2 <= 18; cy2++) {
-      p(2, cy2, HC[0]); p(3, cy2, HC[cy2 % 2 === 0 ? 2 : 1]); p(4, cy2, HC[cy2 % 2 === 0 ? 1 : 2]);
-      p(17, cy2, HC[cy2 % 2 === 0 ? 2 : 1]); p(18, cy2, HC[cy2 % 2 === 0 ? 1 : 2]); p(19, cy2, HC[0]);
-      if (cy2 % 2 === 0) { p(1, cy2, HC[0]); p(20, cy2, HC[0]); }
-    }
-    // Inner framing near face
-    p(5, 5, HC[2]); p(5, 6, HC[2]); p(16, 5, HC[2]); p(16, 6, HC[2]);
-  } else if (hair === 3) { // updo/bun
-    drawHairTop();
-    p(4, 7, HC[0]); p(5, 7, HC[1]); p(16, 7, HC[1]); p(17, 7, HC[0]);
-    // Bun on top
-    hLine(-3, 8, 13, HC[2]);
-    hLine(-4, 9, 12, HC[1]);
-    hLine(-2, 7, 14, HC[2]);
-    p(9, -3, HC[3]); p(10, -3, HC[3]);
-    p(8, -4, HC[0]); p(13, -4, HC[0]);
-  } else if (hair === 4) { // pixie/mohawk
-    hLine(-1, 7, 14, HC[2]);
-    hLine(-2, 8, 13, HC[1]);
-    hLine(-3, 9, 12, HC[2]);
-    hLine(0, 5, 16, HC[2]); p(5, 0, HC[0]); p(16, 0, HC[0]);
-    p(9, -1, HC[3]); p(10, -1, HC[3]); p(11, -1, HC[3]);
-    hLine(1, 5, 16, HC[1]); p(5, 1, HC[0]); p(16, 1, HC[0]);
-    p(5, 2, HC[0]); p(6, 2, HC[1]); p(15, 2, HC[1]); p(16, 2, HC[0]);
-    p(5, 3, HC[0]); p(16, 3, HC[0]);
-    p(5, 4, HC[0]); p(16, 4, HC[0]);
-  } else if (hair === 5) { // bob
-    drawHairTop();
-    for (var bby = 7; bby <= 12; bby++) {
-      p(3, bby, HC[0]); p(4, bby, HC[1]); p(5, bby, HC[2]);
-      p(16, bby, HC[2]); p(17, bby, HC[1]); p(18, bby, HC[0]);
-    }
-    hLine(13, 3, 5, HC[0]);
-    hLine(13, 16, 18, HC[0]);
-  } else if (hair === 6) { // braids
-    drawHairTop();
-    p(4, 7, HC[0]); p(5, 7, HC[1]); p(16, 7, HC[1]); p(17, 7, HC[0]);
-    for (var br = 8; br <= 24; br++) {
-      p(3, br, br % 2 === 0 ? HC[2] : HC[1]); p(4, br, br % 2 === 0 ? HC[1] : HC[2]);
-      p(17, br, br % 2 === 0 ? HC[1] : HC[2]); p(18, br, br % 2 === 0 ? HC[2] : HC[1]);
-    }
-    p(3, 25, EC); p(4, 25, EC);
-    p(17, 25, EC); p(18, 25, EC);
-  }
-
-  // 12. ACCESSORIES
   if (accIdx === 0) { // gold bowtie
     p(8, 16, '#d4af37'); p(9, 16, '#d4af37'); p(12, 16, '#d4af37'); p(13, 16, '#d4af37');
     p(10, 16, '#b89020'); p(11, 16, '#b89020');
@@ -866,35 +658,27 @@ function drawChibiSprite(ctx, cx, cy, ps, options) {
     p(7, 15, '#d0d0e0'); p(8, 15, '#e8e8f0'); p(9, 15, '#f0f0ff');
     p(12, 15, '#f0f0ff'); p(13, 15, '#e8e8f0'); p(14, 15, '#d0d0e0');
     p(10, 16, '#f8f8ff'); p(11, 16, '#f0f0ff');
-  } else if (accIdx === 2) { // sunglasses — cover the eyes
-    hLine(8, 5, 16, BK); // bridge across top
-    // Left lens
-    p(5, 9, BK); p(6, 9, '#303050'); p(7, 9, '#303050'); p(8, 9, '#303050'); p(9, 9, BK);
-    p(5, 10, BK); p(6, 10, '#303050'); p(7, 10, '#303050'); p(8, 10, '#303050'); p(9, 10, BK);
-    p(6, 11, BK); p(7, 11, BK); p(8, 11, BK);
-    // Right lens
-    p(12, 9, BK); p(13, 9, '#303050'); p(14, 9, '#303050'); p(15, 9, '#303050'); p(16, 9, BK);
-    p(12, 10, BK); p(13, 10, '#303050'); p(14, 10, '#303050'); p(15, 10, '#303050'); p(16, 10, BK);
-    p(13, 11, BK); p(14, 11, BK); p(15, 11, BK);
-    // Nose bridge
-    p(10, 9, BK); p(11, 9, BK);
+  } else if (accIdx === 2) { // sunglasses
+    for (var sx = 5; sx <= 16; sx++) p(sx, 8, BK2);
+    p(5, 9, BK2); p(6, 9, '#303050'); p(7, 9, '#303050'); p(8, 9, '#303050'); p(9, 9, BK2);
+    p(10, 9, BK2); p(11, 9, BK2);
+    p(12, 9, BK2); p(13, 9, '#303050'); p(14, 9, '#303050'); p(15, 9, '#303050'); p(16, 9, BK2);
   } else if (accIdx === 3) { // flower crown
-    p(5, 0, '#50a050'); p(6, -1, '#f090a0'); p(7, -1, '#50a050'); p(8, -1, '#f8b0c0');
-    p(9, -2, '#f090a0'); p(10, -1, '#50a050'); p(11, -2, '#f8b0c0'); p(12, -1, '#50a050');
-    p(13, -1, '#f090a0'); p(14, -1, '#50a050'); p(15, -1, '#f8b0c0'); p(16, 0, '#50a050');
+    p(5, 0, '#50a050'); p(6, 0, '#f090a0'); p(7, 0, '#50a050'); p(8, 0, '#f8b0c0');
+    p(9, 0, '#f090a0'); p(10, 0, '#50a050'); p(11, 0, '#f8b0c0'); p(12, 0, '#50a050');
+    p(13, 0, '#f090a0'); p(14, 0, '#50a050'); p(15, 0, '#f8b0c0'); p(16, 0, '#50a050');
   } else if (accIdx === 4) { // top hat
-    hLine(-5, 7, 14, BK);
-    for (var th2 = -4; th2 <= -2; th2++) {
-      hLine(th2, 8, 13, '#1a1a28');
-      p(7, th2, BK); p(14, th2, BK);
+    for (var tx = 7; tx <= 14; tx++) p(tx, 0, BK2);
+    for (var ty = 1; ty <= 3; ty++) {
+      for (var tx2 = 8; tx2 <= 13; tx2++) p(tx2, ty, '#1a1a28');
+      p(7, ty, BK2); p(14, ty, BK2);
     }
-    hLine(-2, 7, 14, BK);
-    p(6, -2, BK); p(15, -2, BK);
-    hLine(-2, 8, 13, '#d4af37'); // gold band
+    p(6, 3, BK2); p(15, 3, BK2);
+    for (var tx3 = 8; tx3 <= 13; tx3++) p(tx3, 3, '#d4af37');
   } else if (accIdx === 5) { // tiara
-    p(7, 0, '#c0c0e0'); p(8, -1, '#d0d0f0'); p(9, -2, '#e0e0ff');
-    p(10, -1, '#ff6090'); // jewel
-    p(11, -1, '#d0d0f0'); p(12, -2, '#e0e0ff'); p(13, -1, '#d0d0f0'); p(14, 0, '#c0c0e0');
+    p(7, 0, '#c0c0e0'); p(8, 0, '#d0d0f0'); p(9, 0, '#e0e0ff');
+    p(10, 0, '#ff6090');
+    p(11, 0, '#d0d0f0'); p(12, 0, '#e0e0ff'); p(13, 0, '#d0d0f0'); p(14, 0, '#c0c0e0');
   }
 }
 
