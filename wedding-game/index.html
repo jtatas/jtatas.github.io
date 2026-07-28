@@ -3174,18 +3174,18 @@ function initGame2() {
   const dirSymbols = {left:'◀', down:'▼', up:'▲', right:'▶'};
 
   const pattern = [];
-  let pTime = 1000; // ms
-  // Build pattern: start simple, get faster
-  for (let i = 0; i < 90; i++) {
-    const progress = i / 90;
-    const gap = progress < 0.3 ? rand(500, 700) : (progress < 0.7 ? rand(350, 550) : rand(280, 420));
+  let pTime = 1500; // ms — start later
+  // Build pattern: start simple, get faster (but overall slower)
+  for (let i = 0; i < 60; i++) {
+    const progress = i / 60;
+    const gap = progress < 0.3 ? rand(800, 1100) : (progress < 0.7 ? rand(600, 850) : rand(450, 650));
     pattern.push({time: pTime, dir: dirs[randInt(0, 3)], hit: false, missed: false});
     pTime += gap;
-    // Doubles near end
-    if (progress > 0.8 && Math.random() < 0.3) {
+    // Doubles near end (less frequent)
+    if (progress > 0.85 && Math.random() < 0.2) {
       const otherDir = dirs[randInt(0, 3)];
       if (otherDir !== pattern[pattern.length - 1].dir) {
-        pattern.push({time: pTime - gap + 20, dir: otherDir, hit: false, missed: false});
+        pattern.push({time: pTime - gap + 50, dir: otherDir, hit: false, missed: false});
       }
     }
   }
@@ -3196,7 +3196,7 @@ function initGame2() {
   const laneX = {left: W/2 - laneW * 1.5, down: W/2 - laneW * 0.5, up: W/2 + laneW * 0.5, right: W/2 + laneW * 1.5};
   const targetY = H * 0.15;
   const spawnY = H * 0.85;
-  const arrowSpeed = (spawnY - targetY) / 2000; // pixels per ms — 2 sec travel
+  const arrowSpeed = (spawnY - targetY) / 2800; // pixels per ms — 2.8 sec travel (slower)
 
   // Feedback popups
   const feedbacks = [];
@@ -3224,6 +3224,29 @@ function initGame2() {
   });
   app.appendChild(btnContainer);
 
+  // Keyboard arrow support (desktop)
+  function handleKeyDown(e) {
+    if (currentScreen !== 'game2') {
+      document.removeEventListener('keydown', handleKeyDown);
+      return;
+    }
+    const keyMap = {ArrowLeft:'left', ArrowDown:'down', ArrowUp:'up', ArrowRight:'right'};
+    const dir = keyMap[e.key];
+    if (dir) {
+      e.preventDefault();
+      handleHit(dir);
+      // Visual feedback on button
+      const btns = btnContainer.querySelectorAll('button');
+      btns.forEach(function(b) {
+        if (b.dataset.dir === dir) {
+          b.style.background = 'rgba(255,255,255,0.3)';
+          setTimeout(function() { b.style.background = 'rgba(0,0,0,0.7)'; }, 100);
+        }
+      });
+    }
+  }
+  document.addEventListener('keydown', handleKeyDown);
+
   function handleHit(dir) {
     if (finished) return;
     const now = gameTime * 1000;
@@ -3236,15 +3259,15 @@ function initGame2() {
       if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
     }
 
-    if (bestIdx >= 0 && bestDiff <= 200) {
+    if (bestIdx >= 0 && bestDiff <= 300) {
       const a = pattern[bestIdx];
       a.hit = true;
       let pts = 0;
       let label = '';
       let color = '';
-      if (bestDiff <= 30) { pts = 100; label = 'PERFECT!'; color = '#ffd700'; }
-      else if (bestDiff <= 80) { pts = 50; label = 'GREAT!'; color = '#6bff8a'; }
-      else if (bestDiff <= 130) { pts = 25; label = 'GOOD'; color = '#6bcaff'; }
+      if (bestDiff <= 50) { pts = 100; label = 'PERFECT!'; color = '#ffd700'; }
+      else if (bestDiff <= 120) { pts = 50; label = 'GREAT!'; color = '#6bff8a'; }
+      else if (bestDiff <= 200) { pts = 25; label = 'GOOD'; color = '#6bcaff'; }
       else { pts = 10; label = 'OK'; color = '#aaa'; }
 
       // Combo multiplier
@@ -3284,7 +3307,7 @@ function initGame2() {
     if (!finished) {
       for (let i = 0; i < pattern.length; i++) {
         const a = pattern[i];
-        if (!a.hit && !a.missed && now - a.time > 200) {
+        if (!a.hit && !a.missed && now - a.time > 350) {
           a.missed = true;
           combo = 0;
           feedbacks.push({text: 'MISS', x: laneX[a.dir], y: targetY, life: 30, color: '#ff4444'});
