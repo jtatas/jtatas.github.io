@@ -3,66 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Max &amp; Julie's Wedding Arcade</title>
+<title>Max & Julie's Wedding Arcade</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#0a0a1a;font-family:'DM Sans',sans-serif}
-#gameContainer{position:relative;width:100%;max-width:500px;height:100%;margin:0 auto;overflow:hidden}
-canvas#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;z-index:1}
-.screen{position:absolute;top:0;left:0;width:100%;height:100%;display:none;z-index:2;overflow-y:auto}
-.screen.active{display:flex;flex-direction:column}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--pink:#F4A7BB;--gold:#D4AF37;--cream:#FFF8E7;--sage:#8FA67A;--sky:#A8C4D4;--choco:#4A4238;--white:#FFFDF7}
+body{background:#0f0f2a;font-family:'DM Sans',sans-serif;overflow:hidden;height:100dvh;width:100vw;display:flex;justify-content:center;align-items:center;color:var(--choco)}
+#app{width:100%;max-width:500px;height:100dvh;position:relative;overflow:hidden;background:var(--cream)}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:10}
+.screen.active{opacity:1;pointer-events:auto}
 .screen.canvas-screen{pointer-events:none!important;background:transparent!important}
+canvas#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;image-rendering:pixelated;z-index:1}
 .pixel-font{font-family:'Press Start 2P',monospace}
-#screenCharCreator{background:linear-gradient(180deg,#1a1a2e 0%,#2d1b4e 30%,#4a2a6b 60%,#1a1a2e 100%);padding:10px;align-items:center;gap:8px}
-#screenCharCreator *{pointer-events:auto}
-.cc-title{color:#ffd700;font-size:11px;text-align:center;margin:5px 0;text-shadow:0 0 8px rgba(255,215,0,0.5)}
-.cc-mansion-silhouette{width:100%;height:40px;opacity:0.3}
-.cc-section{width:100%;max-width:400px;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px;border:1px solid rgba(255,215,0,0.15)}
-.cc-label{color:#e8d5f5;font-size:12px;margin-bottom:6px;font-weight:500}
-.cc-input{width:100%;padding:10px;border-radius:8px;border:2px solid rgba(255,215,0,0.3);background:rgba(0,0,0,0.4);color:#fff;font-size:16px;font-family:'DM Sans',sans-serif;outline:none}
-.cc-input:focus{border-color:#ffd700}
-.cc-avatar-box{width:256px;height:256px;border:3px solid rgba(255,215,0,0.3);border-radius:8px;background:#1a1a2e;overflow:hidden;margin:0 auto}
-.cc-avatar-box canvas{width:100%;height:100%;image-rendering:pixelated}
-.cc-tabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
-.cc-tab{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,215,0,0.3);background:rgba(0,0,0,0.3);color:#ccc;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
-.cc-tab.active{background:rgba(255,215,0,0.2);color:#ffd700;border-color:#ffd700}
-.cc-arrows{display:flex;align-items:center;justify-content:center;gap:15px;margin:5px 0}
-.cc-arrow-btn{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,215,0,0.4);background:rgba(0,0,0,0.4);color:#ffd700;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.cc-option-name{color:#fff;font-size:13px;min-width:100px;text-align:center}
-.cc-color-btn{padding:6px 14px;border-radius:6px;border:1px solid rgba(255,215,0,0.3);background:rgba(0,0,0,0.3);color:#e8d5f5;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
-.cc-save-btn{padding:14px 30px;border-radius:10px;border:none;background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin:5px 0;text-align:center}
-#screenGame2{background:linear-gradient(180deg,#1a1a2e,#2d1b4e);padding:0;align-items:center}
-#screenGame2 *{pointer-events:auto}
-.ddr-canvas-wrap{width:100%;flex:1;position:relative;min-height:0}
-.ddr-canvas-wrap canvas{width:100%;height:100%;image-rendering:pixelated}
-.ddr-buttons{display:flex;justify-content:center;gap:8px;padding:8px;flex-shrink:0}
-.ddr-btn{width:72px;height:72px;border-radius:12px;border:3px solid;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(0,0,0,0.5);-webkit-tap-highlight-color:transparent;user-select:none}
-.ddr-btn.left{border-color:#ff69b4;color:#ff69b4}
-.ddr-btn.down{border-color:#4a90d9;color:#4a90d9}
-.ddr-btn.up{border-color:#4ad94a;color:#4ad94a}
-.ddr-btn.right{border-color:#ffd700;color:#ffd700}
-.ddr-btn:active{transform:scale(0.9);filter:brightness(1.5)}
-.ddr-score-overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:none;background:rgba(0,0,0,0.85);z-index:10;flex-direction:column;align-items:center;justify-content:center;gap:15px;color:#fff}
-.ddr-score-overlay.active{display:flex}
-#screenFinale{background:#0a0a1a;padding:20px;align-items:center;justify-content:center;gap:12px;overflow-y:auto}
-#screenFinale *{pointer-events:auto}
-.finale-title{color:#ffd700;font-size:16px;text-align:center;text-shadow:0 0 15px rgba(255,215,0,0.6)}
-.finale-score{color:#fff;font-size:13px;text-align:center}
-.finale-avatar{width:128px;height:128px;border:3px solid #ffd700;border-radius:8px;image-rendering:pixelated}
-.finale-lb{width:100%;max-width:380px;background:rgba(255,255,255,0.06);border-radius:10px;padding:12px;border:1px solid rgba(255,215,0,0.15)}
-.finale-lb-row{display:flex;justify-content:space-between;padding:5px 8px;color:#ccc;font-size:12px;border-radius:4px}
-.finale-lb-row.me{background:rgba(255,215,0,0.15);color:#ffd700}
-.finale-btn{padding:12px 24px;border-radius:8px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;text-align:center;display:inline-block}
-.finale-btn.gold{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a2e}
-.finale-btn.outline{background:transparent;border:2px solid #ffd700;color:#ffd700}
-.finale-footer{color:#888;font-size:10px;text-align:center;margin-top:8px}
-.firework{position:absolute;width:6px;height:6px;border-radius:50%;animation:fw 1.2s ease-out forwards}
-@keyframes fw{0%{transform:scale(1);opacity:1}100%{transform:scale(0) translateY(-80px);opacity:0}}
+.btn{font-family:'Press Start 2P',monospace;border:none;cursor:pointer;padding:14px 28px;font-size:12px;border-radius:8px;color:var(--white);min-height:48px;touch-action:manipulation;position:relative;overflow:hidden;transition:transform .1s,box-shadow .1s}
+.btn:active{transform:scale(.95)}
+.btn-pink{background:var(--pink);box-shadow:0 4px 0 #c4788a}
+.btn-gold{background:var(--gold);box-shadow:0 4px 0 #a48a2a;color:var(--choco)}
+.btn-sage{background:var(--sage);box-shadow:0 4px 0 #6b7f5a}
+.btn-pulse{animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.dialog-box{background:var(--white);border:4px solid var(--choco);border-radius:12px;padding:16px;margin:12px;font-size:14px;line-height:1.6;max-width:90%;text-align:left}
+input[type="text"]{font-family:'DM Sans',sans-serif;font-size:16px;padding:10px 14px;border:3px solid var(--choco);border-radius:8px;background:var(--white);width:80%;max-width:280px;text-align:center;outline:none}
+input[type="text"]:focus{border-color:var(--pink)}
+.tab-row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.tab-btn{padding:8px 10px;font-size:8px;border-radius:6px;border:2px solid var(--choco);background:var(--cream);cursor:pointer;font-family:'Press Start 2P',monospace;min-height:36px}
+.tab-btn.active{background:var(--pink);color:var(--white)}
+.ddr-controls{position:absolute;bottom:0;left:0;width:100%;display:flex;justify-content:center;gap:6px;padding:10px;z-index:30;background:rgba(0,0,0,.3)}
+.ddr-btn{width:72px;height:72px;border-radius:12px;border:3px solid rgba(255,255,255,.5);font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;transition:background .05s}
+.lb-entry{display:flex;justify-content:space-between;padding:6px 10px;border-radius:6px;font-size:13px;margin:2px 0;background:rgba(255,255,255,.1);color:#ccc}
+.lb-entry.current{background:var(--gold);color:var(--choco);font-weight:700}
+.score-countup{font-family:'Press Start 2P',monospace;font-size:28px;color:var(--gold)}
+@keyframes fw-burst{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--dx),var(--dy))}}
+.fw-dot{position:absolute;width:4px;height:4px;border-radius:50%;animation:fw-burst 1.2s ease-out forwards;pointer-events:none}
 </style>
 </head>
 <body>
-<div id="gameContainer">
+<div id="app">
 <canvas id="gameCanvas"></canvas>
 <div id="screenWelcome" class="screen canvas-screen active"></div>
 <div id="screenCharCreator" class="screen"></div>
@@ -76,2086 +52,3024 @@ canvas#gameCanvas{position:absolute;top:0;left:0;width:100%;height:100%;image-re
 <div id="screenFinale" class="screen"></div>
 </div>
 <script>
-'use strict';
-/* ============================================================
-   MAX & JULIE'S WEDDING ARCADE — COMPLETE GAME
-   ============================================================ */
+// ===== ART FUNCTIONS =====
+// ============================================================
+// PIXEL ART DRAWING FUNCTIONS — Wedding Game at Lyndhurst Mansion
+// Pure Canvas 2D context drawing, no dependencies
+// ============================================================
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const container = document.getElementById('gameContainer');
-let W, H, dpr;
+// Helper: draw a single "pixel" at grid coordinates
+function px(ctx, x, y, s, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x), Math.round(y), Math.ceil(s), Math.ceil(s));
+}
+
+// ============================================================
+// 1. LYNDHURST MANSION — Gothic Revival, Tarrytown NY
+// ============================================================
+function drawMansion(ctx, cx, baseY, s, timeOfDay, W, H) {
+  // Time-of-day palettes
+  const palettes = {
+    golden: {
+      stone1: '#d0c8b0', stone2: '#c0b090', stone3: '#a09878', stone4: '#b0a488',
+      roof: '#4a4e54', window: '#ffd700', windowFrame: '#8a7a60', trim: '#9c9080',
+      door: '#5c4a30', coursing: '#a89878'
+    },
+    storm: {
+      stone1: '#8a8498', stone2: '#7a7488', stone3: '#5e586a', stone4: '#6e687a',
+      roof: '#3a3e44', window: '#6888a8', windowFrame: '#5a5468', trim: '#6e687a',
+      door: '#4a4050', coursing: '#686278'
+    },
+    clear: {
+      stone1: '#c0b8a8', stone2: '#b5a590', stone3: '#8a8278', stone4: '#9c9080',
+      roof: '#4a4e54', window: '#87ceeb', windowFrame: '#7a7268', trim: '#8a8278',
+      door: '#5c4a38', coursing: '#9a9280'
+    },
+    night: {
+      stone1: '#5a5850', stone2: '#4a4840', stone3: '#3a3830', stone4: '#484640',
+      roof: '#2a2e34', window: '#ffc830', windowFrame: '#3a3830', trim: '#484640',
+      door: '#2a2820', coursing: '#424038'
+    }
+  };
+  const p = palettes[timeOfDay] || palettes.clear;
+
+  // Dimensions scaled
+  const totalW = 280 * s;
+  const towerH = 140 * s;
+  const left = cx - totalW / 2;
+
+  // Helper for stone coursing lines
+  function drawCoursing(x0, y0, w, h, color) {
+    ctx.fillStyle = color;
+    for (let row = y0 + 4 * s; row < y0 + h; row += 5 * s) {
+      ctx.fillRect(x0, row, w, Math.max(1, s * 0.5));
+    }
+  }
+
+  // --- LEFT LOW WING (steep gable) ---
+  const lwX = left;
+  const lwW = 55 * s;
+  const lwH = 50 * s;
+  const lwTop = baseY - lwH;
+
+  // Gable roof (steep triangle)
+  ctx.fillStyle = p.roof;
+  ctx.beginPath();
+  ctx.moveTo(lwX, lwTop);
+  ctx.lineTo(lwX + lwW / 2, lwTop - 30 * s);
+  ctx.lineTo(lwX + lwW, lwTop);
+  ctx.fill();
+
+  // Wall
+  ctx.fillStyle = p.stone2;
+  ctx.fillRect(lwX, lwTop, lwW, lwH);
+  drawCoursing(lwX, lwTop, lwW, lwH, p.coursing);
+
+  // Windows on left wing
+  drawGothicWindow(ctx, lwX + 8 * s, lwTop + 10 * s, 10 * s, 18 * s, p.window, p.windowFrame);
+  drawGothicWindow(ctx, lwX + 28 * s, lwTop + 10 * s, 10 * s, 18 * s, p.window, p.windowFrame);
+
+  // --- LEFT TURRET (secondary, shorter) ---
+  const ltX = left + 50 * s;
+  const ltW = 30 * s;
+  const ltH = 90 * s;
+  const ltTop = baseY - ltH;
+
+  // Turret body
+  ctx.fillStyle = p.stone1;
+  ctx.fillRect(ltX, ltTop, ltW, ltH);
+  drawCoursing(ltX, ltTop, ltW, ltH, p.coursing);
+
+  // Turret crenellation / steep roof cap
+  ctx.fillStyle = p.roof;
+  ctx.beginPath();
+  ctx.moveTo(ltX - 2 * s, ltTop);
+  ctx.lineTo(ltX + ltW / 2, ltTop - 18 * s);
+  ctx.lineTo(ltX + ltW + 2 * s, ltTop);
+  ctx.fill();
+
+  // Pinnacles on left turret
+  drawPinnacle(ctx, ltX + 2 * s, ltTop - 18 * s, s, p.stone3);
+  drawPinnacle(ctx, ltX + ltW / 2, ltTop - 22 * s, s, p.stone3);
+  drawPinnacle(ctx, ltX + ltW - 4 * s, ltTop - 18 * s, s, p.stone3);
+
+  // Turret windows
+  drawGothicWindow(ctx, ltX + 8 * s, ltTop + 12 * s, 14 * s, 24 * s, p.window, p.windowFrame);
+  drawGothicWindow(ctx, ltX + 8 * s, ltTop + 50 * s, 14 * s, 20 * s, p.window, p.windowFrame);
+
+  // --- CENTRAL TOWER (tallest, signature element) ---
+  const ctX = left + 78 * s;
+  const ctW = 50 * s;
+  const ctTop = baseY - towerH;
+
+  // Tower body
+  ctx.fillStyle = p.stone1;
+  ctx.fillRect(ctX, ctTop, ctW, towerH);
+  drawCoursing(ctX, ctTop, ctW, towerH, p.coursing);
+
+  // Darker base band
+  ctx.fillStyle = p.stone3;
+  ctx.fillRect(ctX, baseY - 20 * s, ctW, 20 * s);
+
+  // Parapet at top
+  ctx.fillStyle = p.stone3;
+  ctx.fillRect(ctX - 3 * s, ctTop, ctW + 6 * s, 4 * s);
+
+  // Crenellation bumps
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = p.stone3;
+    ctx.fillRect(ctX - 3 * s + i * 9 * s, ctTop - 4 * s, 5 * s, 4 * s);
+  }
+
+  // PINNACLES — THE signature detail of Lyndhurst
+  drawPinnacle(ctx, ctX - 2 * s, ctTop - 8 * s, s * 1.2, p.stone3);
+  drawPinnacle(ctx, ctX + 10 * s, ctTop - 10 * s, s * 1.3, p.stone3);
+  drawPinnacle(ctx, ctX + ctW / 2 - 1 * s, ctTop - 14 * s, s * 1.5, p.stone4);
+  drawPinnacle(ctx, ctX + ctW - 12 * s, ctTop - 10 * s, s * 1.3, p.stone3);
+  drawPinnacle(ctx, ctX + ctW, ctTop - 8 * s, s * 1.2, p.stone3);
+
+  // Large Gothic tracery window (3 lancets)
+  const gwX = ctX + 6 * s;
+  const gwY = ctTop + 14 * s;
+  const gwW = 38 * s;
+  const gwH = 55 * s;
+
+  // Window frame (pointed arch outline)
+  ctx.fillStyle = p.windowFrame;
+  // Draw the outer arch
+  ctx.beginPath();
+  ctx.moveTo(gwX, gwY + gwH);
+  ctx.lineTo(gwX, gwY + gwH * 0.35);
+  ctx.quadraticCurveTo(gwX, gwY - 4 * s, gwX + gwW / 2, gwY - 8 * s);
+  ctx.quadraticCurveTo(gwX + gwW, gwY - 4 * s, gwX + gwW, gwY + gwH * 0.35);
+  ctx.lineTo(gwX + gwW, gwY + gwH);
+  ctx.fill();
+
+  // Window glass fill (3 lancets)
+  const lancetW = (gwW - 6 * s) / 3;
+  for (let i = 0; i < 3; i++) {
+    const lx = gwX + 2 * s + i * (lancetW + 1 * s);
+    ctx.fillStyle = p.window;
+    ctx.beginPath();
+    ctx.moveTo(lx, gwY + gwH - 2 * s);
+    ctx.lineTo(lx, gwY + gwH * 0.3);
+    ctx.quadraticCurveTo(lx + lancetW / 2, gwY + 2 * s, lx + lancetW, gwY + gwH * 0.3);
+    ctx.lineTo(lx + lancetW, gwY + gwH - 2 * s);
+    ctx.fill();
+  }
+
+  // Horizontal mullion
+  ctx.fillStyle = p.windowFrame;
+  ctx.fillRect(gwX, gwY + gwH * 0.55, gwW, 2 * s);
+
+  // More windows below the tracery
+  drawGothicWindow(ctx, ctX + 10 * s, ctTop + 80 * s, 12 * s, 22 * s, p.window, p.windowFrame);
+  drawGothicWindow(ctx, ctX + 28 * s, ctTop + 80 * s, 12 * s, 22 * s, p.window, p.windowFrame);
+
+  // --- RIGHT CONNECTING BODY ---
+  const rbX = left + 128 * s;
+  const rbW = 60 * s;
+  const rbH = 70 * s;
+  const rbTop = baseY - rbH;
+
+  ctx.fillStyle = p.stone2;
+  ctx.fillRect(rbX, rbTop, rbW, rbH);
+  drawCoursing(rbX, rbTop, rbW, rbH, p.coursing);
+
+  // Steep gable roof
+  ctx.fillStyle = p.roof;
+  ctx.beginPath();
+  ctx.moveTo(rbX - 2 * s, rbTop);
+  ctx.lineTo(rbX + rbW / 2, rbTop - 28 * s);
+  ctx.lineTo(rbX + rbW + 2 * s, rbTop);
+  ctx.fill();
+
+  // Gothic arched doorway (main entrance)
+  const doorW = 18 * s;
+  const doorH = 32 * s;
+  const doorX = rbX + (rbW - doorW) / 2;
+  const doorY = baseY - doorH;
+  ctx.fillStyle = p.door;
+  ctx.fillRect(doorX, doorY + 8 * s, doorW, doorH - 8 * s);
+  // Arch top of door
+  ctx.beginPath();
+  ctx.moveTo(doorX, doorY + 8 * s);
+  ctx.quadraticCurveTo(doorX + doorW / 2, doorY - 4 * s, doorX + doorW, doorY + 8 * s);
+  ctx.fill();
+
+  // Door trim
+  ctx.fillStyle = p.trim;
+  ctx.fillRect(doorX - 2 * s, doorY + 6 * s, 2 * s, doorH - 6 * s);
+  ctx.fillRect(doorX + doorW, doorY + 6 * s, 2 * s, doorH - 6 * s);
+
+  // Windows above door
+  drawGothicWindow(ctx, rbX + 6 * s, rbTop + 10 * s, 14 * s, 22 * s, p.window, p.windowFrame);
+  drawGothicWindow(ctx, rbX + 38 * s, rbTop + 10 * s, 14 * s, 22 * s, p.window, p.windowFrame);
+
+  // --- RIGHT LOW WING (porte-cochere) ---
+  const rwX = left + 188 * s;
+  const rwW = 60 * s;
+  const rwH = 40 * s;
+  const rwTop = baseY - rwH;
+
+  ctx.fillStyle = p.stone4;
+  ctx.fillRect(rwX, rwTop, rwW, rwH);
+  drawCoursing(rwX, rwTop, rwW, rwH, p.coursing);
+
+  // Flat-ish roof with slight gable
+  ctx.fillStyle = p.roof;
+  ctx.beginPath();
+  ctx.moveTo(rwX - 1 * s, rwTop);
+  ctx.lineTo(rwX + rwW / 2, rwTop - 12 * s);
+  ctx.lineTo(rwX + rwW + 1 * s, rwTop);
+  ctx.fill();
+
+  // Porte-cochere arches (3 arches)
+  for (let i = 0; i < 3; i++) {
+    const ax = rwX + 4 * s + i * 18 * s;
+    const aw = 14 * s;
+    const ah = 26 * s;
+    // Dark arch opening
+    ctx.fillStyle = (timeOfDay === 'night') ? '#1a1a20' : '#3a3830';
+    ctx.fillRect(ax, rwTop + rwH - ah + 8 * s, aw, ah - 8 * s);
+    ctx.beginPath();
+    ctx.moveTo(ax, rwTop + rwH - ah + 8 * s);
+    ctx.quadraticCurveTo(ax + aw / 2, rwTop + rwH - ah - 2 * s, ax + aw, rwTop + rwH - ah + 8 * s);
+    ctx.fill();
+    // Arch trim
+    ctx.strokeStyle = p.trim;
+    ctx.lineWidth = s;
+    ctx.beginPath();
+    ctx.moveTo(ax, rwTop + rwH - ah + 8 * s);
+    ctx.quadraticCurveTo(ax + aw / 2, rwTop + rwH - ah - 3 * s, ax + aw, rwTop + rwH - ah + 8 * s);
+    ctx.stroke();
+  }
+
+  // Far right extension / chimney
+  const chX = left + 250 * s;
+  ctx.fillStyle = p.stone3;
+  ctx.fillRect(chX, baseY - 55 * s, 12 * s, 55 * s);
+  // Chimney cap
+  ctx.fillStyle = p.roof;
+  ctx.fillRect(chX - 1 * s, baseY - 58 * s, 14 * s, 4 * s);
+
+  // --- GROUND LINE ---
+  ctx.fillStyle = p.stone3;
+  ctx.fillRect(left - 5 * s, baseY, totalW + 10 * s, 3 * s);
+}
+
+// ============================================================
+// 2. GOTHIC WINDOW — pointed arch with mullion cross
+// ============================================================
+function drawGothicWindow(ctx, x, y, w, h, color, trimColor) {
+  const archH = h * 0.3;
+
+  // Trim outline
+  ctx.fillStyle = trimColor;
+  ctx.fillRect(x - 1, y + archH, w + 2, h - archH + 1);
+  // Arch outline
+  ctx.beginPath();
+  ctx.moveTo(x - 1, y + archH);
+  ctx.quadraticCurveTo(x + w / 2, y - archH * 0.5, x + w + 1, y + archH);
+  ctx.fill();
+
+  // Glass fill
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 1, y + archH + 1, w - 2, h - archH - 2);
+  // Glass arch
+  ctx.beginPath();
+  ctx.moveTo(x + 1, y + archH);
+  ctx.quadraticCurveTo(x + w / 2, y - archH * 0.3, x + w - 1, y + archH);
+  ctx.fill();
+
+  // Vertical mullion
+  ctx.fillStyle = trimColor;
+  ctx.fillRect(x + w / 2 - 0.5, y + archH * 0.5, Math.max(1, w * 0.06), h - archH * 0.5);
+
+  // Horizontal mullion
+  ctx.fillRect(x + 1, y + h * 0.55, w - 2, Math.max(1, h * 0.04));
+}
+
+// ============================================================
+// 3. PINNACLE — thin stone spike
+// ============================================================
+function drawPinnacle(ctx, x, y, s, color) {
+  // Thin vertical spike: 2px wide base tapering to 1px point, ~10px tall
+  const h = 10 * s;
+  const baseW = 3 * s;
+  ctx.fillStyle = color;
+
+  // Draw tapered spike pixel by pixel
+  for (let row = 0; row < h; row++) {
+    const t = row / h; // 0 at top, 1 at bottom
+    const w = Math.max(1, Math.round(baseW * t));
+    ctx.fillRect(x + (baseW - w) / 2, y + row - h, w, Math.ceil(s * 0.8));
+  }
+
+  // Bright tip
+  ctx.fillStyle = '#d0c8b8';
+  ctx.fillRect(x + baseW / 2 - 0.5, y - h, Math.max(1, s * 0.5), Math.max(1, s));
+
+  // Small finial ball at very top
+  ctx.fillRect(x + baseW / 2 - s * 0.3, y - h - s, Math.max(1, s * 0.8), Math.max(1, s * 0.8));
+}
+
+// ============================================================
+// 4. CHERRY BLOSSOM TREE
+// ============================================================
+function drawCherryBlossomTree(ctx, x, baseY, s) {
+  const trunkH = 50 * s;
+  const trunkW = 8 * s;
+  const trunkColors = ['#5c3a1a', '#7a5030', '#6b4528'];
+
+  // Trunk
+  ctx.fillStyle = trunkColors[1];
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW, trunkH);
+  // Trunk shading
+  ctx.fillStyle = trunkColors[0];
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW * 0.3, trunkH);
+  ctx.fillStyle = trunkColors[2];
+  ctx.fillRect(x + trunkW * 0.2, baseY - trunkH, trunkW * 0.3, trunkH);
+
+  // Branches (angled thick lines)
+  ctx.fillStyle = trunkColors[1];
+  // Left branch
+  for (let i = 0; i < 20 * s; i++) {
+    ctx.fillRect(x - i * 1.2, baseY - trunkH + 10 * s - i * 0.6, 3 * s, 2 * s);
+  }
+  // Right branch
+  for (let i = 0; i < 18 * s; i++) {
+    ctx.fillRect(x + i * 1.1, baseY - trunkH + 8 * s - i * 0.5, 3 * s, 2 * s);
+  }
+  // Upper branch
+  for (let i = 0; i < 12 * s; i++) {
+    ctx.fillRect(x - i * 0.8, baseY - trunkH - i * 0.8, 2 * s, 2 * s);
+  }
+
+  // Blossom clusters
+  const blossomColors = ['#f4a7bb', '#ffd4e0', '#fff0f5', '#f8b4c8', '#ffccd8'];
+  const leafGreen = ['#5a8a4a', '#6ea05a', '#88b870'];
+  const canopyCX = x;
+  const canopyCY = baseY - trunkH - 15 * s;
+  const canopyRX = 45 * s;
+  const canopyRY = 35 * s;
+
+  // Use seeded random for consistent look
+  const seed = Math.round(x * 100 + baseY * 7);
+  function seededRand(i) {
+    const v = Math.sin(seed + i * 127.1) * 43758.5453;
+    return v - Math.floor(v);
+  }
+
+  for (let i = 0; i < 300; i++) {
+    const angle = seededRand(i) * Math.PI * 2;
+    const r = Math.sqrt(seededRand(i + 500)) * 0.95;
+    const bx = canopyCX + Math.cos(angle) * canopyRX * r;
+    const by = canopyCY + Math.sin(angle) * canopyRY * r * 0.8;
+    const sz = (1 + seededRand(i + 1000)) * 2 * s;
+
+    if (seededRand(i + 200) < 0.15) {
+      // Green leaf
+      ctx.fillStyle = leafGreen[Math.floor(seededRand(i + 300) * 3)];
+    } else {
+      ctx.fillStyle = blossomColors[Math.floor(seededRand(i + 400) * blossomColors.length)];
+    }
+    ctx.fillRect(bx, by, sz, sz);
+  }
+}
+
+// ============================================================
+// 5. EVERGREEN TREE — tall conifer
+// ============================================================
+function drawEvergreenTree(ctx, x, baseY, s) {
+  const treeH = 60 * s;
+  const trunkH = 12 * s;
+  const trunkW = 6 * s;
+
+  // Trunk
+  ctx.fillStyle = '#5c3a1a';
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW, trunkH);
+
+  // Triangular layers (4 tiers, overlapping)
+  const greens = ['#1a4a1a', '#2a5a2a', '#1e4e20', '#2e6030'];
+  const tiers = [
+    { y: baseY - trunkH, w: 30 * s, h: 20 * s },
+    { y: baseY - trunkH - 14 * s, w: 25 * s, h: 18 * s },
+    { y: baseY - trunkH - 26 * s, w: 20 * s, h: 16 * s },
+    { y: baseY - trunkH - 36 * s, w: 14 * s, h: 14 * s },
+  ];
+
+  tiers.forEach((t, idx) => {
+    ctx.fillStyle = greens[idx % greens.length];
+    ctx.beginPath();
+    ctx.moveTo(x - t.w / 2, t.y);
+    ctx.lineTo(x, t.y - t.h);
+    ctx.lineTo(x + t.w / 2, t.y);
+    ctx.fill();
+
+    // Lighter highlight on right side
+    ctx.fillStyle = greens[(idx + 1) % greens.length];
+    ctx.beginPath();
+    ctx.moveTo(x, t.y - t.h);
+    ctx.lineTo(x + t.w / 2, t.y);
+    ctx.lineTo(x + t.w * 0.15, t.y);
+    ctx.fill();
+  });
+}
+
+// ============================================================
+// 6. DECIDUOUS TREE — rounded canopy
+// ============================================================
+function drawDeciduousTree(ctx, x, baseY, s) {
+  const trunkH = 30 * s;
+  const trunkW = 7 * s;
+
+  // Trunk
+  ctx.fillStyle = '#6b4528';
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW, trunkH);
+  ctx.fillStyle = '#5c3a1a';
+  ctx.fillRect(x - trunkW / 2, baseY - trunkH, trunkW * 0.35, trunkH);
+
+  // Rounded canopy using overlapping circles of green pixels
+  const greens = ['#3a7a30', '#4a8a40', '#5a9a50', '#6aaa60', '#358030'];
+  const canopyCY = baseY - trunkH - 10 * s;
+  const canopyR = 28 * s;
+
+  const seed = Math.round(x * 73 + baseY * 13);
+  function srand(i) {
+    const v = Math.sin(seed + i * 91.3) * 43758.5453;
+    return v - Math.floor(v);
+  }
+
+  // Fill a roughly circular area with green pixels
+  for (let i = 0; i < 250; i++) {
+    const angle = srand(i) * Math.PI * 2;
+    const r = Math.sqrt(srand(i + 600)) * canopyR;
+    const px2 = x + Math.cos(angle) * r;
+    const py = canopyCY + Math.sin(angle) * r * 0.75;
+    const sz = (1.5 + srand(i + 800)) * 2.5 * s;
+    ctx.fillStyle = greens[Math.floor(srand(i + 100) * greens.length)];
+    ctx.fillRect(px2, py, sz, sz);
+  }
+}
+
+// ============================================================
+// 7. CHIBI SPRITE — configurable pixel art character
+// ============================================================
+function drawChibiSprite(ctx, x, y, ps, options) {
+  const opt = options || {};
+  const skinBase = '#e8c4a0';
+  const skinLight = '#f0d4b4';
+  const skinShadow = '#c8a080';
+  const skinDark = '#a89070';
+
+  // Hair colors
+  const hairSets = {
+    brown: ['#5c3a1a', '#8b5e3c', '#a0724e'],
+    blonde: ['#8b7a30', '#c4a040', '#d4b860'],
+    black: ['#1a1a2a', '#2a2a3a', '#3a3a4a'],
+    red: ['#6b2a1a', '#a04030', '#c05040']
+  };
+  const hc = hairSets[opt.hairColor || 'brown'];
+
+  // Eye color
+  const eyeColor = opt.eyeColor || '#4488cc';
+
+  // Clothing colors
+  const topColors = [
+    { main: '#1a2a5a', light: '#2a3a6a', dark: '#0a1a4a' },     // 0: suit jacket navy
+    { main: '#f0a0b0', light: '#f8b8c8', dark: '#d88898' },     // 1: bridesmaid pink
+    { main: '#e04040', light: '#f06060', dark: '#40a040', alt: '#4080e0' }, // 2: hawaiian
+    { main: '#1a1a1a', light: '#3a3a3a', dark: '#0a0a0a' },     // 3: tux vest black
+    { main: '#e8e0d0', light: '#f0e8e0', dark: '#d0c8b8', alt: '#d06080' }, // 4: floral blouse
+    { main: '#8a8a8a', light: '#a0a0a0', dark: '#6a6a6a' },     // 5: hoodie gray
+    { main: '#f0f0f0', light: '#ffffff', dark: '#d8d8d8' },     // 6: crop top white
+  ];
+  const bottomColors = [
+    { main: '#1a1a1a', light: '#2a2a2a' },   // 0: dress pants black
+    { main: '#f0a0b0', light: '#f8b8c8' },   // 1: long skirt pink
+    { main: '#c8b890', light: '#d8c8a0' },   // 2: shorts khaki
+    { main: '#c8a820', light: '#d8b830' },   // 3: gown gold
+    { main: '#4060a0', light: '#5070b0' },   // 4: jeans blue
+    { main: '#c02020', light: '#d03030' },   // 5: mini skirt red
+  ];
+  const shoeColors = [
+    '#1a1a1a',  // 0: dress shoes black
+    '#c02020',  // 1: heels red
+    '#f0f0f0',  // 2: sneakers white
+    '#6b4528',  // 3: boots brown
+    '#c8b080',  // 4: sandals tan
+  ];
+
+  const topIdx = opt.top != null ? opt.top : 0;
+  const botIdx = opt.bottom != null ? opt.bottom : 0;
+  const shoeIdx = opt.shoes != null ? opt.shoes : 0;
+  const hairStyle = opt.hair != null ? opt.hair : 0;
+  const accIdx = opt.accessory != null ? opt.accessory : -1;
+
+  const tc = topColors[topIdx] || topColors[0];
+  const bc = bottomColors[botIdx] || bottomColors[0];
+  const sc = shoeColors[shoeIdx] || shoeColors[0];
+
+  // Draw pixel helper
+  function p(col, row, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, ps, ps);
+  }
+  function pRect(col, row, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, w * ps, h * ps);
+  }
+
+  // --- HEAD OUTLINE (rows 0-14) ---
+  // Head is 14 wide (cols 5-18), centered in 24-wide grid
+  // Skin fill
+  pRect(6, 3, 12, 12, skinBase);
+  // Lighter cheek area
+  pRect(6, 5, 3, 5, skinLight);
+  pRect(15, 5, 3, 5, skinLight);
+  // Shadow under chin
+  pRect(7, 13, 10, 1, skinShadow);
+
+  // Ears
+  pRect(5, 7, 1, 3, skinBase);
+  pRect(18, 7, 1, 3, skinBase);
+
+  // --- EYES (large chibi eyes) ---
+  // Left eye: cols 7-10, rows 7-10
+  pRect(7, 7, 4, 1, '#000000');  // top lash
+  p(7, 8, '#000000'); p(10, 8, '#000000'); // sides
+  p(8, 8, '#ffffff'); p(9, 8, '#ffffff');  // sclera top
+  p(7, 9, '#000000');
+  p(8, 9, '#ffffff');  // highlight!
+  p(9, 9, eyeColor);  // iris
+  p(10, 9, eyeColor); // iris
+  p(7, 10, '#000000'); p(8, 10, eyeColor); p(9, 10, eyeColor); p(10, 10, '#000000');
+  pRect(8, 11, 2, 1, '#000000'); // bottom
+
+  // Right eye: cols 13-16, rows 7-10
+  pRect(13, 7, 4, 1, '#000000');
+  p(13, 8, '#000000'); p(16, 8, '#000000');
+  p(14, 8, '#ffffff'); p(15, 8, '#ffffff');
+  p(13, 9, '#000000');
+  p(14, 9, '#ffffff');  // highlight!
+  p(15, 9, eyeColor);
+  p(16, 9, eyeColor);
+  p(13, 10, '#000000'); p(14, 10, eyeColor); p(15, 10, eyeColor); p(16, 10, '#000000');
+  pRect(14, 11, 2, 1, '#000000');
+
+  // --- BLUSH (pink cheeks) ---
+  pRect(7, 11, 2, 1, '#f8a0a0');
+  pRect(15, 11, 2, 1, '#f8a0a0');
+
+  // --- MOUTH ---
+  pRect(11, 12, 2, 1, '#e08080');
+
+  // --- NECK ---
+  pRect(10, 14, 4, 1, skinShadow);
+
+  // --- HAIR (wraps around head) ---
+  function drawHair() {
+    // Top hair (all styles have some top coverage)
+    pRect(5, 1, 14, 3, hc[0]); // dark base layer
+    pRect(6, 0, 12, 2, hc[1]); // mid tone
+    pRect(8, 0, 8, 1, hc[2]);  // highlights
+
+    if (hairStyle === 0) {
+      // Short crop — just top
+      pRect(5, 2, 2, 3, hc[0]);
+      pRect(17, 2, 2, 3, hc[0]);
+    } else if (hairStyle === 1) {
+      // Long wavy — extends past chin
+      pRect(4, 2, 2, 14, hc[0]);
+      pRect(18, 2, 2, 14, hc[0]);
+      pRect(4, 3, 1, 12, hc[1]);
+      pRect(19, 3, 1, 12, hc[1]);
+      // Wavy edges
+      p(3, 6, hc[1]); p(3, 10, hc[1]);
+      p(20, 7, hc[1]); p(20, 11, hc[1]);
+      // Shoulder length ends
+      pRect(4, 16, 2, 3, hc[0]);
+      pRect(18, 16, 2, 3, hc[0]);
+      p(4, 19, hc[1]); p(19, 19, hc[1]);
+    } else if (hairStyle === 2) {
+      // Curly — puffy
+      pRect(3, 2, 3, 12, hc[0]);
+      pRect(18, 2, 3, 12, hc[0]);
+      pRect(2, 4, 2, 8, hc[1]);
+      pRect(20, 4, 2, 8, hc[1]);
+      // Puff bumps
+      p(2, 3, hc[2]); p(21, 3, hc[2]);
+      p(1, 6, hc[1]); p(22, 6, hc[1]);
+      p(2, 10, hc[2]); p(21, 10, hc[2]);
+      p(1, 8, hc[0]); p(22, 8, hc[0]);
+    } else if (hairStyle === 3) {
+      // Bun on top + framing
+      pRect(8, -2, 8, 3, hc[0]); // bun
+      pRect(9, -3, 6, 2, hc[1]);
+      pRect(10, -4, 4, 2, hc[2]);
+      // Side framing
+      pRect(4, 2, 2, 8, hc[0]);
+      pRect(18, 2, 2, 8, hc[0]);
+    } else if (hairStyle === 4) {
+      // Mohawk
+      pRect(9, -3, 6, 4, hc[0]);
+      pRect(10, -4, 4, 3, hc[1]);
+      pRect(11, -5, 2, 2, hc[2]);
+      // Shaved sides (skin visible, just slight shadow)
+      pRect(5, 2, 2, 3, skinShadow);
+      pRect(17, 2, 2, 3, skinShadow);
+    } else if (hairStyle === 5) {
+      // Bob — clean edges at jaw
+      pRect(4, 2, 2, 11, hc[0]);
+      pRect(18, 2, 2, 11, hc[0]);
+      pRect(4, 13, 3, 1, hc[1]); // clean bottom edge
+      pRect(17, 13, 3, 1, hc[1]);
+      pRect(3, 4, 1, 8, hc[1]); // outer edge
+      pRect(20, 4, 1, 8, hc[1]);
+    }
+  }
+  drawHair();
+
+  // --- BODY (rows 15-24) ---
+  // Torso: cols 7-16
+  const isShortTop = (topIdx === 6); // crop top
+  const bodyTop = 15;
+  const bodyBot = isShortTop ? 20 : 24;
+
+  pRect(7, bodyTop, 10, bodyBot - bodyTop, tc.main);
+  // Shading
+  pRect(7, bodyTop, 2, bodyBot - bodyTop, tc.dark);
+  pRect(15, bodyTop, 2, bodyBot - bodyTop, tc.light);
+
+  // Sleeves / arms
+  pRect(5, 16, 2, 5, tc.main);  // left arm
+  pRect(17, 16, 2, 5, tc.main); // right arm
+  // Hands
+  pRect(5, 21, 2, 1, skinBase);
+  pRect(17, 21, 2, 1, skinBase);
+
+  // Hawaiian shirt pattern
+  if (topIdx === 2) {
+    for (let r = bodyTop + 1; r < bodyBot; r += 2) {
+      p(9, r, tc.alt);
+      p(13, r, '#f0e040');
+      p(11, r + 1, tc.alt);
+    }
+  }
+  // Floral blouse pattern
+  if (topIdx === 4) {
+    for (let r = bodyTop + 1; r < bodyBot; r += 3) {
+      p(9, r, tc.alt);
+      p(14, r + 1, tc.alt);
+      p(11, r + 2, '#80b060');
+    }
+  }
+
+  // If crop top, show skin midriff
+  if (isShortTop) {
+    pRect(7, 21, 10, 3, skinBase);
+  }
+
+  // --- BOTTOM (rows 22/24-30) ---
+  const legTop = isShortTop ? 24 : 24;
+  const isShort = (botIdx === 2 || botIdx === 5); // shorts or mini skirt
+  const legBot = isShort ? 27 : 30;
+
+  // Draw bottom garment
+  pRect(7, legTop, 10, legBot - legTop, bc.main);
+  pRect(7, legTop, 2, legBot - legTop, bc.light); // highlight
+
+  // Leg split line
+  pRect(12, legTop + 1, 1, legBot - legTop - 1, bc.light);
+
+  // Exposed skin for shorts/mini
+  if (isShort) {
+    pRect(7, legBot, 4, 31 - legBot, skinBase);
+    pRect(13, legBot, 4, 31 - legBot, skinBase);
+  }
+
+  // Gown flare (bottom === 3)
+  if (botIdx === 3) {
+    pRect(5, 27, 14, 3, bc.main);
+    pRect(4, 29, 16, 1, bc.light);
+  }
+
+  // --- SHOES (rows 30-31) ---
+  pRect(7, 30, 4, 2, sc);
+  pRect(13, 30, 4, 2, sc);
+
+  // Heels (shoe 1) - add heel pixel
+  if (shoeIdx === 1) {
+    p(7, 31, sc);
+    p(13, 31, sc);
+    // Slight heel rise
+    p(7, 29, sc);
+    p(13, 29, sc);
+  }
+  // Boots (shoe 3) - taller
+  if (shoeIdx === 3) {
+    pRect(7, 28, 4, 4, sc);
+    pRect(13, 28, 4, 4, sc);
+  }
+
+  // --- ACCESSORIES ---
+  if (accIdx === 0) {
+    // Bowtie
+    p(10, 15, '#c8a820');
+    p(11, 15, '#e0c030');
+    p(12, 15, '#c8a820');
+    p(11, 14, '#d8b828');
+  } else if (accIdx === 1) {
+    // Pearl necklace
+    for (let i = 9; i <= 14; i++) {
+      p(i, 15, i % 2 === 0 ? '#f0ece0' : '#e8e0d0');
+    }
+  } else if (accIdx === 2) {
+    // Sunglasses
+    pRect(7, 8, 4, 2, '#1a1a1a');
+    pRect(13, 8, 4, 2, '#1a1a1a');
+    pRect(11, 8, 2, 1, '#1a1a1a'); // bridge
+    // Lens reflection
+    p(8, 8, '#4060a0');
+    p(14, 8, '#4060a0');
+  } else if (accIdx === 3) {
+    // Flower crown
+    const flowerC = ['#ff6080', '#ff80a0', '#ffa0c0', '#80c040', '#60a030'];
+    for (let i = 5; i <= 18; i += 2) {
+      p(i, 1, flowerC[i % flowerC.length]);
+      if (i % 3 === 0) p(i, 0, flowerC[(i + 1) % flowerC.length]);
+    }
+    // Leaves
+    p(6, 2, '#60a030');
+    p(10, 2, '#80c040');
+    p(16, 2, '#60a030');
+  } else if (accIdx === 4) {
+    // Top hat
+    pRect(7, -4, 10, 5, '#1a1a1a');
+    pRect(5, 0, 14, 2, '#1a1a1a');
+    pRect(7, -1, 10, 1, '#3a2a1a'); // hat band
+  } else if (accIdx === 5) {
+    // Tiara
+    pRect(7, 1, 10, 1, '#c0c0d0');
+    p(9, 0, '#c0c0d0');
+    p(12, 0, '#c0c0d0');
+    p(15, 0, '#c0c0d0');
+    // Gems
+    p(9, 0, '#60a0ff');
+    p(12, -1, '#ff60a0');
+    p(15, 0, '#60a0ff');
+  }
+}
+
+// ============================================================
+// 8. PIXEL HEART
+// ============================================================
+function drawPixelHeart(ctx, x, y, s, color) {
+  ctx.fillStyle = color || '#ff4060';
+  // Classic pixel heart pattern (7x6)
+  const heart = [
+    [0,1,1,0,1,1,0],
+    [1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1],
+    [0,1,1,1,1,1,0],
+    [0,0,1,1,1,0,0],
+    [0,0,0,1,0,0,0],
+  ];
+  heart.forEach((row, r) => {
+    row.forEach((val, c) => {
+      if (val) ctx.fillRect(x + c * s, y + r * s, s, s);
+    });
+  });
+}
+
+// ============================================================
+// 9. FLOWER GIRL — small chibi in white dress
+// ============================================================
+function drawFlowerGirl(ctx, x, y, ps) {
+  // Small chibi girl with white dress and flower basket
+  drawChibiSprite(ctx, x, y, ps, {
+    hairColor: 'blonde',
+    hair: 1,  // long wavy
+    top: 6,   // crop top white (we'll overdraw with dress)
+    bottom: 1, // long skirt pink-ish white
+    shoes: 1,  // small heels
+    accessory: 3, // flower crown
+    eyeColor: '#4488cc'
+  });
+
+  // Overdraw with white dress instead
+  const pRect = (col, row, w, h, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, w * ps, h * ps);
+  };
+  const p = (col, row, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, ps, ps);
+  };
+
+  // White dress overlay
+  pRect(7, 15, 10, 15, '#f8f0f0');
+  pRect(7, 15, 2, 15, '#f0e8e8');
+  pRect(15, 15, 2, 8, '#ffffff');
+  // Dress flare
+  pRect(5, 26, 14, 4, '#f8f0f0');
+  pRect(4, 28, 16, 2, '#f0e8e8');
+  // Pink sash
+  pRect(7, 20, 10, 1, '#f8b0c0');
+  // Arms
+  pRect(5, 16, 2, 5, '#f8f0f0');
+  pRect(17, 16, 2, 5, '#f8f0f0');
+  // Hands
+  pRect(5, 21, 2, 1, '#e8c4a0');
+  pRect(17, 21, 2, 1, '#e8c4a0');
+
+  // Flower basket (held in front)
+  pRect(17, 20, 4, 3, '#8b6530');
+  pRect(17, 19, 4, 1, '#a07840');
+  // Flowers in basket
+  p(17, 19, '#ff6080');
+  p(18, 18, '#ff80a0');
+  p(19, 19, '#ffa040');
+  p(20, 18, '#ff6080');
+
+  // Scattered petals on ground
+  p(3, 31, '#f4a7bb');
+  p(8, 31, '#ffd4e0');
+  p(15, 31, '#f4a7bb');
+  p(20, 30, '#ffd4e0');
+  p(1, 30, '#fff0f5');
+
+  // Shoes
+  pRect(7, 30, 4, 2, '#f0a0b0');
+  pRect(13, 30, 4, 2, '#f0a0b0');
+}
+
+// ============================================================
+// 10. RING BEARER — small chibi boy in mini tux
+// ============================================================
+function drawRingBearer(ctx, x, y, ps) {
+  drawChibiSprite(ctx, x, y, ps, {
+    hairColor: 'brown',
+    hair: 0,   // short crop
+    top: 3,    // tux vest black
+    bottom: 0, // dress pants black
+    shoes: 0,  // dress shoes
+    accessory: 0, // bowtie
+    eyeColor: '#6a4a2a'
+  });
+
+  const pRect = (col, row, w, h, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, w * ps, h * ps);
+  };
+  const p = (col, row, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, ps, ps);
+  };
+
+  // White shirt showing under vest
+  pRect(9, 15, 6, 8, '#f0f0f0');
+  // Vest sides
+  pRect(7, 15, 2, 8, '#1a1a1a');
+  pRect(15, 15, 2, 8, '#1a1a1a');
+
+  // Bowtie (re-draw on top)
+  p(10, 15, '#c8a820');
+  p(11, 15, '#e0c030');
+  p(12, 15, '#c8a820');
+
+  // Ring pillow in hands
+  pRect(17, 20, 4, 2, '#e0d0e0');
+  pRect(17, 19, 4, 1, '#d0c0d0');
+  // Rings on pillow
+  p(18, 19, '#ffd700');
+  p(19, 19, '#ffd700');
+}
+
+// ============================================================
+// 11. DOG WITH BOWTIE — pixel golden retriever ~16x12
+// ============================================================
+function drawDogWithBowtie(ctx, x, y, ps) {
+  const p = (col, row, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, ps, ps);
+  };
+  const pRect = (col, row, w, h, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, w * ps, h * ps);
+  };
+
+  const fur1 = '#c8a040';  // golden main
+  const fur2 = '#d8b050';  // golden light
+  const fur3 = '#a88030';  // golden dark
+  const nose = '#2a2a2a';
+  const eye = '#2a1a0a';
+
+  // Body (rows 4-9, cols 4-14)
+  pRect(4, 4, 10, 6, fur1);
+  pRect(4, 4, 10, 2, fur2); // lighter back
+  pRect(4, 8, 10, 2, fur3); // darker belly area
+
+  // Head (rows 1-5, cols 0-6)
+  pRect(0, 1, 6, 5, fur1);
+  pRect(0, 1, 6, 2, fur2);
+
+  // Snout
+  pRect(0, 4, 3, 2, fur2);
+  p(0, 4, nose); // nose
+
+  // Eyes
+  p(2, 2, eye);
+
+  // Ears (floppy)
+  pRect(0, 0, 2, 2, fur3);
+  pRect(5, 0, 2, 2, fur3);
+
+  // Mouth
+  p(1, 5, '#e08080');
+
+  // Legs (4 legs)
+  pRect(4, 10, 2, 3, fur1);   // front left
+  pRect(7, 10, 2, 3, fur1);   // front right
+  pRect(11, 10, 2, 3, fur1);  // back left
+  pRect(13, 10, 2, 3, fur3);  // back right
+
+  // Paws
+  pRect(4, 12, 2, 1, fur3);
+  pRect(7, 12, 2, 1, fur3);
+  pRect(11, 12, 2, 1, fur3);
+  pRect(13, 12, 2, 1, fur1);
+
+  // Tail (wagging up!)
+  pRect(14, 3, 1, 2, fur2);
+  p(15, 2, fur2);
+  p(16, 1, fur2);
+  p(16, 0, fur1);
+
+  // BOWTIE!
+  p(4, 4, '#c02020');
+  p(5, 3, '#c02020');
+  p(5, 4, '#e03030');
+  p(5, 5, '#c02020');
+  p(6, 4, '#c02020');
+
+  // Tongue (happy dog!)
+  p(1, 6, '#e06080');
+  p(1, 7, '#e06080');
+}
+
+// ============================================================
+// 12. WITCH — chibi with hat, purple shawl, on broomstick
+// ============================================================
+function drawWitch(ctx, x, y, ps) {
+  // Draw base chibi
+  drawChibiSprite(ctx, x, y, ps, {
+    hairColor: 'black',
+    hair: 1,   // long wavy (witchy)
+    top: 5,    // hoodie gray (will overdraw with purple)
+    bottom: 0, // dark pants
+    shoes: 3,  // boots brown
+    accessory: -1,
+    eyeColor: '#40c040' // green eyes
+  });
+
+  const pRect = (col, row, w, h, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, w * ps, h * ps);
+  };
+  const p = (col, row, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + col * ps, y + row * ps, ps, ps);
+  };
+
+  // Purple shawl overlay
+  pRect(5, 15, 14, 7, '#5a2a7a');
+  pRect(5, 15, 3, 7, '#4a1a6a');
+  pRect(16, 15, 3, 5, '#6a3a8a');
+  // Sparkles on shawl
+  p(8, 16, '#c0a0ff');
+  p(12, 18, '#d0b0ff');
+  p(10, 17, '#e0c0ff');
+  p(14, 16, '#b090ff');
+  p(7, 19, '#c0a0ff');
+  p(15, 20, '#d0b0ff');
+
+  // Hands
+  pRect(5, 21, 2, 1, '#e8c4a0');
+  pRect(17, 21, 2, 1, '#e8c4a0');
+
+  // BIG WITCH HAT
+  // Hat brim
+  pRect(2, 1, 20, 2, '#1a1a2a');
+  // Hat cone
+  pRect(6, -5, 12, 6, '#1a1a2a');
+  pRect(7, -9, 10, 4, '#2a1a3a');
+  pRect(8, -12, 8, 3, '#2a1a3a');
+  pRect(9, -14, 6, 2, '#3a2a4a');
+  pRect(10, -16, 4, 2, '#3a2a4a');
+  pRect(11, -17, 2, 2, '#3a2a4a');
+
+  // Hat tip (bent slightly)
+  p(13, -18, '#3a2a4a');
+  p(14, -18, '#3a2a4a');
+  p(15, -17, '#4a3a5a');
+
+  // Hat band
+  pRect(6, -2, 12, 1, '#8030b0');
+  // Hat buckle
+  p(11, -2, '#ffd700');
+  p(12, -2, '#ffd700');
+
+  // BROOMSTICK (held in right hand, extends below and behind)
+  // Handle
+  ctx.fillStyle = '#7a5020';
+  for (let i = 0; i < 20; i++) {
+    ctx.fillRect(x + (18 + i * 0.5) * ps, y + (20 + i * 0.7) * ps, ps, ps);
+  }
+  // Bristles at end
+  const bristleX = x + 28 * ps;
+  const bristleY = y + 34 * ps;
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = i % 2 === 0 ? '#c8a040' : '#b09030';
+    ctx.fillRect(bristleX + i * ps * 0.5, bristleY, ps, ps * 3);
+    ctx.fillRect(bristleX + i * ps * 0.5, bristleY + ps * 2, ps, ps * 2);
+  }
+
+  // Boots (re-draw as witchy boots)
+  pRect(7, 29, 4, 3, '#2a1a1a');
+  pRect(13, 29, 4, 3, '#2a1a1a');
+  // Pointed toes
+  p(6, 31, '#2a1a1a');
+  p(12, 31, '#2a1a1a');
+  // Buckles on boots
+  p(9, 30, '#c8a820');
+  p(15, 30, '#c8a820');
+}
+
+
+// ===== GAME ENGINE =====
+'use strict';
+
+/* ═══════════════════════════════════════════
+   GLOBAL VARIABLES & SETUP
+   ═══════════════════════════════════════════ */
+const C = document.getElementById('gameCanvas');
+const ctx = C.getContext('2d');
+const app = document.getElementById('app');
+let W, H, scale;
+let currentScreen = 'welcome';
+let playerName = 'Guest';
+let avatar = {hair:0, hairColor:0, top:0, bottom:0, shoes:0, acc:0};
+let scores = {game1:0, game2:0, game2combo:0, game3:0};
+let animId = null;
 
 function resize() {
-  dpr = window.devicePixelRatio || 1;
-  const rect = container.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const rect = app.getBoundingClientRect();
   W = rect.width;
   H = rect.height;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
+  C.width = W * dpr;
+  C.height = H * dpr;
+  C.style.width = W + 'px';
+  C.style.height = H + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  scale = Math.min(W / 400, H / 700);
 }
 window.addEventListener('resize', resize);
 resize();
 
-/* ---- State ---- */
-let currentScreen = 'welcome';
-let playerName = 'Guest';
-let playerAvatar = { hair: 0, hairColor: 0, top: 0, bottom: 0, shoes: 0, acc: 0 };
-let scores = { game1: 0, game2: 0, game3: 0 };
-let animFrame = 0;
-let tapCallbacks = [];
-
-/* ---- Screen Manager ---- */
+/* ═══════════════════════════════════════════
+   SCREEN MANAGEMENT
+   ═══════════════════════════════════════════ */
 function showScreen(name) {
   currentScreen = name;
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const screenMap = {
-    welcome: 'screenWelcome', charCreator: 'screenCharCreator',
-    storyIntro: 'screenStoryIntro', game1: 'screenGame1',
-    stormTransition: 'screenStormTransition', witchIntro: 'screenWitchIntro',
-    game2: 'screenGame2', clearSkies: 'screenClearSkies',
-    game3: 'screenGame3', finale: 'screenFinale'
-  };
-  const el = document.getElementById(screenMap[name] || 'screenWelcome');
-  if (el) el.classList.add('active');
-  tapCallbacks = [];
-  if (name === 'charCreator') initCharCreator();
-  if (name === 'game2') initGame2DOM();
-  if (name === 'finale') initFinale();
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  const screens = document.querySelectorAll('.screen');
+  for (let i = 0; i < screens.length; i++) {
+    screens[i].classList.remove('active');
+  }
+  const target = document.getElementById('screen-' + name);
+  if (target) target.classList.add('active');
 }
 
-/* ---- Input ---- */
-function onTap(x, y) {
-  for (let i = tapCallbacks.length - 1; i >= 0; i--) {
-    if (tapCallbacks[i](x, y)) return;
-  }
-}
-canvas.addEventListener('pointerdown', e => {
-  const rect = canvas.getBoundingClientRect();
-  onTap(e.clientX - rect.left, e.clientY - rect.top);
-});
+/* ═══════════════════════════════════════════
+   UTILITY HELPERS
+   ═══════════════════════════════════════════ */
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function rand(a, b) { return a + Math.random() * (b - a); }
+function randInt(a, b) { return Math.floor(rand(a, b + 1)); }
 
-/* ============================================================
-   DRAWING HELPERS
-   ============================================================ */
-
-function drawGothicWindow(x, y, w, h, color, mullionColor, darkColor) {
-  const archH = h * 0.35;
-  const bodyH = h - archH;
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y + archH, w, bodyH);
-  ctx.beginPath();
-  ctx.moveTo(x, y + archH);
-  ctx.quadraticCurveTo(x, y - archH * 0.1, x + w / 2, y);
-  ctx.quadraticCurveTo(x + w, y - archH * 0.1, x + w, y + archH);
-  ctx.closePath();
-  ctx.fill();
-  if (darkColor) {
-    ctx.fillStyle = darkColor;
-    ctx.globalAlpha = 0.3;
-    ctx.fillRect(x + w * 0.6, y + archH, w * 0.4, bodyH);
-    ctx.globalAlpha = 1;
-  }
-  if (mullionColor) {
-    ctx.strokeStyle = mullionColor;
-    ctx.lineWidth = Math.max(1, w * 0.08);
-    ctx.beginPath();
-    ctx.moveTo(x + w / 2, y);
-    ctx.lineTo(x + w / 2, y + h);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x, y + archH + bodyH * 0.4);
-    ctx.lineTo(x + w, y + archH + bodyH * 0.4);
-    ctx.stroke();
-  }
-  ctx.strokeStyle = mullionColor || '#666';
-  ctx.lineWidth = Math.max(1, w * 0.06);
-  ctx.beginPath();
-  ctx.moveTo(x, y + h);
-  ctx.lineTo(x, y + archH);
-  ctx.quadraticCurveTo(x, y - archH * 0.1, x + w / 2, y);
-  ctx.quadraticCurveTo(x + w, y - archH * 0.1, x + w, y + archH);
-  ctx.lineTo(x + w, y + h);
-  ctx.stroke();
-}
-
-function drawCrenellations(x, y, width, toothH, toothW, color) {
-  ctx.fillStyle = color;
-  const count = Math.floor(width / toothW);
-  for (let i = 0; i < count; i++) {
-    if (i % 2 === 0) {
-      ctx.fillRect(x + i * toothW, y - toothH, toothW, toothH);
-    }
-  }
-}
-
-function drawStoneCoursing(x, y, w, h, color) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1;
-  ctx.globalAlpha = 0.25;
-  for (let row = 0; row < h; row += 7) {
-    ctx.beginPath();
-    ctx.moveTo(x, y + row);
-    ctx.lineTo(x + w, y + row);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-}
-
-/* ============================================================
-   drawMansion() — ARCHITECTURALLY ACCURATE LYNDHURST MANSION
-   ============================================================ */
-function drawMansion(baseX, baseY, s, timeOfDay) {
-  const colorSets = {
-    golden: {
-      stoneLight: '#c9bfb0', stoneMid: '#b5a997', stoneDark: '#9c8e7c',
-      roof: '#4a4f54', roofHighlight: '#6b7178',
-      window: '#ffd700', windowDark: '#b8960f',
-      trim: '#8b7d6b', shadow: 'rgba(0,0,0,0.15)', copper: '#c47a3a'
-    },
-    storm: {
-      stoneLight: '#8a8292', stoneMid: '#6e677a', stoneDark: '#555060',
-      roof: '#3a3d42', roofHighlight: '#4a4f54',
-      window: '#4a6080', windowDark: '#354560',
-      trim: '#5c5470', shadow: 'rgba(0,0,0,0.25)', copper: '#6a5a4a'
-    },
-    clear: {
-      stoneLight: '#d4cabb', stoneMid: '#bfb5a2', stoneDark: '#a89c8a',
-      roof: '#4a5054', roofHighlight: '#6b7278',
-      window: '#87ceeb', windowDark: '#5ba3c9',
-      trim: '#8b7d6b', shadow: 'rgba(0,0,0,0.12)', copper: '#c47a3a'
-    },
-    night: {
-      stoneLight: '#6b6478', stoneMid: '#555060', stoneDark: '#3d3a4a',
-      roof: '#2a2d32', roofHighlight: '#3a3d42',
-      window: '#ffd700', windowDark: '#b8960f',
-      trim: '#4a4460', shadow: 'rgba(0,0,0,0.3)', copper: '#5a4a3a'
-    }
-  };
-  const c = colorSets[timeOfDay] || colorSets.golden;
-
-  const totalW = 300 * s;
-  const maxH = 200 * s;
-  const left = baseX - totalW / 2;
-
-  // ---- 1. LEFT WING ---- (30% width, 55% height)
-  const lwW = totalW * 0.30;
-  const lwH = maxH * 0.55;
-  const lwX = left;
-  const lwY = baseY - lwH;
-
-  // Bay window protrusion
-  ctx.fillStyle = c.stoneMid;
-  ctx.fillRect(lwX - 6 * s, baseY - lwH * 0.7, 8 * s, lwH * 0.5);
-  ctx.fillStyle = c.stoneDark;
-  ctx.fillRect(lwX - 6 * s, baseY - lwH * 0.7, 8 * s, 2 * s);
-  drawGothicWindow(lwX - 4 * s, baseY - lwH * 0.65, 5 * s, 12 * s, c.window, c.trim, c.windowDark);
-
-  // Main body
-  ctx.fillStyle = c.stoneMid;
-  ctx.fillRect(lwX, lwY, lwW, lwH);
-  // Shadow right edge
-  ctx.fillStyle = c.shadow;
-  ctx.fillRect(lwX + lwW - 4 * s, lwY, 4 * s, lwH);
-  // Stone coursing
-  drawStoneCoursing(lwX, lwY, lwW, lwH, c.stoneDark);
-
-  // Gable roof
-  ctx.fillStyle = c.roof;
-  ctx.beginPath();
-  ctx.moveTo(lwX - 3 * s, lwY);
-  ctx.lineTo(lwX + lwW / 2, lwY - 30 * s);
-  ctx.lineTo(lwX + lwW + 3 * s, lwY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = c.roofHighlight;
-  ctx.beginPath();
-  ctx.moveTo(lwX - 3 * s, lwY);
-  ctx.lineTo(lwX + lwW / 2, lwY - 30 * s);
-  ctx.lineTo(lwX + lwW * 0.3, lwY);
-  ctx.closePath();
-  ctx.fill();
-
-  // Left wing windows - upper row
-  const lwWinW = 8 * s;
-  const lwWinH = 14 * s;
-  for (let i = 0; i < 3; i++) {
-    drawGothicWindow(lwX + 8 * s + i * (lwWinW + 8 * s), lwY + 10 * s, lwWinW, lwWinH, c.window, c.trim, c.windowDark);
-  }
-  // Left wing windows - lower row
-  for (let i = 0; i < 3; i++) {
-    drawGothicWindow(lwX + 8 * s + i * (lwWinW + 8 * s), lwY + lwH * 0.5 + 4 * s, lwWinW, lwWinH * 0.9, c.window, c.trim, c.windowDark);
-  }
-
-  // ---- 2. MAIN SQUARE TOWER ---- (15% width, 100% height)
-  const twW = totalW * 0.15;
-  const twH = maxH;
-  const twX = left + totalW * 0.28;
-  const twY = baseY - twH;
-
-  // Tower body
-  ctx.fillStyle = c.stoneLight;
-  ctx.fillRect(twX, twY, twW, twH);
-  // Mid-tone band
-  ctx.fillStyle = c.stoneMid;
-  ctx.fillRect(twX, twY + twH * 0.3, twW, twH * 0.4);
-  // Shadow right
-  ctx.fillStyle = c.shadow;
-  ctx.fillRect(twX + twW - 3 * s, twY, 3 * s, twH);
-  // Stone coursing
-  drawStoneCoursing(twX, twY, twW, twH, c.stoneDark);
-
-  // Horizontal band / string course
-  ctx.fillStyle = c.stoneDark;
-  ctx.fillRect(twX - 2 * s, twY + twH * 0.3, twW + 4 * s, 2 * s);
-  ctx.fillRect(twX - 2 * s, twY + twH * 0.55, twW + 4 * s, 2 * s);
-
-  // CRENELLATIONS - the signature flat top
-  const toothW = Math.max(4, twW / 6);
-  const toothH = 6 * s;
-  // Parapet base
-  ctx.fillStyle = c.stoneLight;
-  ctx.fillRect(twX - 2 * s, twY - 3 * s, twW + 4 * s, 5 * s);
-  drawCrenellations(twX - 2 * s, twY - 3 * s, twW + 4 * s, toothH, toothW, c.stoneLight);
-  // Coursing on teeth
-  ctx.fillStyle = c.stoneDark;
-  ctx.globalAlpha = 0.3;
-  const cCount = Math.floor((twW + 4 * s) / toothW);
-  for (let i = 0; i < cCount; i++) {
-    if (i % 2 === 0) {
-      ctx.fillRect(twX - 2 * s + i * toothW, twY - 3 * s - toothH + toothH * 0.5, toothW, 1);
-    }
-  }
-  ctx.globalAlpha = 1;
-
-  // Large Gothic tracery window on tower
-  const tWinW = twW * 0.6;
-  const tWinH = twH * 0.28;
-  const tWinX = twX + (twW - tWinW) / 2;
-  const tWinY = twY + twH * 0.08;
-  drawGothicWindow(tWinX, tWinY, tWinW, tWinH, c.window, c.trim, c.windowDark);
-  // Extra tracery mullion (vertical subdivisions)
-  ctx.strokeStyle = c.trim;
-  ctx.lineWidth = Math.max(1, s);
-  ctx.beginPath();
-  ctx.moveTo(tWinX + tWinW * 0.3, tWinY + tWinH * 0.35);
-  ctx.lineTo(tWinX + tWinW * 0.3, tWinY + tWinH);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(tWinX + tWinW * 0.7, tWinY + tWinH * 0.35);
-  ctx.lineTo(tWinX + tWinW * 0.7, tWinY + tWinH);
-  ctx.stroke();
-
-  // Lower tower window
-  drawGothicWindow(tWinX + 2 * s, twY + twH * 0.45, tWinW - 4 * s, tWinH * 0.6, c.window, c.trim, c.windowDark);
-
-  // ---- 3. CENTER BODY ---- (25% width, 65% height)
-  const cbW = totalW * 0.25;
-  const cbH = maxH * 0.65;
-  const cbX = left + totalW * 0.38;
-  const cbY = baseY - cbH;
-
-  ctx.fillStyle = c.stoneMid;
-  ctx.fillRect(cbX, cbY, cbW, cbH);
-  ctx.fillStyle = c.shadow;
-  ctx.fillRect(cbX + cbW - 4 * s, cbY, 4 * s, cbH);
-  drawStoneCoursing(cbX, cbY, cbW, cbH, c.stoneDark);
-
-  // Pointed gable roof
-  ctx.fillStyle = c.roof;
-  ctx.beginPath();
-  ctx.moveTo(cbX - 3 * s, cbY);
-  ctx.lineTo(cbX + cbW / 2, cbY - 25 * s);
-  ctx.lineTo(cbX + cbW + 3 * s, cbY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = c.copper;
-  ctx.globalAlpha = 0.3;
-  ctx.beginPath();
-  ctx.moveTo(cbX + cbW / 2, cbY - 25 * s);
-  ctx.lineTo(cbX + cbW / 2 + 2 * s, cbY - 24 * s);
-  ctx.lineTo(cbX + cbW / 2, cbY - 15 * s);
-  ctx.closePath();
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  // Center upper windows
-  const cbWinW = 9 * s;
-  const cbWinH = 15 * s;
-  for (let i = 0; i < 2; i++) {
-    drawGothicWindow(cbX + 10 * s + i * (cbWinW + 12 * s), cbY + 8 * s, cbWinW, cbWinH, c.window, c.trim, c.windowDark);
-  }
-
-  // Grand Gothic arched doorway
-  const doorW = 16 * s;
-  const doorH = 26 * s;
-  const doorX = cbX + (cbW - doorW) / 2;
-  const doorY = baseY - doorH;
-  ctx.fillStyle = c.stoneDark;
-  ctx.fillRect(doorX, doorY + doorH * 0.35, doorW, doorH * 0.65);
-  ctx.beginPath();
-  ctx.moveTo(doorX, doorY + doorH * 0.35);
-  ctx.quadraticCurveTo(doorX, doorY - doorH * 0.05, doorX + doorW / 2, doorY);
-  ctx.quadraticCurveTo(doorX + doorW, doorY - doorH * 0.05, doorX + doorW, doorY + doorH * 0.35);
-  ctx.closePath();
-  ctx.fill();
-  // Door darker interior
-  const innerD = 2 * s;
-  ctx.fillStyle = '#1a1510';
-  ctx.fillRect(doorX + innerD, doorY + doorH * 0.4, doorW - innerD * 2, doorH * 0.6);
-  ctx.beginPath();
-  ctx.moveTo(doorX + innerD, doorY + doorH * 0.4);
-  ctx.quadraticCurveTo(doorX + innerD, doorY + doorH * 0.05, doorX + doorW / 2, doorY + innerD);
-  ctx.quadraticCurveTo(doorX + doorW - innerD, doorY + doorH * 0.05, doorX + doorW - innerD, doorY + doorH * 0.4);
-  ctx.closePath();
-  ctx.fill();
-  // Door frame trim
-  ctx.strokeStyle = c.trim;
-  ctx.lineWidth = Math.max(1.5, 1.5 * s);
-  ctx.beginPath();
-  ctx.moveTo(doorX, baseY);
-  ctx.lineTo(doorX, doorY + doorH * 0.35);
-  ctx.quadraticCurveTo(doorX, doorY - doorH * 0.05, doorX + doorW / 2, doorY);
-  ctx.quadraticCurveTo(doorX + doorW, doorY - doorH * 0.05, doorX + doorW, doorY + doorH * 0.35);
-  ctx.lineTo(doorX + doorW, baseY);
-  ctx.stroke();
-
-  // ---- 4. RIGHT WING ---- (30% width, 50% height)
-  const rwW = totalW * 0.30;
-  const rwH = maxH * 0.50;
-  const rwX = left + totalW * 0.60;
-  const rwY = baseY - rwH;
-
-  ctx.fillStyle = c.stoneMid;
-  ctx.fillRect(rwX, rwY, rwW, rwH);
-  ctx.fillStyle = c.shadow;
-  ctx.fillRect(rwX + rwW - 4 * s, rwY, 4 * s, rwH);
-  drawStoneCoursing(rwX, rwY, rwW, rwH, c.stoneDark);
-
-  // Right wing gable
-  ctx.fillStyle = c.roof;
-  ctx.beginPath();
-  ctx.moveTo(rwX - 3 * s, rwY);
-  ctx.lineTo(rwX + rwW / 2, rwY - 22 * s);
-  ctx.lineTo(rwX + rwW + 3 * s, rwY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = c.roofHighlight;
-  ctx.beginPath();
-  ctx.moveTo(rwX - 3 * s, rwY);
-  ctx.lineTo(rwX + rwW / 2, rwY - 22 * s);
-  ctx.lineTo(rwX + rwW * 0.35, rwY);
-  ctx.closePath();
-  ctx.fill();
-
-  // Right wing windows upper
-  for (let i = 0; i < 3; i++) {
-    drawGothicWindow(rwX + 8 * s + i * (8 * s + 8 * s), rwY + 8 * s, 8 * s, 13 * s, c.window, c.trim, c.windowDark);
-  }
-  // Right wing windows lower
-  for (let i = 0; i < 3; i++) {
-    drawGothicWindow(rwX + 8 * s + i * (8 * s + 8 * s), rwY + rwH * 0.48 + 4 * s, 8 * s, 12 * s, c.window, c.trim, c.windowDark);
-  }
-
-  // Covered porch / veranda at ground level
-  ctx.fillStyle = c.stoneDark;
-  ctx.fillRect(rwX + 4 * s, baseY - 18 * s, rwW - 8 * s, 2 * s);
-  // Porch columns
-  for (let i = 0; i < 4; i++) {
-    const px = rwX + 8 * s + i * ((rwW - 16 * s) / 3);
-    ctx.fillStyle = c.stoneLight;
-    ctx.fillRect(px, baseY - 18 * s, 2 * s, 18 * s);
-  }
-
-  // ---- Foundation line ----
-  ctx.fillStyle = c.stoneDark;
-  ctx.fillRect(left - 6 * s, baseY - 2 * s, totalW + 12 * s, 4 * s);
-}
-
-/* ============================================================
-   LANDSCAPE HELPERS
-   ============================================================ */
-
-function drawSky(timeOfDay) {
-  let grad;
-  if (timeOfDay === 'golden') {
-    grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#1a1a2e');
-    grad.addColorStop(0.25, '#3d2d6b');
-    grad.addColorStop(0.45, '#8b4a78');
-    grad.addColorStop(0.6, '#e88ca5');
-    grad.addColorStop(0.75, '#f0a0b8');
-    grad.addColorStop(1, '#ffd4a8');
-  } else if (timeOfDay === 'storm') {
-    grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#0a0a15');
-    grad.addColorStop(0.3, '#1a1a30');
-    grad.addColorStop(0.6, '#2a2a45');
-    grad.addColorStop(1, '#3a3a55');
-  } else if (timeOfDay === 'clear') {
-    grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#1a6dd4');
-    grad.addColorStop(0.3, '#4a9de8');
-    grad.addColorStop(0.5, '#7dc4f5');
-    grad.addColorStop(0.7, '#aadcfa');
-    grad.addColorStop(1, '#e0f0ff');
-  } else {
-    grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#0a0a1a');
-    grad.addColorStop(0.4, '#151530');
-    grad.addColorStop(1, '#1a1a3a');
-  }
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-}
-
-function drawClouds(y, timeOfDay, offset) {
-  const cloudColor = timeOfDay === 'golden' ? ['#e88ca5', '#f0a0b8', '#c8a8d8'] :
-    timeOfDay === 'storm' ? ['#2a2a40', '#353550', '#404060'] :
-    timeOfDay === 'clear' ? ['#ffffff', '#e8f4ff', '#d0e8ff'] :
-    ['#1a1a30', '#252540', '#2a2a45'];
-  const t = offset * 0.0003;
-  for (let i = 0; i < 5; i++) {
-    const cx = (W * 0.15 + i * W * 0.2 + Math.sin(t + i * 1.5) * 30) % (W + 100) - 50;
-    const cy = y + Math.sin(t * 0.7 + i) * 10 + i * 8;
-    const r = 25 + i * 8;
-    ctx.fillStyle = cloudColor[i % cloudColor.length];
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, r * 1.8, r * 0.7, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx - r * 0.8, cy + 5, r * 1.2, r * 0.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + r, cy + 3, r * 1.4, r * 0.6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-}
-
-function drawCherryTree(x, y, size, mirrored) {
-  const dir = mirrored ? -1 : 1;
-  // Trunk
-  ctx.fillStyle = '#5a3a28';
-  ctx.fillRect(x - size * 0.05, y - size * 0.6, size * 0.1, size * 0.6);
-  // Branches
-  ctx.strokeStyle = '#5a3a28';
-  ctx.lineWidth = size * 0.04;
-  ctx.beginPath();
-  ctx.moveTo(x, y - size * 0.5);
-  ctx.lineTo(x + dir * size * 0.3, y - size * 0.8);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x, y - size * 0.45);
-  ctx.lineTo(x - dir * size * 0.2, y - size * 0.7);
-  ctx.stroke();
-  // Pink blossom canopy
-  const blossomColors = ['#ffb7c5', '#ff91a4', '#ffc0cb', '#ff69b4', '#ffcce0'];
-  for (let i = 0; i < 20; i++) {
-    const bx = x + dir * size * 0.1 + (Math.sin(i * 2.3) * size * 0.35);
-    const by = y - size * 0.6 - Math.abs(Math.cos(i * 1.7)) * size * 0.4;
-    const br = size * (0.06 + Math.sin(i) * 0.03);
-    ctx.fillStyle = blossomColors[i % blossomColors.length];
-    ctx.globalAlpha = 0.85;
-    ctx.beginPath();
-    ctx.arc(bx, by, br, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawEvergreenTree(x, y, h) {
-  ctx.fillStyle = '#3a2820';
-  ctx.fillRect(x - h * 0.04, y - h * 0.15, h * 0.08, h * 0.15);
-  const layers = 4;
-  const greens = ['#1a4d2e', '#2d6b3f', '#1a5530', '#245a35'];
-  for (let i = 0; i < layers; i++) {
-    const ly = y - h * 0.15 - i * h * 0.22;
-    const lw = h * (0.25 - i * 0.04);
-    ctx.fillStyle = greens[i % greens.length];
-    ctx.beginPath();
-    ctx.moveTo(x - lw, ly);
-    ctx.lineTo(x, ly - h * 0.25);
-    ctx.lineTo(x + lw, ly);
-    ctx.closePath();
-    ctx.fill();
-  }
-}
-
-function drawLawn(groundY) {
-  const grad = ctx.createLinearGradient(0, groundY, 0, H);
-  grad.addColorStop(0, '#4a8f5c');
-  grad.addColorStop(0.3, '#3d7a4e');
-  grad.addColorStop(1, '#2d6b3f');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, groundY, W, H - groundY);
-  // Path
-  ctx.fillStyle = '#b0a090';
-  ctx.beginPath();
-  ctx.moveTo(W * 0.42, groundY);
-  ctx.lineTo(W * 0.38, H);
-  ctx.lineTo(W * 0.62, H);
-  ctx.lineTo(W * 0.58, groundY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = '#a0907a';
-  ctx.globalAlpha = 0.3;
-  for (let i = 0; i < 15; i++) {
-    ctx.fillRect(W * 0.39 + Math.random() * W * 0.22, groundY + Math.random() * (H - groundY), 3, 2);
-  }
-  ctx.globalAlpha = 1;
-}
-
-function drawBirds(t) {
-  ctx.strokeStyle = '#2a2030';
-  ctx.lineWidth = 1.5;
-  for (let i = 0; i < 4; i++) {
-    const bx = (W * 0.2 + i * W * 0.2 + t * 0.02) % (W + 40) - 20;
-    const by = H * 0.08 + i * 15 + Math.sin(t * 0.005 + i) * 8;
-    const wing = Math.sin(t * 0.015 + i * 2) * 4;
-    ctx.beginPath();
-    ctx.moveTo(bx - 5, by + wing);
-    ctx.quadraticCurveTo(bx - 2, by - 3, bx, by);
-    ctx.quadraticCurveTo(bx + 2, by - 3, bx + 5, by + wing);
-    ctx.stroke();
-  }
-}
-
-let petals = [];
-function initPetals() {
-  petals = [];
-  for (let i = 0; i < 25; i++) {
-    petals.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      vx: -0.3 + Math.random() * 0.6,
-      vy: 0.3 + Math.random() * 0.5,
-      r: 2 + Math.random() * 3,
-      rot: Math.random() * Math.PI * 2,
-      color: ['#ffb7c5', '#ff91a4', '#ffc0cb', '#ffcce0'][Math.floor(Math.random() * 4)]
-    });
-  }
-}
-initPetals();
-
-function updatePetals() {
-  for (const p of petals) {
-    p.x += p.vx + Math.sin(animFrame * 0.01 + p.rot) * 0.3;
-    p.y += p.vy;
-    p.rot += 0.02;
-    if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
-    if (p.x < -10) p.x = W + 10;
-    if (p.x > W + 10) p.x = -10;
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = 0.8;
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.rot);
-    ctx.beginPath();
-    ctx.ellipse(0, 0, p.r, p.r * 0.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-    ctx.globalAlpha = 1;
-  }
-}
-
-function drawRainbow(x, y, r) {
-  const colors = ['#ff0000', '#ff7700', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8b00ff'];
-  for (let i = 0; i < colors.length; i++) {
-    ctx.strokeStyle = colors[i];
-    ctx.lineWidth = 3;
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    ctx.arc(x, y, r - i * 4, Math.PI, 0);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-}
-
-/* ============================================================
-   PIXEL TEXT
-   ============================================================ */
-function drawPixelText(text, x, y, size, color, align, shadow) {
-  ctx.font = size + 'px "Press Start 2P"';
+function drawTextOutline(text, x, y, fontSize, fillColor, strokeColor, align) {
+  ctx.save();
+  ctx.font = 'bold ' + fontSize + 'px "Segoe UI", Arial, sans-serif';
   ctx.textAlign = align || 'center';
   ctx.textBaseline = 'middle';
-  if (shadow) {
-    ctx.fillStyle = typeof shadow === 'string' ? shadow : 'rgba(0,0,0,0.5)';
-    ctx.fillText(text, x + 2, y + 2);
-  }
-  ctx.fillStyle = color;
+  ctx.strokeStyle = strokeColor || '#000';
+  ctx.lineWidth = fontSize * 0.15;
+  ctx.lineJoin = 'round';
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = fillColor || '#fff';
   ctx.fillText(text, x, y);
+  ctx.restore();
 }
 
-function drawButton(text, x, y, w, h, active) {
-  const grad = ctx.createLinearGradient(x, y, x, y + h);
-  grad.addColorStop(0, active ? '#ffe066' : '#ffd700');
-  grad.addColorStop(1, active ? '#ffcc00' : '#e6b800');
-  ctx.fillStyle = grad;
+function drawButton(text, x, y, w, h, color, textColor) {
+  ctx.save();
+  const r = h * 0.3;
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 8);
+  ctx.moveTo(x - w/2 + r, y - h/2);
+  ctx.lineTo(x + w/2 - r, y - h/2);
+  ctx.quadraticCurveTo(x + w/2, y - h/2, x + w/2, y - h/2 + r);
+  ctx.lineTo(x + w/2, y + h/2 - r);
+  ctx.quadraticCurveTo(x + w/2, y + h/2, x + w/2 - r, y + h/2);
+  ctx.lineTo(x - w/2 + r, y + h/2);
+  ctx.quadraticCurveTo(x - w/2, y + h/2, x - w/2, y + h/2 - r);
+  ctx.lineTo(x - w/2, y - h/2 + r);
+  ctx.quadraticCurveTo(x - w/2, y - h/2, x - w/2 + r, y - h/2);
+  ctx.closePath();
+  ctx.fillStyle = color || '#d4af37';
   ctx.fill();
-  ctx.strokeStyle = '#b8960f';
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
   ctx.lineWidth = 2;
   ctx.stroke();
-  ctx.fillStyle = '#1a1a2e';
-  ctx.font = '11px "Press Start 2P"';
+  ctx.fillStyle = textColor || '#fff';
+  ctx.font = 'bold ' + (h * 0.45) + 'px "Segoe UI", Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + w / 2, y + h / 2);
-}
-
-/* ============================================================
-   AVATAR DRAWING
-   ============================================================ */
-const HAIR_COLORS = ['#5a3825', '#d4a855', '#1a1a1a', '#aa3322'];
-const HAIR_NAMES = ['Brown', 'Blonde', 'Black', 'Red'];
-const HAIR_STYLES = ['Short', 'Long', 'Curly', 'Pixie', 'Mohawk', 'Bun'];
-const TOP_NAMES = ['Suit Jacket', 'Bridesmaid', 'Hawaiian', 'Tux Vest', 'Floral', 'Hoodie', 'Crop Top'];
-const BOTTOM_NAMES = ['Dress Pants', 'Skirt', 'Shorts', 'Gown', 'Jeans', 'Mini Skirt'];
-const SHOE_NAMES = ['Dress Shoes', 'Heels', 'Sneakers', 'Boots', 'Sandals'];
-const ACC_NAMES = ['None', 'Bow Tie', 'Necklace', 'Sunglasses', 'Flower Crown', 'Top Hat', 'Tiara'];
-
-function drawAvatar(ctx2, x, y, scale, avatar) {
-  const s = scale;
-  const hc = HAIR_COLORS[avatar.hairColor % HAIR_COLORS.length];
-  // Skin
-  ctx2.fillStyle = '#f0c8a0';
-  // Body
-  ctx2.fillRect(x + 24 * s, y + 28 * s, 16 * s, 14 * s);
-  // Head
-  ctx2.fillRect(x + 22 * s, y + 10 * s, 20 * s, 18 * s);
-  // Eyes
-  ctx2.fillStyle = '#1a1a2e';
-  ctx2.fillRect(x + 26 * s, y + 18 * s, 3 * s, 3 * s);
-  ctx2.fillRect(x + 35 * s, y + 18 * s, 3 * s, 3 * s);
-  // Mouth
-  ctx2.fillStyle = '#cc6666';
-  ctx2.fillRect(x + 29 * s, y + 23 * s, 6 * s, 2 * s);
-
-  // Hair
-  ctx2.fillStyle = hc;
-  const hs = avatar.hair % HAIR_STYLES.length;
-  if (hs === 0) { ctx2.fillRect(x + 20 * s, y + 8 * s, 24 * s, 8 * s); }
-  else if (hs === 1) { ctx2.fillRect(x + 20 * s, y + 8 * s, 24 * s, 8 * s); ctx2.fillRect(x + 20 * s, y + 16 * s, 5 * s, 14 * s); ctx2.fillRect(x + 39 * s, y + 16 * s, 5 * s, 14 * s); }
-  else if (hs === 2) { ctx2.fillRect(x + 18 * s, y + 6 * s, 28 * s, 12 * s); ctx2.fillRect(x + 18 * s, y + 12 * s, 6 * s, 10 * s); ctx2.fillRect(x + 40 * s, y + 12 * s, 6 * s, 10 * s); }
-  else if (hs === 3) { ctx2.fillRect(x + 22 * s, y + 6 * s, 20 * s, 6 * s); ctx2.fillRect(x + 38 * s, y + 8 * s, 6 * s, 8 * s); }
-  else if (hs === 4) { ctx2.fillRect(x + 28 * s, y + 2 * s, 8 * s, 10 * s); ctx2.fillRect(x + 22 * s, y + 8 * s, 20 * s, 4 * s); }
-  else { ctx2.fillRect(x + 22 * s, y + 6 * s, 20 * s, 6 * s); ctx2.beginPath(); ctx2.arc(x + 32 * s, y + 6 * s, 6 * s, 0, Math.PI * 2); ctx2.fill(); }
-
-  // Top
-  const topColors = ['#2a2a4a', '#e88ca5', '#ff9944', '#1a1a2e', '#d4a8d4', '#666', '#ff6b8a'];
-  ctx2.fillStyle = topColors[avatar.top % topColors.length];
-  ctx2.fillRect(x + 20 * s, y + 28 * s, 24 * s, 14 * s);
-  // Arms
-  ctx2.fillRect(x + 14 * s, y + 28 * s, 6 * s, 12 * s);
-  ctx2.fillRect(x + 44 * s, y + 28 * s, 6 * s, 12 * s);
-
-  // Bottom
-  const botColors = ['#2a2a3a', '#c44a7a', '#8b7355', '#e88ca5', '#4a6a9a', '#c44a7a'];
-  ctx2.fillStyle = botColors[avatar.bottom % botColors.length];
-  ctx2.fillRect(x + 22 * s, y + 42 * s, 20 * s, 12 * s);
-
-  // Shoes
-  const shoeColors = ['#1a1a1a', '#cc4466', '#ffffff', '#5a3a20', '#c4a060'];
-  ctx2.fillStyle = shoeColors[avatar.shoes % shoeColors.length];
-  ctx2.fillRect(x + 20 * s, y + 54 * s, 10 * s, 4 * s);
-  ctx2.fillRect(x + 34 * s, y + 54 * s, 10 * s, 4 * s);
-
-  // Accessory
-  const acc = avatar.acc % ACC_NAMES.length;
-  if (acc === 1) { ctx2.fillStyle = '#ffd700'; ctx2.fillRect(x + 29 * s, y + 27 * s, 6 * s, 3 * s); ctx2.fillRect(x + 31 * s, y + 26 * s, 2 * s, 1 * s); }
-  else if (acc === 2) { ctx2.fillStyle = '#ffd700'; ctx2.fillRect(x + 26 * s, y + 28 * s, 12 * s, 2 * s); ctx2.fillRect(x + 30 * s, y + 30 * s, 4 * s, 3 * s); }
-  else if (acc === 3) { ctx2.fillStyle = '#1a1a1a'; ctx2.fillRect(x + 24 * s, y + 17 * s, 16 * s, 5 * s); ctx2.fillStyle = '#4a4aaa'; ctx2.globalAlpha = 0.5; ctx2.fillRect(x + 25 * s, y + 18 * s, 6 * s, 3 * s); ctx2.fillRect(x + 33 * s, y + 18 * s, 6 * s, 3 * s); ctx2.globalAlpha = 1; }
-  else if (acc === 4) { ctx2.fillStyle = '#ff69b4'; for (let fi = 0; fi < 5; fi++) { ctx2.beginPath(); ctx2.arc(x + (24 + fi * 4) * s, y + 9 * s, 2.5 * s, 0, Math.PI * 2); ctx2.fill(); } ctx2.fillStyle = '#4a8f5c'; ctx2.fillRect(x + 22 * s, y + 10 * s, 20 * s, 2 * s); }
-  else if (acc === 5) { ctx2.fillStyle = '#1a1a2e'; ctx2.fillRect(x + 24 * s, y + 0, 16 * s, 8 * s); ctx2.fillRect(x + 20 * s, y + 8 * s, 24 * s, 3 * s); }
-  else if (acc === 6) { ctx2.fillStyle = '#ffd700'; ctx2.fillRect(x + 24 * s, y + 7 * s, 16 * s, 3 * s); for (let ti = 0; ti < 3; ti++) { ctx2.fillRect(x + (26 + ti * 5) * s, y + 4 * s, 3 * s, 3 * s); } }
-}
-
-/* ============================================================
-   SCREEN: WELCOME
-   ============================================================ */
-function drawWelcome() {
-  drawSky('golden');
-  drawClouds(H * 0.12, 'golden', animFrame);
-  drawBirds(animFrame);
-
-  const groundY = H * 0.72;
-  const mansionY = groundY;
-  const mansionScale = W / 340;
-
-  // Trees behind mansion
-  drawEvergreenTree(W * 0.05, groundY, H * 0.3);
-  drawEvergreenTree(W * 0.12, groundY, H * 0.35);
-  drawEvergreenTree(W * 0.88, groundY, H * 0.32);
-  drawEvergreenTree(W * 0.95, groundY, H * 0.28);
-
-  drawCherryTree(W * 0.18, groundY, H * 0.25, false);
-  drawCherryTree(W * 0.82, groundY, H * 0.22, true);
-
-  // Mansion
-  drawMansion(W / 2, mansionY, mansionScale, 'golden');
-
-  // Lawn
-  drawLawn(groundY);
-
-  // More cherry trees in foreground
-  drawCherryTree(W * 0.08, H * 0.85, H * 0.15, false);
-  drawCherryTree(W * 0.92, H * 0.88, H * 0.13, true);
-
-  // Petals
-  updatePetals();
-
-  // Title
-  const pulse = Math.sin(animFrame * 0.04) * 3;
-  ctx.save();
-  // Gold glow
-  ctx.shadowColor = '#ffd700';
-  ctx.shadowBlur = 15;
-  drawPixelText("Max & Julie's", W / 2, H * 0.15 + pulse, Math.min(18, W * 0.04), '#ffd700', 'center', '#8b6914');
-  drawPixelText("Wedding Arcade", W / 2, H * 0.15 + 28 + pulse, Math.min(14, W * 0.032), '#fff', 'center', '#4a3060');
-  ctx.shadowBlur = 0;
-  drawPixelText("at Lyndhurst Mansion", W / 2, H * 0.15 + 52 + pulse, Math.min(8, W * 0.018), '#e8d5f5', 'center', false);
+  ctx.fillText(text, x, y);
   ctx.restore();
-
-  // Tap to start
-  const tapAlpha = 0.5 + Math.sin(animFrame * 0.06) * 0.5;
-  ctx.globalAlpha = tapAlpha;
-  drawPixelText("Tap to Start", W / 2, H * 0.92, Math.min(10, W * 0.024), '#ffd700', 'center', '#000');
-  ctx.globalAlpha = 1;
-
-  // Tap handler
-  tapCallbacks = [() => { showScreen('charCreator'); return true; }];
 }
 
-/* ============================================================
-   SCREEN: CHARACTER CREATOR (DOM)
-   ============================================================ */
-function initCharCreator() {
-  const el = document.getElementById('screenCharCreator');
-  let tab = 'Hair';
-  const saved = JSON.parse(localStorage.getItem('weddingAvatar') || 'null');
-  if (saved) {
-    playerAvatar = saved.avatar || playerAvatar;
-    playerName = saved.name || playerName;
-  }
-  function render() {
-    const categories = ['Hair', 'Top', 'Bottom', 'Shoes', 'Accessories'];
-    const optionNames = {
-      Hair: HAIR_STYLES,
-      Top: TOP_NAMES,
-      Bottom: BOTTOM_NAMES,
-      Shoes: SHOE_NAMES,
-      Accessories: ACC_NAMES
-    };
-    const keys = { Hair: 'hair', Top: 'top', Bottom: 'bottom', Shoes: 'shoes', Accessories: 'acc' };
-    const curKey = keys[tab];
-    const curIdx = playerAvatar[curKey];
-    const curOptions = optionNames[tab];
-    const curName = curOptions[curIdx % curOptions.length];
+function hitBtn(mx, my, bx, by, bw, bh) {
+  return mx >= bx - bw/2 && mx <= bx + bw/2 && my >= by - bh/2 && my <= by + bh/2;
+}
 
-    el.innerHTML = `
-      <div class="cc-title pixel-font">CREATE YOUR GUEST</div>
-      <div class="cc-section">
-        <div class="cc-label">Your Name</div>
-        <input class="cc-input" id="ccName" type="text" value="${playerName.replace(/"/g, '&quot;')}" maxlength="16" placeholder="Enter name...">
-      </div>
-      <div class="cc-section">
-        <div class="cc-label">Preview</div>
-        <div class="cc-avatar-box"><canvas id="ccAvatarCanvas" width="64" height="64"></canvas></div>
-      </div>
-      <div class="cc-section">
-        <div class="cc-tabs">
-          ${categories.map(c => `<div class="cc-tab ${c === tab ? 'active' : ''}" data-tab="${c}">${c}</div>`).join('')}
-        </div>
-        <div class="cc-arrows">
-          <button class="cc-arrow-btn" id="ccPrev">◀</button>
-          <span class="cc-option-name">${curName}</span>
-          <button class="cc-arrow-btn" id="ccNext">▶</button>
-        </div>
-        ${tab === 'Hair' ? `<div style="text-align:center;margin-top:4px"><button class="cc-color-btn" id="ccColorBtn">Color: ${HAIR_NAMES[playerAvatar.hairColor % HAIR_COLORS.length]}</button></div>` : ''}
-      </div>
-      <button class="cc-save-btn" id="ccSave">Save & Continue ▶</button>
-    `;
+function getCanvasXY(e) {
+  const rect = C.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return { x: (t.clientX - rect.left), y: (t.clientY - rect.top) };
+}
 
-    // Draw avatar
-    const avCanvas = document.getElementById('ccAvatarCanvas');
-    if (avCanvas) {
-      const actx = avCanvas.getContext('2d');
-      actx.clearRect(0, 0, 64, 64);
-      drawAvatar(actx, 0, 0, 1, playerAvatar);
-    }
+function removeCanvasListeners() {
+  const newC = C.cloneNode(false);
+  C.parentNode.replaceChild(newC, C);
+  // re-grab references — we declared with const so we reassign the global
+  // Actually we can't reassign const. Instead we add/remove named handlers.
+}
+// Better approach: use named handler references
+let _canvasClick = null;
+let _canvasTouch = null;
+function setCanvasHandler(fn) {
+  if (_canvasClick) { C.removeEventListener('click', _canvasClick); }
+  if (_canvasTouch) { C.removeEventListener('touchstart', _canvasTouch); }
+  _canvasClick = fn;
+  _canvasTouch = function(e) { e.preventDefault(); fn(e); };
+  C.addEventListener('click', _canvasClick);
+  C.addEventListener('touchstart', _canvasTouch, {passive: false});
+}
 
-    // Events
-    document.getElementById('ccName').addEventListener('input', e => { playerName = e.target.value || 'Guest'; });
-    document.querySelectorAll('.cc-tab').forEach(t => {
-      t.addEventListener('click', () => { tab = t.dataset.tab; render(); });
-    });
-    document.getElementById('ccPrev').addEventListener('click', () => {
-      playerAvatar[curKey] = (playerAvatar[curKey] - 1 + curOptions.length) % curOptions.length;
-      render();
-    });
-    document.getElementById('ccNext').addEventListener('click', () => {
-      playerAvatar[curKey] = (playerAvatar[curKey] + 1) % curOptions.length;
-      render();
-    });
-    const colorBtn = document.getElementById('ccColorBtn');
-    if (colorBtn) {
-      colorBtn.addEventListener('click', () => {
-        playerAvatar.hairColor = (playerAvatar.hairColor + 1) % HAIR_COLORS.length;
-        render();
-      });
-    }
-    document.getElementById('ccSave').addEventListener('click', () => {
-      playerName = document.getElementById('ccName').value || 'Guest';
-      localStorage.setItem('weddingAvatar', JSON.stringify({ name: playerName, avatar: playerAvatar }));
-      showScreen('storyIntro');
+/* ═══════════════════════════════════════════
+   1. WELCOME SCREEN
+   ═══════════════════════════════════════════ */
+function initWelcome() {
+  showScreen('canvas');
+  scores = {game1:0, game2:0, game2combo:0, game3:0};
+
+  const petals = [];
+  for (let i = 0; i < 30; i++) {
+    petals.push({
+      x: rand(0, W), y: rand(0, H),
+      vx: rand(-0.5, 0.5), vy: rand(0.3, 1.2),
+      size: rand(2, 5) * scale,
+      alpha: rand(0.3, 0.8),
+      rot: rand(0, Math.PI * 2),
+      rotV: rand(-0.03, 0.03)
     });
   }
-  render();
-}
 
-/* ============================================================
-   SCREEN: STORY INTRO
-   ============================================================ */
-let storyTimer = 0;
-let storyText = "Oh no! We dropped the rings and ran out of petals on the way to the altar! Can you help us get them down the aisle?";
-let storyCharIdx = 0;
-
-function drawStoryIntro() {
-  drawSky('golden');
-  const groundY = H * 0.65;
-  drawLawn(groundY);
-
-  // Trees
-  drawCherryTree(W * 0.15, groundY, H * 0.2, false);
-  drawCherryTree(W * 0.85, groundY, H * 0.18, true);
-
-  // Small mansion in background
-  drawMansion(W / 2, groundY, W / 600, 'golden');
-
-  // Characters on path
-  const charY = groundY + (H - groundY) * 0.3;
-
-  // Flower girl
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(W * 0.3 - 5, charY - 18, 10, 14);
-  ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(W * 0.3 - 4, charY - 26, 8, 8);
-  ctx.fillStyle = '#5a3825';
-  ctx.fillRect(W * 0.3 - 5, charY - 28, 10, 4);
-  // Basket
-  ctx.fillStyle = '#b08050';
-  ctx.fillRect(W * 0.3 + 6, charY - 14, 8, 6);
-
-  // Ring bearer
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(W * 0.5 - 5, charY - 20, 10, 16);
-  ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(W * 0.5 - 4, charY - 28, 8, 8);
-  ctx.fillStyle = '#3a2a15';
-  ctx.fillRect(W * 0.5 - 5, charY - 30, 10, 4);
-
-  // Dog (golden retriever)
-  ctx.fillStyle = '#c8a050';
-  ctx.fillRect(W * 0.68 - 8, charY - 12, 16, 10);
-  ctx.fillRect(W * 0.68 - 11, charY - 16, 8, 8);
-  // Tail
-  ctx.fillRect(W * 0.68 + 8, charY - 16, 4, 6);
-  // Bowtie
-  ctx.fillStyle = '#ff4444';
-  ctx.fillRect(W * 0.68 - 7, charY - 10, 4, 3);
-  // Legs
-  ctx.fillStyle = '#b08840';
-  ctx.fillRect(W * 0.68 - 6, charY - 2, 3, 4);
-  ctx.fillRect(W * 0.68 + 3, charY - 2, 3, 4);
-
-  // Dialog box
-  storyTimer++;
-  storyCharIdx = Math.min(storyText.length, Math.floor(storyTimer / 2));
-  const boxY = H * 0.7;
-  const boxH = H * 0.18;
-  ctx.fillStyle = 'rgba(0,0,0,0.8)';
-  ctx.beginPath();
-  ctx.roundRect(W * 0.05, boxY, W * 0.9, boxH, 10);
-  ctx.fill();
-  ctx.strokeStyle = '#ffd700';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.fillStyle = '#fff';
-  ctx.font = `${Math.min(10, W * 0.022)}px "Press Start 2P"`;
-  ctx.textAlign = 'left';
-  const visibleText = storyText.substring(0, storyCharIdx);
-  wrapText(visibleText, W * 0.1, boxY + 18, W * 0.8, 16);
-
-  // Button
-  if (storyCharIdx >= storyText.length) {
-    const btnW = 150;
-    const btnH = 36;
-    const btnX = W / 2 - btnW / 2;
-    const btnY = H * 0.91;
-    drawButton('Help Them!', btnX, btnY, btnW, btnH, false);
-    tapCallbacks = [(x, y) => {
-      if (x >= btnX && x <= btnX + btnW && y >= btnY && y <= btnY + btnH) {
-        showScreen('game1');
-        initGame1();
-        return true;
-      }
-      return false;
-    }];
-  }
-}
-
-function wrapText(text, x, y, maxW, lineH) {
-  const words = text.split(' ');
-  let line = '';
-  let ly = y;
-  for (const word of words) {
-    const test = line + word + ' ';
-    const m = ctx.measureText(test);
-    if (m.width > maxW && line) {
-      ctx.fillText(line.trim(), x, ly);
-      line = word + ' ';
-      ly += lineH;
-    } else {
-      line = test;
-    }
-  }
-  ctx.fillText(line.trim(), x, ly);
-}
-
-/* ============================================================
-   GAME 1: QUEST TO THE ALTAR (Runner)
-   ============================================================ */
-let g1 = {};
-function initGame1() {
-  g1 = {
-    dist: 0, maxDist: 1500, score: 0,
-    py: 0, vy: 0, jumping: false, grounded: true,
-    speed: 3, elapsed: 0,
-    collectibles: [], obstacles: [],
-    sparkles: [], done: false, doneTimer: 0,
-    scrollX: 0
-  };
-  // Pre-generate items
-  for (let d = 100; d < 1500; d += 40 + Math.random() * 60) {
-    if (Math.random() < 0.7) {
-      g1.collectibles.push({ d, type: Math.random() < 0.8 ? 'petal' : 'ring', y: Math.random() * 60, collected: false });
-    }
-    if (Math.random() < 0.4) {
-      g1.obstacles.push({ d: d + 20, type: ['cork', 'chair', 'program'][Math.floor(Math.random() * 3)], y: 0, hit: false });
-    }
-  }
-  tapCallbacks = [(x, y) => {
-    if (g1.done) {
-      if (g1.doneTimer > 60) {
-        showScreen('stormTransition');
-        stormTimer = 0;
-        return true;
-      }
-      return false;
-    }
-    if (g1.grounded) {
-      g1.vy = -8 - Math.min(3, (y / H) * 3);
-      g1.jumping = true;
-      g1.grounded = false;
-    }
-    return true;
-  }];
-}
-
-function drawGame1() {
-  const groundY = H * 0.75;
-  const playerX = W * 0.2;
-
-  if (!g1.done) {
-    g1.elapsed++;
-    g1.dist += g1.speed;
-    g1.scrollX += g1.speed * 2;
-
-    // Physics
-    g1.vy += 0.45;
-    g1.py += g1.vy;
-    if (g1.py >= 0) { g1.py = 0; g1.vy = 0; g1.grounded = true; g1.jumping = false; }
+  const birds = [];
+  for (let i = 0; i < 5; i++) {
+    birds.push({
+      ox: W * 0.6 + i * 12 * scale,
+      oy: H * 0.12 + Math.abs(i - 2) * 8 * scale,
+      phase: rand(0, Math.PI * 2)
+    });
   }
 
-  const progress = g1.dist / g1.maxDist;
-  const stormProgress = Math.max(0, (progress - 0.8) / 0.2);
+  let t = 0;
+  function loop() {
+    if (currentScreen !== 'canvas') return;
+    t += 0.016;
+    ctx.clearRect(0, 0, W, H);
 
-  // Background — interior
-  // Far: stone walls
-  const wallColor = `rgb(${Math.floor(160 - stormProgress * 40)},${Math.floor(150 - stormProgress * 40)},${Math.floor(140 - stormProgress * 40)})`;
-  ctx.fillStyle = wallColor;
-  ctx.fillRect(0, 0, W, H);
+    // Sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.65);
+    skyGrad.addColorStop(0, '#1a1a4e');
+    skyGrad.addColorStop(0.3, '#4a2060');
+    skyGrad.addColorStop(0.55, '#c4587a');
+    skyGrad.addColorStop(0.8, '#e8a040');
+    skyGrad.addColorStop(1, '#f5cc60');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H * 0.65);
 
-  // Gothic windows in far background
-  for (let i = 0; i < 4; i++) {
-    const wx = (i * W * 0.3 - g1.scrollX * 0.2) % (W * 1.5) - W * 0.15;
-    const skyColor = stormProgress > 0 ? `rgba(60,60,80,${0.8 + stormProgress * 0.2})` : '#87ceeb';
-    drawGothicWindow(wx, H * 0.1, W * 0.08, H * 0.25, skyColor, '#8b7d6b', null);
-  }
+    // Hudson River
+    ctx.fillStyle = '#3a6080';
+    ctx.fillRect(0, H * 0.52, W, H * 0.06);
+    // River shimmer
+    ctx.fillStyle = 'rgba(255,200,100,0.15)';
+    for (let i = 0; i < 8; i++) {
+      const rx = (i * W/8 + t * 20) % W;
+      ctx.fillRect(rx, H * 0.53, 20 * scale, 2);
+    }
 
-  // Mid: columns
-  for (let i = 0; i < 6; i++) {
-    const cx = (i * W * 0.25 - g1.scrollX * 0.5) % (W * 1.8) - W * 0.1;
-    ctx.fillStyle = '#a09080';
-    ctx.fillRect(cx, H * 0.2, 12, groundY - H * 0.2);
-    // Column cap
-    ctx.fillStyle = '#b0a090';
-    ctx.fillRect(cx - 4, H * 0.2, 20, 8);
-    // Gothic arch between columns
-    if (i < 5) {
-      ctx.strokeStyle = '#a09080';
-      ctx.lineWidth = 3;
+    // Clouds
+    const cloudColors = ['rgba(255,150,160,0.4)', 'rgba(250,128,114,0.35)', 'rgba(200,170,220,0.3)'];
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = cloudColors[i % 3];
+      const cx = ((i * W/4 + t * 8 * (i % 2 === 0 ? 1 : -1)) % (W + 100)) - 50;
+      const cy = H * 0.08 + i * H * 0.06;
       ctx.beginPath();
-      ctx.moveTo(cx + 12, H * 0.2 + 8);
-      ctx.quadraticCurveTo(cx + W * 0.125, H * 0.12, cx + W * 0.25, H * 0.2 + 8);
+      ctx.ellipse(cx, cy, 50 * scale, 18 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx + 30 * scale, cy + 5, 35 * scale, 14 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Lawn
+    const lawnGrad = ctx.createLinearGradient(0, H * 0.58, 0, H);
+    lawnGrad.addColorStop(0, '#4a8c3f');
+    lawnGrad.addColorStop(1, '#2d6b2e');
+    ctx.fillStyle = lawnGrad;
+    ctx.fillRect(0, H * 0.58, W, H * 0.42);
+
+    // Trees
+    drawEvergreenTree(ctx, W * 0.08, H * 0.58, scale * 0.7);
+    drawCherryBlossomTree(ctx, W * 0.22, H * 0.57, scale * 0.8);
+    drawEvergreenTree(ctx, W * 0.88, H * 0.58, scale * 0.65);
+
+    // Mansion
+    drawMansion(ctx, W * 0.5, H * 0.45, scale * 0.8, 'golden', W, H);
+
+    // Birds
+    for (let i = 0; i < birds.length; i++) {
+      const b = birds[i];
+      const bx = b.ox + Math.sin(t * 0.5) * 15;
+      const by = b.oy + Math.sin(t * 2 + b.phase) * 3;
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx - 4 * scale, by + Math.sin(t * 4 + b.phase) * 2);
+      ctx.lineTo(bx, by);
+      ctx.lineTo(bx + 4 * scale, by + Math.sin(t * 4 + b.phase + 1) * 2);
       ctx.stroke();
     }
-  }
 
-  // Candelabras
-  for (let i = 0; i < 3; i++) {
-    const cx = (W * 0.2 + i * W * 0.35 - g1.scrollX * 0.4) % (W * 1.5) - W * 0.1;
-    ctx.fillStyle = '#c4a030';
-    ctx.fillRect(cx, H * 0.35, 3, 20);
-    ctx.fillRect(cx - 4, H * 0.35, 11, 3);
-    // Flames
-    ctx.fillStyle = '#ffaa00';
-    ctx.fillRect(cx - 3, H * 0.33, 3, 3);
-    ctx.fillRect(cx + 1, H * 0.33, 3, 3);
-    ctx.fillRect(cx + 5, H * 0.33, 3, 3);
-  }
-
-  // Near: pews
-  for (let i = 0; i < 8; i++) {
-    const px = (i * W * 0.2 - g1.scrollX) % (W * 2) - W * 0.15;
-    ctx.fillStyle = '#6b4a2a';
-    ctx.fillRect(px, groundY - 30, 8, 30);
-    ctx.fillRect(px - 5, groundY - 35, 18, 8);
-    ctx.fillRect(px + W * 0.08, groundY - 30, 8, 30);
-    ctx.fillRect(px + W * 0.08 - 5, groundY - 35, 18, 8);
-  }
-
-  // Red carpet
-  ctx.fillStyle = '#8b2020';
-  ctx.fillRect(0, groundY, W, H - groundY);
-  ctx.fillStyle = '#a83030';
-  ctx.fillRect(0, groundY, W, 4);
-
-  // Collectibles & obstacles
-  for (const c of g1.collectibles) {
-    if (c.collected) continue;
-    const cx = playerX + (c.d - g1.dist) * 2;
-    if (cx < -20 || cx > W + 20) continue;
-    const cy = groundY - 20 - c.y;
-    if (c.type === 'petal') {
-      ctx.fillStyle = '#ff69b4';
+    // Petals
+    const petalColors = ['#ffb7c5', '#ff91a4', '#ffc0cb', '#fff0f5'];
+    for (let i = petals.length - 1; i >= 0; i--) {
+      const p = petals[i];
+      p.x += p.vx + Math.sin(t * 2 + i) * 0.3;
+      p.y += p.vy;
+      p.rot += p.rotV;
+      if (p.y > H + 10) { p.y = -10; p.x = rand(0, W); }
+      if (p.x < -10) p.x = W + 10;
+      if (p.x > W + 10) p.x = -10;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = petalColors[i % petalColors.length];
       ctx.beginPath();
-      ctx.ellipse(cx, cy, 6, 4, animFrame * 0.05, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, p.size, p.size * 0.6, 0, 0, Math.PI * 2);
       ctx.fill();
-    } else {
-      ctx.fillStyle = '#ffd700';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffd700';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.restore();
     }
-    // Collision
-    if (!g1.done && Math.abs(cx - playerX) < 15 && Math.abs(cy - (groundY - 16 + g1.py)) < 20) {
-      c.collected = true;
-      g1.score += c.type === 'petal' ? 10 : 50;
-      if (c.type === 'ring') g1.speed = Math.min(6, g1.speed + 0.5);
-      for (let si = 0; si < 5; si++) {
-        g1.sparkles.push({ x: cx, y: cy, vx: (Math.random() - 0.5) * 4, vy: -Math.random() * 3, life: 30, color: c.type === 'petal' ? '#ff69b4' : '#ffd700' });
-      }
-    }
-  }
 
-  for (const o of g1.obstacles) {
-    if (o.hit) continue;
-    const ox = playerX + (o.d - g1.dist) * 2;
-    if (ox < -20 || ox > W + 20) continue;
-    const oy = groundY;
-    if (o.type === 'chair') {
-      ctx.fillStyle = '#8b6b4a';
-      ctx.fillRect(ox - 8, oy - 22, 16, 22);
-      ctx.fillRect(ox - 10, oy - 28, 20, 6);
-    } else if (o.type === 'cork') {
-      const corkY = oy - 30 - Math.abs(Math.sin((animFrame + o.d) * 0.08)) * 20;
-      ctx.fillStyle = '#c4a060';
-      ctx.beginPath();
-      ctx.ellipse(ox, corkY, 5, 7, 0.3, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      const progY = oy - 35 + Math.sin(animFrame * 0.03 + o.d) * 15;
-      ctx.fillStyle = '#f5f0e0';
-      ctx.fillRect(ox - 6, progY, 12, 16);
-      ctx.fillStyle = '#ccc';
-      ctx.fillRect(ox - 4, progY + 3, 8, 1);
-      ctx.fillRect(ox - 4, progY + 6, 8, 1);
-    }
-    // Collision
-    if (!g1.done && Math.abs(ox - playerX) < 12 && g1.py > -20) {
-      o.hit = true;
-      g1.score = Math.max(0, g1.score - 15);
-      g1.speed = Math.max(2, g1.speed - 0.3);
-    }
-  }
+    // Title
+    const titleY = H * 0.2 + Math.sin(t * 1.5) * 4;
+    drawTextOutline('Max & Julie\'s', W/2, titleY - 20 * scale, 22 * scale, '#ffd700', '#6b3a00', 'center');
+    drawTextOutline('Wedding Arcade', W/2, titleY + 14 * scale, 26 * scale, '#fff', '#4a2060', 'center');
+    drawTextOutline('at Lyndhurst', W/2, titleY + 42 * scale, 16 * scale, '#f5cc60', '#6b3a00', 'center');
 
-  // Player avatar (simplified)
-  const ppy = groundY - 16 + g1.py;
-  const runFrame = Math.floor(animFrame / 8) % 2;
-  ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(playerX - 4, ppy - 20, 8, 8);
-  const topCol = ['#2a2a4a', '#e88ca5', '#ff9944', '#1a1a2e', '#d4a8d4', '#666', '#ff6b8a'][playerAvatar.top % 7];
-  ctx.fillStyle = topCol;
-  ctx.fillRect(playerX - 5, ppy - 12, 10, 8);
-  const botCol = ['#2a2a3a', '#c44a7a', '#8b7355', '#e88ca5', '#4a6a9a', '#c44a7a'][playerAvatar.bottom % 6];
-  ctx.fillStyle = botCol;
-  ctx.fillRect(playerX - 4, ppy - 4, 8, 6);
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(playerX - 5, ppy + 2 + (runFrame * 2 - 1), 4, 3);
-  ctx.fillRect(playerX + 1, ppy + 2 - (runFrame * 2 - 1), 4, 3);
-  // Hair
-  ctx.fillStyle = HAIR_COLORS[playerAvatar.hairColor % HAIR_COLORS.length];
-  ctx.fillRect(playerX - 5, ppy - 23, 10, 5);
-
-  // Sparkles
-  for (let i = g1.sparkles.length - 1; i >= 0; i--) {
-    const sp = g1.sparkles[i];
-    sp.x += sp.vx;
-    sp.y += sp.vy;
-    sp.vy += 0.1;
-    sp.life--;
-    ctx.fillStyle = sp.color;
-    ctx.globalAlpha = sp.life / 30;
-    ctx.fillRect(sp.x - 2, sp.y - 2, 4, 4);
+    // Tap to Start pulsing
+    const pulse = 0.5 + Math.sin(t * 3) * 0.5;
+    ctx.globalAlpha = 0.5 + pulse * 0.5;
+    drawTextOutline('Tap to Start', W/2, H * 0.82, 18 * scale, '#fff', '#333', 'center');
     ctx.globalAlpha = 1;
-    if (sp.life <= 0) g1.sparkles.splice(i, 1);
+
+    // Pixel hearts
+    drawPixelHeart(ctx, W * 0.15, H * 0.78, scale * 5, '#ff6b8a');
+    drawPixelHeart(ctx, W * 0.85, H * 0.78, scale * 5, '#ff6b8a');
+
+    animId = requestAnimationFrame(loop);
   }
 
-  // Progress bar
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(W * 0.1, 12, W * 0.6, 10);
-  ctx.fillStyle = '#ffd700';
-  ctx.fillRect(W * 0.1, 12, W * 0.6 * Math.min(1, progress), 10);
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(W * 0.1, 12, W * 0.6, 10);
-
-  // Score
-  drawPixelText(`${g1.score}`, W * 0.92, 18, 10, '#ffd700', 'right', '#000');
-
-  // Check finish
-  if (g1.dist >= g1.maxDist && !g1.done) {
-    g1.done = true;
-    g1.doneTimer = 0;
-    scores.game1 = g1.score;
-    // Celebration sparkles
-    for (let i = 0; i < 30; i++) {
-      g1.sparkles.push({
-        x: W / 2 + (Math.random() - 0.5) * W * 0.6,
-        y: H * 0.5,
-        vx: (Math.random() - 0.5) * 6,
-        vy: -2 - Math.random() * 5,
-        life: 60 + Math.random() * 30,
-        color: ['#ffd700', '#ff69b4', '#87ceeb', '#ff4444', '#44ff44'][Math.floor(Math.random() * 5)]
-      });
-    }
-  }
-
-  // Done overlay
-  if (g1.done) {
-    g1.doneTimer++;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(0, 0, W, H);
-    drawPixelText('ALTAR REACHED!', W / 2, H * 0.35, 14, '#ffd700', 'center', '#000');
-    drawPixelText(`Score: ${g1.score}`, W / 2, H * 0.45, 12, '#fff', 'center', '#000');
-    if (g1.doneTimer > 60) {
-      const btnW = 140;
-      const btnH = 36;
-      drawButton('Continue', W / 2 - btnW / 2, H * 0.55, btnW, btnH, false);
-    }
-  }
-}
-
-/* ============================================================
-   SCREEN: STORM TRANSITION
-   ============================================================ */
-let stormTimer = 0;
-let lightningFlash = 0;
-
-function drawStormTransition() {
-  stormTimer++;
-  drawSky('storm');
-
-  // Lightning
-  if (Math.random() < 0.02) lightningFlash = 8;
-  if (lightningFlash > 0) {
-    ctx.fillStyle = `rgba(255,255,255,${lightningFlash / 10})`;
-    ctx.fillRect(0, 0, W, H);
-    lightningFlash--;
-  }
-
-  drawClouds(H * 0.08, 'storm', animFrame);
-  const groundY = H * 0.7;
-  drawMansion(W / 2, groundY, W / 380, 'storm');
-  drawLawn(groundY);
-
-  // Rain
-  ctx.strokeStyle = 'rgba(150,180,255,0.4)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 60; i++) {
-    const rx = (Math.random() * W + animFrame * 2) % W;
-    const ry = (Math.random() * H * 0.8 + animFrame * 5) % (H * 0.8);
-    ctx.beginPath();
-    ctx.moveTo(rx, ry);
-    ctx.lineTo(rx - 2, ry + 8);
-    ctx.stroke();
-  }
-
-  // Text
-  const boxY = H * 0.78;
-  ctx.fillStyle = 'rgba(0,0,0,0.8)';
-  ctx.beginPath();
-  ctx.roundRect(W * 0.05, boxY, W * 0.9, H * 0.12, 8);
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.font = `${Math.min(9, W * 0.02)}px "Press Start 2P"`;
-  ctx.textAlign = 'left';
-  wrapText("The rings are safe! But dark storm clouds gather over Lyndhurst...", W * 0.1, boxY + 18, W * 0.8, 15);
-
-  // Button
-  const btnW = 140;
-  const btnH = 36;
-  const btnX = W / 2 - btnW / 2;
-  const btnY = H * 0.92;
-  drawButton('Continue ▶', btnX, btnY, btnW, btnH, false);
-  tapCallbacks = [(x, y) => {
-    if (x >= btnX && x <= btnX + btnW && y >= btnY && y <= btnY + btnH) {
-      showScreen('witchIntro');
-      witchTimer = 0;
-      return true;
-    }
-    return false;
-  }];
-}
-
-/* ============================================================
-   SCREEN: WITCH AUNTIE INTRO
-   ============================================================ */
-let witchTimer = 0;
-let witchX = -60;
-let witchText = "It's going to pour! Quick, I need you as my assistant witch to cast a weather spell and clear these skies!";
-let witchCharIdx = 0;
-
-function drawWitchIntro() {
-  witchTimer++;
-  drawSky('storm');
-
-  // Lightning
-  if (Math.random() < 0.015) lightningFlash = 6;
-  if (lightningFlash > 0) {
-    ctx.fillStyle = `rgba(255,255,255,${lightningFlash / 10})`;
-    ctx.fillRect(0, 0, W, H);
-    lightningFlash--;
-  }
-
-  drawClouds(H * 0.08, 'storm', animFrame);
-  const groundY = H * 0.7;
-  drawMansion(W / 2, groundY, W / 380, 'storm');
-  drawLawn(groundY);
-
-  // Rain
-  ctx.strokeStyle = 'rgba(150,180,255,0.3)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 40; i++) {
-    const rx = (Math.random() * W + animFrame * 2) % W;
-    const ry = (Math.random() * H * 0.7 + animFrame * 5) % (H * 0.7);
-    ctx.beginPath();
-    ctx.moveTo(rx, ry);
-    ctx.lineTo(rx - 2, ry + 8);
-    ctx.stroke();
-  }
-
-  // Witch flies in
-  witchX = Math.min(W * 0.55, witchX + 3);
-  const witchY = H * 0.3 + Math.sin(animFrame * 0.04) * 10;
-
-  // Broom
-  ctx.fillStyle = '#8b6b3a';
-  ctx.fillRect(witchX - 25, witchY + 8, 50, 3);
-  ctx.fillStyle = '#c4a030';
-  ctx.fillRect(witchX + 20, witchY + 4, 12, 10);
-
-  // Body
-  ctx.fillStyle = '#4a2080';
-  ctx.fillRect(witchX - 6, witchY - 10, 12, 16);
-  // Head
-  ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(witchX - 4, witchY - 18, 8, 8);
-  // Hat
-  ctx.fillStyle = '#2a1050';
-  ctx.fillRect(witchX - 8, witchY - 22, 16, 4);
-  ctx.beginPath();
-  ctx.moveTo(witchX - 4, witchY - 22);
-  ctx.lineTo(witchX, witchY - 36);
-  ctx.lineTo(witchX + 4, witchY - 22);
-  ctx.closePath();
-  ctx.fill();
-  // Sparkly shawl
-  ctx.fillStyle = '#c8a8d8';
-  ctx.globalAlpha = 0.6;
-  ctx.fillRect(witchX - 8, witchY - 8, 16, 6);
-  ctx.globalAlpha = 1;
-
-  // Sparkle trail
-  for (let i = 0; i < 6; i++) {
-    const sx = witchX - 30 - i * 12 + Math.sin(animFrame * 0.1 + i) * 5;
-    const sy = witchY + Math.cos(animFrame * 0.08 + i * 1.5) * 8;
-    ctx.fillStyle = ['#ffd700', '#ff69b4', '#87ceeb'][i % 3];
-    ctx.globalAlpha = 0.7 - i * 0.1;
-    ctx.fillRect(sx - 2, sy - 2, 4, 4);
-  }
-  ctx.globalAlpha = 1;
-
-  // Dialog
-  witchCharIdx = Math.min(witchText.length, Math.floor(witchTimer / 2));
-  const boxY = H * 0.72;
-  const boxH = H * 0.15;
-  ctx.fillStyle = 'rgba(0,0,0,0.8)';
-  ctx.beginPath();
-  ctx.roundRect(W * 0.05, boxY, W * 0.9, boxH, 8);
-  ctx.fill();
-  ctx.strokeStyle = '#c8a8d8';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.fillStyle = '#fff';
-  ctx.font = `${Math.min(9, W * 0.02)}px "Press Start 2P"`;
-  ctx.textAlign = 'left';
-  wrapText(witchText.substring(0, witchCharIdx), W * 0.1, boxY + 16, W * 0.8, 15);
-
-  if (witchCharIdx >= witchText.length) {
-    const btnW = 180;
-    const btnH = 36;
-    const btnX = W / 2 - btnW / 2;
-    const btnY = H * 0.91;
-    drawButton('Cast the Spell!', btnX, btnY, btnW, btnH, false);
-    tapCallbacks = [(x, y) => {
-      if (x >= btnX && x <= btnX + btnW && y >= btnY && y <= btnY + btnH) {
-        showScreen('game2');
-        return true;
-      }
-      return false;
-    }];
-  }
-}
-
-/* ============================================================
-   GAME 2: DDR RHYTHM (DOM + Canvas hybrid)
-   ============================================================ */
-let g2 = {};
-
-function initGame2DOM() {
-  const el = document.getElementById('screenGame2');
-  el.innerHTML = `
-    <div class="ddr-canvas-wrap"><canvas id="ddrCanvas"></canvas></div>
-    <div class="ddr-buttons">
-      <button class="ddr-btn left" data-dir="0">⬅</button>
-      <button class="ddr-btn down" data-dir="1">⬇</button>
-      <button class="ddr-btn up" data-dir="2">⬆</button>
-      <button class="ddr-btn right" data-dir="3">➡</button>
-    </div>
-    <div class="ddr-score-overlay" id="ddrOverlay">
-      <div class="pixel-font" style="color:#ffd700;font-size:16px">SPELL COMPLETE!</div>
-      <div class="pixel-font" id="ddrFinalScore" style="font-size:14px">0</div>
-      <div class="pixel-font" id="ddrMaxCombo" style="font-size:10px;color:#c8a8d8">Max Combo: 0</div>
-      <button class="finale-btn gold" id="ddrContinue">Continue ▶</button>
-    </div>
-  `;
-
-  const ddrCanvas = document.getElementById('ddrCanvas');
-  const dCtx = ddrCanvas.getContext('2d');
-
-  g2 = {
-    canvas: ddrCanvas, ctx: dCtx,
-    arrows: [], score: 0, combo: 0, maxCombo: 0,
-    targetY: 0, laneW: 0,
-    elapsed: 0, duration: 3600, // 60 sec at 60fps
-    done: false, feedbacks: [],
-    cleared: 0, // 0-1 how cleared the sky is
-    witchX: 0, witchY: 0
-  };
-
-  // Generate arrows
-  const totalArrows = 90;
-  for (let i = 0; i < totalArrows; i++) {
-    g2.arrows.push({
-      lane: Math.floor(Math.random() * 4),
-      time: 120 + i * (g2.duration / totalArrows),
-      hit: false, missed: false,
-      y: -1 // computed
-    });
-  }
-
-  // Button events
-  document.querySelectorAll('.ddr-btn').forEach(btn => {
-    const handler = e => {
-      e.preventDefault();
-      if (g2.done) return;
-      const dir = parseInt(btn.dataset.dir);
-      hitDDR(dir);
-    };
-    btn.addEventListener('pointerdown', handler);
+  setCanvasHandler(function() {
+    initCharCreator();
   });
 
-  document.getElementById('ddrContinue').addEventListener('click', () => {
-    showScreen('clearSkies');
-    clearTimer = 0;
-  });
-
-  requestAnimationFrame(ddrLoop);
+  loop();
 }
 
-function hitDDR(lane) {
-  const targetY = g2.targetY;
-  let best = null;
-  let bestDist = Infinity;
-  for (const a of g2.arrows) {
-    if (a.lane !== lane || a.hit || a.missed) continue;
-    const dist = Math.abs(a.y - targetY);
-    if (dist < bestDist) { bestDist = dist; best = a; }
-  }
-  if (!best) return;
-  const multiplier = g2.combo >= 50 ? 3 : g2.combo >= 25 ? 2 : g2.combo >= 10 ? 1.5 : 1;
-  let label = '';
-  let pts = 0;
-  if (bestDist <= 8) { label = 'PERFECT'; pts = 100; }
-  else if (bestDist <= 20) { label = 'GREAT'; pts = 50; }
-  else if (bestDist <= 35) { label = 'GOOD'; pts = 25; }
-  else { return; }
+/* ═══════════════════════════════════════════
+   2. CHARACTER CREATOR
+   ═══════════════════════════════════════════ */
+function initCharCreator() {
+  showScreen('charCreator');
+  const el = document.getElementById('screen-charCreator');
+  if (!el) return;
 
-  best.hit = true;
-  pts = Math.floor(pts * multiplier);
-  g2.score += pts;
-  g2.combo++;
-  if (g2.combo > g2.maxCombo) g2.maxCombo = g2.combo;
-  g2.feedbacks.push({ text: label, x: g2.laneW * (lane + 0.5) + (g2.canvas.width * 0.1), y: g2.targetY, life: 40, color: label === 'PERFECT' ? '#ffd700' : label === 'GREAT' ? '#4ad94a' : '#4a90d9' });
+  const maxOpts = {hair:6, top:6, bottom:5, shoes:4, acc:5};
+  const hairColorNames = ['Brown','Black','Blonde','Red','Blue','Pink','Silver'];
+  let activeTab = 'hair';
 
-  // Perfect sparkle on witch
-  if (label === 'PERFECT') {
-    for (let i = 0; i < 3; i++) {
-      g2.feedbacks.push({
-        text: '✨', x: g2.witchX + (Math.random() - 0.5) * 30,
-        y: g2.witchY + (Math.random() - 0.5) * 20, life: 25, color: '#ffd700'
-      });
-    }
-  }
-}
+  function renderCreator() {
+    el.innerHTML =
+      '<div style="padding:12px;max-width:380px;margin:0 auto;color:#fff;text-align:center;">' +
+        '<h2 style="color:#ffd700;margin:4px 0 8px;font-size:20px;">Create Your Character</h2>' +
+        '<div style="margin-bottom:8px;">' +
+          '<label style="font-size:14px;">Your Name</label><br>' +
+          '<input id="ccName" type="text" value="' + playerName + '" maxlength="16" ' +
+            'style="font-size:16px;padding:6px 10px;border-radius:8px;border:2px solid #d4af37;' +
+            'background:#1a1a3e;color:#fff;text-align:center;width:180px;margin-top:4px;">' +
+        '</div>' +
+        '<canvas id="ccPreview" width="120" height="160" ' +
+          'style="display:block;margin:0 auto 8px;background:rgba(0,0,0,0.3);border-radius:12px;border:2px solid #d4af37;"></canvas>' +
+        '<div id="ccTabs" style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">' +
+          buildTabs() +
+        '</div>' +
+        '<div id="ccControls" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;">' +
+          buildControls() +
+        '</div>' +
+        '<button id="ccSave" style="font-size:18px;padding:10px 36px;border:none;border-radius:12px;' +
+          'background:linear-gradient(135deg,#d4af37,#f0d060);color:#1a1a3e;font-weight:bold;cursor:pointer;' +
+          'box-shadow:0 4px 12px rgba(212,175,55,0.4);">Save & Start!</button>' +
+      '</div>';
 
-function ddrLoop() {
-  if (currentScreen !== 'game2') return;
-  requestAnimationFrame(ddrLoop);
+    // Draw preview
+    setTimeout(drawPreview, 10);
 
-  const c = g2.canvas;
-  const parent = c.parentElement;
-  if (!parent) return;
-  c.width = parent.clientWidth * dpr;
-  c.height = parent.clientHeight * dpr;
-  c.style.width = parent.clientWidth + 'px';
-  c.style.height = parent.clientHeight + 'px';
-  const d = g2.ctx;
-  d.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const cW = parent.clientWidth;
-  const cH = parent.clientHeight;
-
-  if (!g2.done) g2.elapsed++;
-
-  g2.targetY = cH * 0.15;
-  const margin = cW * 0.1;
-  g2.laneW = (cW - margin * 2) / 4;
-  const laneColors = ['#ff69b4', '#4a90d9', '#4ad94a', '#ffd700'];
-  const arrowSymbols = ['◀', '▼', '▲', '▶'];
-  const scrollSpeed = cH / 90;
-
-  // Sky clearing
-  g2.cleared = Math.min(1, g2.score / 5000);
-
-  // Background — sky gradient based on clearing
-  const skyR = Math.floor(26 + g2.cleared * 100);
-  const skyG = Math.floor(26 + g2.cleared * 130);
-  const skyB = Math.floor(48 + g2.cleared * 160);
-  d.fillStyle = `rgb(${skyR},${skyG},${skyB})`;
-  d.fillRect(0, 0, cW, cH);
-
-  // Small mansion silhouette at bottom
-  const msY = cH * 0.85;
-  d.fillStyle = g2.cleared > 0.5 ? 'rgba(180,170,155,0.4)' : 'rgba(80,75,90,0.4)';
-  d.fillRect(cW * 0.25, msY, cW * 0.5, cH * 0.15);
-  d.fillRect(cW * 0.42, msY - cH * 0.08, cW * 0.08, cH * 0.08);
-  // Crenellations silhouette
-  for (let i = 0; i < 4; i++) {
-    if (i % 2 === 0) d.fillRect(cW * 0.42 + i * cW * 0.02, msY - cH * 0.1, cW * 0.02, cH * 0.02);
-  }
-
-  // Rainbow when > 75%
-  if (g2.cleared > 0.75) {
-    const rainbowColors = ['#ff000060', '#ff770060', '#ffff0060', '#00ff0060', '#0000ff60', '#4b008260'];
-    for (let i = 0; i < rainbowColors.length; i++) {
-      d.strokeStyle = rainbowColors[i];
-      d.lineWidth = 3;
-      d.beginPath();
-      d.arc(cW * 0.5, cH * 0.9, cW * (0.3 + i * 0.02), Math.PI, 0);
-      d.stroke();
-    }
-  }
-
-  // Storm clouds if not cleared
-  if (g2.cleared < 1) {
-    d.fillStyle = `rgba(40,40,60,${(1 - g2.cleared) * 0.6})`;
-    for (let i = 0; i < 5; i++) {
-      const cx = cW * 0.1 + i * cW * 0.2 + Math.sin(g2.elapsed * 0.003 + i) * 15;
-      d.beginPath();
-      d.ellipse(cx, cH * 0.7, 40, 15, 0, 0, Math.PI * 2);
-      d.fill();
-    }
-  }
-
-  // Lane backgrounds
-  for (let i = 0; i < 4; i++) {
-    const lx = margin + i * g2.laneW;
-    d.fillStyle = 'rgba(255,255,255,0.05)';
-    d.fillRect(lx, 0, g2.laneW, cH);
-    d.strokeStyle = 'rgba(255,255,255,0.1)';
-    d.lineWidth = 1;
-    d.strokeRect(lx, 0, g2.laneW, cH);
-  }
-
-  // Target zones
-  for (let i = 0; i < 4; i++) {
-    const lx = margin + i * g2.laneW;
-    d.strokeStyle = laneColors[i];
-    d.lineWidth = 2;
-    d.globalAlpha = 0.5 + Math.sin(g2.elapsed * 0.06) * 0.2;
-    d.strokeRect(lx + 4, g2.targetY - 15, g2.laneW - 8, 30);
-    d.globalAlpha = 1;
-  }
-
-  // Arrows
-  for (const a of g2.arrows) {
-    if (a.hit) continue;
-    a.y = g2.targetY + (a.time - g2.elapsed) * scrollSpeed * -0.3;
-    if (a.y > cH + 30) continue;
-    if (a.y < -30) continue;
-
-    // Check miss
-    if (!a.missed && a.y < g2.targetY - 40) {
-      a.missed = true;
-      g2.combo = 0;
-    }
-
-    if (a.missed) continue;
-
-    const lx = margin + a.lane * g2.laneW + g2.laneW / 2;
-    d.fillStyle = laneColors[a.lane];
-    d.font = `${Math.min(24, g2.laneW * 0.5)}px "Press Start 2P"`;
-    d.textAlign = 'center';
-    d.textBaseline = 'middle';
-    d.fillText(arrowSymbols[a.lane], lx, a.y);
-  }
-
-  // Witch flying around
-  g2.witchX = cW * 0.7 + Math.sin(g2.elapsed * 0.02) * cW * 0.15;
-  g2.witchY = cH * 0.55 + Math.cos(g2.elapsed * 0.015) * 20;
-  d.fillStyle = '#4a2080';
-  d.fillRect(g2.witchX - 4, g2.witchY - 6, 8, 10);
-  d.fillStyle = '#f0c8a0';
-  d.fillRect(g2.witchX - 3, g2.witchY - 12, 6, 6);
-  d.fillStyle = '#2a1050';
-  d.fillRect(g2.witchX - 5, g2.witchY - 14, 10, 3);
-  d.beginPath();
-  d.moveTo(g2.witchX - 2, g2.witchY - 14);
-  d.lineTo(g2.witchX, g2.witchY - 22);
-  d.lineTo(g2.witchX + 2, g2.witchY - 14);
-  d.fill();
-  d.fillStyle = '#8b6b3a';
-  d.fillRect(g2.witchX - 15, g2.witchY + 3, 30, 2);
-
-  // Feedbacks
-  for (let i = g2.feedbacks.length - 1; i >= 0; i--) {
-    const f = g2.feedbacks[i];
-    f.life--;
-    f.y -= 1.5;
-    d.fillStyle = f.color;
-    d.globalAlpha = f.life / 40;
-    d.font = '10px "Press Start 2P"';
-    d.textAlign = 'center';
-    d.fillText(f.text, f.x, f.y);
-    d.globalAlpha = 1;
-    if (f.life <= 0) g2.feedbacks.splice(i, 1);
-  }
-
-  // Score / combo display
-  d.fillStyle = '#fff';
-  d.font = '10px "Press Start 2P"';
-  d.textAlign = 'right';
-  d.fillText(`${g2.score}`, cW - 10, 20);
-  if (g2.combo > 5) {
-    d.fillStyle = '#ffd700';
-    d.font = '8px "Press Start 2P"';
-    d.fillText(`${g2.combo}x combo`, cW - 10, 34);
-  }
-
-  // Multiplier indicator
-  const mult = g2.combo >= 50 ? '3x' : g2.combo >= 25 ? '2x' : g2.combo >= 10 ? '1.5x' : '1x';
-  d.fillStyle = '#c8a8d8';
-  d.font = '8px "Press Start 2P"';
-  d.textAlign = 'left';
-  d.fillText(`${mult}`, 10, 20);
-
-  // Check done
-  if (!g2.done && g2.elapsed > g2.duration + 120) {
-    g2.done = true;
-    scores.game2 = g2.score;
-    const overlay = document.getElementById('ddrOverlay');
-    document.getElementById('ddrFinalScore').textContent = `Score: ${g2.score}`;
-    document.getElementById('ddrMaxCombo').textContent = `Max Combo: ${g2.maxCombo}`;
-    overlay.classList.add('active');
-  }
-}
-
-/* ============================================================
-   SCREEN: CLEAR SKIES
-   ============================================================ */
-let clearTimer = 0;
-
-function drawClearSkies() {
-  clearTimer++;
-  drawSky('clear');
-
-  // Rainbow
-  drawRainbow(W * 0.5, H * 0.6, W * 0.35);
-
-  drawClouds(H * 0.1, 'clear', animFrame);
-  drawBirds(animFrame);
-
-  const groundY = H * 0.7;
-  drawCherryTree(W * 0.15, groundY, H * 0.22, false);
-  drawCherryTree(W * 0.85, groundY, H * 0.2, true);
-  drawMansion(W / 2, groundY, W / 380, 'clear');
-  drawLawn(groundY);
-  updatePetals();
-
-  // Witch waving
-  const wy = H * 0.25 + Math.sin(animFrame * 0.03) * 8;
-  ctx.fillStyle = '#8b6b3a';
-  ctx.fillRect(W * 0.65 - 15, wy + 5, 30, 2);
-  ctx.fillStyle = '#4a2080';
-  ctx.fillRect(W * 0.65 - 4, wy - 6, 8, 10);
-  ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(W * 0.65 - 3, wy - 12, 6, 6);
-  // Waving arm
-  ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(W * 0.65 + 5, wy - 10 + Math.sin(animFrame * 0.1) * 3, 4, 6);
-  ctx.fillStyle = '#2a1050';
-  ctx.fillRect(W * 0.65 - 5, wy - 14, 10, 3);
-  ctx.beginPath();
-  ctx.moveTo(W * 0.65 - 2, wy - 14);
-  ctx.lineTo(W * 0.65, wy - 22);
-  ctx.lineTo(W * 0.65 + 2, wy - 14);
-  ctx.closePath();
-  ctx.fill();
-
-  // Text
-  const boxY = H * 0.78;
-  ctx.fillStyle = 'rgba(0,0,0,0.7)';
-  ctx.beginPath();
-  ctx.roundRect(W * 0.05, boxY, W * 0.9, H * 0.1, 8);
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.font = `${Math.min(8, W * 0.018)}px "Press Start 2P"`;
-  ctx.textAlign = 'left';
-  wrapText("The sky is clear! Time for the ceremony... and the first kiss!", W * 0.1, boxY + 16, W * 0.8, 14);
-
-  const btnW = 140;
-  const btnH = 36;
-  const btnX = W / 2 - btnW / 2;
-  const btnY = H * 0.92;
-  drawButton('Continue ▶', btnX, btnY, btnW, btnH, false);
-  tapCallbacks = [(x, y) => {
-    if (x >= btnX && x <= btnX + btnW && y >= btnY && y <= btnY + btnH) {
-      showScreen('game3');
-      initGame3();
-      return true;
-    }
-    return false;
-  }];
-}
-
-/* ============================================================
-   GAME 3: KISS CANNONS
-   ============================================================ */
-let g3 = {};
-
-function initGame3() {
-  g3 = {
-    score: 0, round: 0, totalRounds: 4,
-    needleAngle: 0, needleSpeed: 1.5,
-    speedMults: [1, 1.3, 1.6, 2],
-    state: 'aiming', // aiming, celebrating, roundEnd, done
-    timer: 0, confetti: [], feedback: ''
-  };
-  tapCallbacks = [(x, y) => {
-    if (g3.state === 'aiming') {
-      // Calculate score based on needle position
-      const norm = (Math.sin(g3.needleAngle) + 1) / 2; // 0-1
-      const center = Math.abs(norm - 0.5) * 2; // 0 = center, 1 = edge
-      let pts = 0;
-      if (center <= 0.08) { pts = 100; g3.feedback = 'PERFECT!'; }
-      else if (center <= 0.2) { pts = 60; g3.feedback = 'GREAT!'; }
-      else if (center <= 0.4) { pts = 30; g3.feedback = 'GOOD'; }
-      else { pts = 0; g3.feedback = 'MISS'; }
-      g3.score += pts;
-      g3.state = 'celebrating';
-      g3.timer = 0;
-      // Confetti
-      if (pts > 0) {
-        const intensity = pts >= 100 ? 40 : pts >= 60 ? 25 : 10;
-        for (let i = 0; i < intensity; i++) {
-          g3.confetti.push({
-            x: W * (0.15 + Math.random() * 0.7),
-            y: H * 0.4,
-            vx: (Math.random() - 0.5) * 8,
-            vy: -3 - Math.random() * 6,
-            color: ['#ffd700', '#ff69b4', '#87ceeb', '#ff4444', '#44ff44', '#ff8800', '#aa44ff'][Math.floor(Math.random() * 7)],
-            life: 60 + Math.random() * 40,
-            size: 3 + Math.random() * 4
-          });
-        }
-      }
-      return true;
-    }
-    if (g3.state === 'roundEnd') {
-      g3.round++;
-      if (g3.round >= g3.totalRounds) {
-        g3.state = 'done';
-        scores.game3 = g3.score;
-        g3.timer = 0;
-      } else {
-        g3.state = 'aiming';
-        g3.needleAngle = 0;
-      }
-      return true;
-    }
-    if (g3.state === 'done' && g3.timer > 90) {
-      showScreen('finale');
-      return true;
-    }
-    return false;
-  }];
-}
-
-function drawGame3() {
-  // Interior scene with Gothic arches
-  ctx.fillStyle = '#3a3530';
-  ctx.fillRect(0, 0, W, H);
-
-  // Arched ceiling
-  ctx.fillStyle = '#4a4540';
-  for (let i = 0; i < 3; i++) {
-    const ax = W * (0.2 + i * 0.3);
-    ctx.beginPath();
-    ctx.moveTo(ax - W * 0.15, H * 0.5);
-    ctx.quadraticCurveTo(ax, H * 0.02, ax + W * 0.15, H * 0.5);
-    ctx.lineTo(ax + W * 0.15, 0);
-    ctx.lineTo(ax - W * 0.15, 0);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // Gothic arch frames
-  ctx.strokeStyle = '#8b7d6b';
-  ctx.lineWidth = 4;
-  for (let i = 0; i < 3; i++) {
-    const ax = W * (0.2 + i * 0.3);
-    ctx.beginPath();
-    ctx.moveTo(ax - W * 0.12, H * 0.55);
-    ctx.quadraticCurveTo(ax, H * 0.08, ax + W * 0.12, H * 0.55);
-    ctx.stroke();
-  }
-
-  // Altar
-  ctx.fillStyle = '#f5f0e0';
-  ctx.fillRect(W * 0.35, H * 0.45, W * 0.3, H * 0.08);
-  ctx.fillStyle = '#e8e0d0';
-  ctx.fillRect(W * 0.38, H * 0.53, W * 0.24, H * 0.12);
-
-  // Couple
-  // Person 1 (left)
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(W * 0.42, H * 0.28, 14, 18);
-  ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(W * 0.43, H * 0.22, 12, 8);
-  ctx.fillStyle = '#2a2a3a';
-  ctx.fillRect(W * 0.43, H * 0.19, 12, 4);
-
-  // Person 2 (right)
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(W * 0.54, H * 0.26, 16, 20);
-  ctx.fillStyle = '#f0c8a0';
-  ctx.fillRect(W * 0.55, H * 0.20, 12, 8);
-  ctx.fillStyle = '#5a3825';
-  ctx.fillRect(W * 0.54, H * 0.18, 14, 4);
-  // Veil
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  ctx.fillRect(W * 0.56, H * 0.17, 12, 16);
-
-  // Confetti cannons
-  const cannonPositions = [
-    { x: W * 0.08, y: H * 0.4 },
-    { x: W * 0.22, y: H * 0.35 },
-    { x: W * 0.78, y: H * 0.35 },
-    { x: W * 0.92, y: H * 0.4 }
-  ];
-  for (const cp of cannonPositions) {
-    ctx.fillStyle = '#c44a7a';
-    ctx.fillRect(cp.x - 6, cp.y, 12, 24);
-    ctx.fillStyle = '#e88ca5';
-    ctx.fillRect(cp.x - 8, cp.y - 4, 16, 6);
-    ctx.fillStyle = '#ffd700';
-    ctx.fillRect(cp.x - 2, cp.y - 2, 4, 4);
-  }
-
-  // Mazel Tov Meter
-  const meterY = H * 0.72;
-  const meterW = W * 0.7;
-  const meterX = W * 0.15;
-  const meterH = 30;
-
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.beginPath();
-  ctx.roundRect(meterX - 10, meterY - 5, meterW + 20, meterH + 10, 8);
-  ctx.fill();
-
-  // Meter zones
-  const zones = [
-    { start: 0, end: 0.3, color: '#555' },
-    { start: 0.3, end: 0.4, color: '#4a6a9a' },
-    { start: 0.4, end: 0.46, color: '#4ad94a' },
-    { start: 0.46, end: 0.54, color: '#ffd700' },
-    { start: 0.54, end: 0.6, color: '#4ad94a' },
-    { start: 0.6, end: 0.7, color: '#4a6a9a' },
-    { start: 0.7, end: 1, color: '#555' }
-  ];
-  for (const z of zones) {
-    ctx.fillStyle = z.color;
-    ctx.fillRect(meterX + meterW * z.start, meterY, meterW * (z.end - z.start), meterH);
-  }
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(meterX, meterY, meterW, meterH);
-
-  // Update state
-  g3.timer++;
-  if (g3.state === 'aiming') {
-    const speedMult = g3.speedMults[g3.round % g3.speedMults.length];
-    g3.needleAngle += 0.04 * speedMult * g3.needleSpeed;
-  } else if (g3.state === 'celebrating' && g3.timer > 60) {
-    g3.state = 'roundEnd';
-    g3.timer = 0;
-  }
-
-  // Needle
-  const needleNorm = (Math.sin(g3.needleAngle) + 1) / 2;
-  const needleX = meterX + meterW * needleNorm;
-  ctx.fillStyle = '#ff4444';
-  ctx.beginPath();
-  ctx.moveTo(needleX, meterY - 6);
-  ctx.lineTo(needleX - 5, meterY - 14);
-  ctx.lineTo(needleX + 5, meterY - 14);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillRect(needleX - 1, meterY, 2, meterH);
-
-  // Confetti particles
-  for (let i = g3.confetti.length - 1; i >= 0; i--) {
-    const p = g3.confetti[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.15;
-    p.vx *= 0.99;
-    p.life--;
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = Math.min(1, p.life / 20);
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.life * 0.1);
-    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-    ctx.restore();
-    ctx.globalAlpha = 1;
-    if (p.life <= 0) g3.confetti.splice(i, 1);
-  }
-
-  // Round indicator
-  drawPixelText(`Round ${g3.round + 1}/${g3.totalRounds}`, W / 2, H * 0.12, 10, '#fff', 'center', '#000');
-  drawPixelText(`Score: ${g3.score}`, W * 0.85, H * 0.12, 8, '#ffd700', 'center', '#000');
-
-  // Feedback text
-  if (g3.state === 'celebrating' || g3.state === 'roundEnd') {
-    const fbColor = g3.feedback === 'PERFECT!' ? '#ffd700' : g3.feedback === 'GREAT!' ? '#4ad94a' : g3.feedback === 'GOOD' ? '#4a90d9' : '#ff4444';
-    const fbScale = g3.state === 'celebrating' ? Math.min(1, g3.timer / 10) : 1;
-    drawPixelText(g3.feedback, W / 2, H * 0.2, 14 * fbScale, fbColor, 'center', '#000');
-  }
-
-  if (g3.state === 'roundEnd') {
-    drawPixelText('Tap for next round', W / 2, H * 0.88, 8, '#ccc', 'center', false);
-  }
-
-  // Done overlay
-  if (g3.state === 'done') {
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, W, H);
-    drawPixelText('MAZEL TOV!', W / 2, H * 0.35, 16, '#ffd700', 'center', '#000');
-    drawPixelText(`Total: ${g3.score}`, W / 2, H * 0.45, 12, '#fff', 'center', '#000');
-    const verdict = g3.score >= 250 ? 'AMAZING!' : g3.score >= 150 ? 'Nice!' : 'Good try!';
-    drawPixelText(verdict, W / 2, H * 0.55, 10, '#e88ca5', 'center', false);
-    if (g3.timer > 90) {
-      const btnW = 140;
-      const btnH = 36;
-      drawButton('Continue', W / 2 - btnW / 2, H * 0.65, btnW, btnH, false);
-    }
-
-    // Celebration confetti
-    if (g3.timer % 8 === 0 && g3.score >= 250) {
-      for (let i = 0; i < 5; i++) {
-        g3.confetti.push({
-          x: Math.random() * W, y: -10,
-          vx: (Math.random() - 0.5) * 4, vy: 1 + Math.random() * 3,
-          color: ['#ffd700', '#ff69b4', '#87ceeb', '#ff4444'][Math.floor(Math.random() * 4)],
-          life: 80, size: 4
+    // Attach events
+    setTimeout(function() {
+      const nameInput = document.getElementById('ccName');
+      if (nameInput) {
+        nameInput.addEventListener('input', function() {
+          playerName = this.value || 'Guest';
         });
       }
+
+      const tabs = document.querySelectorAll('.cc-tab');
+      for (let i = 0; i < tabs.length; i++) {
+        tabs[i].addEventListener('click', function() {
+          activeTab = this.dataset.tab;
+          renderCreator();
+        });
+      }
+
+      const leftBtn = document.getElementById('ccLeft');
+      const rightBtn = document.getElementById('ccRight');
+      const colorBtn = document.getElementById('ccColor');
+      if (leftBtn) leftBtn.addEventListener('click', function() {
+        const key = activeTab;
+        avatar[key] = (avatar[key] - 1 + maxOpts[key]) % maxOpts[key];
+        renderCreator();
+      });
+      if (rightBtn) rightBtn.addEventListener('click', function() {
+        const key = activeTab;
+        avatar[key] = (avatar[key] + 1) % maxOpts[key];
+        renderCreator();
+      });
+      if (colorBtn) colorBtn.addEventListener('click', function() {
+        avatar.hairColor = (avatar.hairColor + 1) % hairColorNames.length;
+        renderCreator();
+      });
+
+      const saveBtn = document.getElementById('ccSave');
+      if (saveBtn) saveBtn.addEventListener('click', function() {
+        playerName = (document.getElementById('ccName') ? document.getElementById('ccName').value : '') || 'Guest';
+        try {
+          localStorage.setItem('wg_avatar', JSON.stringify(avatar));
+          localStorage.setItem('wg_name', playerName);
+        } catch(e) {}
+        initStoryIntro();
+      });
+    }, 20);
+  }
+
+  function buildTabs() {
+    const names = ['hair','top','bottom','shoes','acc'];
+    const labels = ['Hair','Top','Bottom','Shoes','Acc'];
+    let html = '';
+    for (let i = 0; i < names.length; i++) {
+      const isActive = activeTab === names[i];
+      html += '<button class="cc-tab" data-tab="' + names[i] + '" style="font-size:13px;padding:5px 10px;' +
+        'border:2px solid ' + (isActive ? '#ffd700' : '#555') + ';border-radius:8px;' +
+        'background:' + (isActive ? '#d4af37' : '#2a2a5e') + ';color:' + (isActive ? '#1a1a3e' : '#ccc') + ';' +
+        'cursor:pointer;font-weight:' + (isActive ? 'bold' : 'normal') + ';">' + labels[i] + '</button>';
+    }
+    return html;
+  }
+
+  function buildControls() {
+    const key = activeTab;
+    const val = avatar[key];
+    const mx = maxOpts[key];
+    let html = '<button id="ccLeft" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;' +
+      'background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">◀</button>' +
+      '<span style="font-size:16px;min-width:60px;display:inline-block;">' +
+        activeTab.charAt(0).toUpperCase() + activeTab.slice(1) + ' ' + (val + 1) + '/' + mx +
+      '</span>' +
+      '<button id="ccRight" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;' +
+      'background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">▶</button>';
+    if (key === 'hair') {
+      html += '<button id="ccColor" style="font-size:12px;padding:5px 8px;border:none;border-radius:8px;' +
+        'background:#6b3a8a;color:#fff;cursor:pointer;margin-left:4px;">' +
+        hairColorNames[avatar.hairColor] + '</button>';
+    }
+    return html;
+  }
+
+  function drawPreview() {
+    const pc = document.getElementById('ccPreview');
+    if (!pc) return;
+    const pCtx = pc.getContext('2d');
+    pCtx.clearRect(0, 0, 120, 160);
+    drawChibiSprite(pCtx, 60, 100, 3.5, {
+      hair: avatar.hair,
+      hairColor: avatar.hairColor,
+      top: avatar.top,
+      bottom: avatar.bottom,
+      shoes: avatar.shoes,
+      acc: avatar.acc,
+      frame: 0
+    });
+  }
+
+  renderCreator();
+}
+
+/* ═══════════════════════════════════════════
+   3. STORY INTRO
+   ═══════════════════════════════════════════ */
+function initStoryIntro() {
+  showScreen('canvas');
+  const dialogLines = [
+    'Oh no! The wedding is about to start...',
+    'But the flower petals are scattered!',
+    'The rings are missing!',
+    'Can you help get everything ready?'
+  ];
+  let charIdx = 0;
+  let lineIdx = 0;
+  let displayText = '';
+  let t = 0;
+  let showButton = false;
+  const btnX = W/2, btnY = H * 0.88, btnW = 160 * scale, btnH = 44 * scale;
+
+  function loop() {
+    if (currentScreen !== 'canvas') return;
+    t += 0.016;
+    ctx.clearRect(0, 0, W, H);
+
+    // Sky
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.5);
+    skyGrad.addColorStop(0, '#f5cc60');
+    skyGrad.addColorStop(1, '#e8a040');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H * 0.5);
+
+    // Lawn
+    ctx.fillStyle = '#4a8c3f';
+    ctx.fillRect(0, H * 0.42, W, H * 0.58);
+
+    // Path
+    ctx.fillStyle = '#c4a86a';
+    ctx.beginPath();
+    ctx.moveTo(W * 0.35, H * 0.5);
+    ctx.lineTo(W * 0.65, H * 0.5);
+    ctx.lineTo(W * 0.7, H);
+    ctx.lineTo(W * 0.3, H);
+    ctx.fill();
+
+    // Mansion (smaller, background)
+    drawMansion(ctx, W * 0.5, H * 0.32, scale * 0.5, 'golden', W, H);
+
+    // Cherry blossom tree
+    drawCherryBlossomTree(ctx, W * 0.15, H * 0.48, scale * 0.6);
+
+    // Characters on path
+    const bounce = Math.sin(t * 3) * 3;
+    drawFlowerGirl(ctx, W * 0.35, H * 0.62 + bounce, scale * 2.5);
+    drawRingBearer(ctx, W * 0.5, H * 0.65 + bounce, scale * 2.5);
+    drawDogWithBowtie(ctx, W * 0.65, H * 0.64 + bounce, scale * 2.5);
+
+    // Typewriter
+    if (lineIdx < dialogLines.length) {
+      const line = dialogLines[lineIdx];
+      if (charIdx < line.length) {
+        charIdx += 0.6;
+        displayText = line.substring(0, Math.floor(charIdx));
+      } else if (t % 3 < 0.02 && lineIdx < dialogLines.length - 1) {
+        lineIdx++;
+        charIdx = 0;
+        displayText = '';
+      } else if (lineIdx === dialogLines.length - 1 && charIdx >= line.length) {
+        showButton = true;
+      }
+    }
+
+    // Dialog box
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    const dbY = H * 0.72;
+    const dbH = H * 0.12;
+    ctx.beginPath();
+    const dbR = 12;
+    ctx.moveTo(20 + dbR, dbY);
+    ctx.lineTo(W - 20 - dbR, dbY);
+    ctx.quadraticCurveTo(W - 20, dbY, W - 20, dbY + dbR);
+    ctx.lineTo(W - 20, dbY + dbH - dbR);
+    ctx.quadraticCurveTo(W - 20, dbY + dbH, W - 20 - dbR, dbY + dbH);
+    ctx.lineTo(20 + dbR, dbY + dbH);
+    ctx.quadraticCurveTo(20, dbY + dbH, 20, dbY + dbH - dbR);
+    ctx.lineTo(20, dbY + dbR);
+    ctx.quadraticCurveTo(20, dbY, 20 + dbR, dbY);
+    ctx.fill();
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = (14 * scale) + 'px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(displayText, W/2, dbY + dbH/2);
+
+    if (showButton) {
+      drawButton('Help Them!', btnX, btnY, btnW, btnH, '#d4af37', '#1a1a3e');
+    }
+
+    animId = requestAnimationFrame(loop);
+  }
+
+  setCanvasHandler(function(e) {
+    if (!showButton) {
+      // Advance text quickly
+      if (lineIdx < dialogLines.length) {
+        charIdx = dialogLines[lineIdx].length;
+        if (lineIdx < dialogLines.length - 1) {
+          lineIdx++;
+          charIdx = 0;
+          displayText = '';
+        } else {
+          showButton = true;
+        }
+      }
+      return;
+    }
+    const p = getCanvasXY(e);
+    if (hitBtn(p.x, p.y, btnX, btnY, btnW, btnH)) {
+      initGame1();
+    }
+  });
+
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   4. GAME 1 — AISLE RUNNER
+   ═══════════════════════════════════════════ */
+function initGame1() {
+  showScreen('canvas');
+
+  let dist = 0;
+  const maxDist = 1500;
+  let speed = 2.5;
+  let score = 0;
+  let t = 0;
+
+  // Player
+  const py = { y: H * 0.7, vy: 0, jumping: false, frame: 0, jumpHeld: false, jumpStart: 0 };
+  const groundY = H * 0.72;
+  const gravity = 0.6;
+
+  // Collectibles & obstacles
+  const items = [];
+  let nextSpawn = 50;
+
+  // Particles
+  const particles = [];
+
+  // State
+  let finished = false;
+  let jumpHeld = false;
+  let jumpStartTime = 0;
+
+  function spawnItem() {
+    const r = Math.random();
+    if (r < 0.35) {
+      // Petal
+      items.push({type:'petal', x: W + 20, y: groundY - rand(20, 80), w:16, h:16, collected:false});
+    } else if (r < 0.5) {
+      // Ring
+      items.push({type:'ring', x: W + 20, y: groundY - rand(40, 100), w:18, h:18, collected:false});
+    } else if (r < 0.7) {
+      // Chair
+      items.push({type:'chair', x: W + 20, y: groundY, w:24, h:28, collected:false});
+    } else if (r < 0.85) {
+      // Cork (arc)
+      items.push({type:'cork', x: W + 20, y: groundY - 60, w:12, h:12, collected:false, vy:-2, vx:-1});
+    } else {
+      // Program (falling)
+      items.push({type:'program', x: W * 0.3 + rand(0, W * 0.5), y: -20, w:16, h:20, collected:false, vy:1.5});
     }
   }
+
+  // Touch/click for jump
+  function onDown(e) {
+    e.preventDefault();
+    if (finished) {
+      const p = getCanvasXY(e);
+      if (hitBtn(p.x, p.y, W/2, H * 0.65, 160 * scale, 44 * scale)) {
+        initStormTransition();
+      }
+      return;
+    }
+    if (!py.jumping) {
+      py.jumping = true;
+      py.vy = -10;
+      jumpHeld = true;
+      jumpStartTime = performance.now();
+    }
+  }
+  function onUp() {
+    jumpHeld = false;
+  }
+
+  setCanvasHandler(onDown);
+  C.addEventListener('touchend', onUp);
+  C.addEventListener('mouseup', onUp);
+
+  function loop() {
+    if (currentScreen !== 'canvas') return;
+    t += 0.016;
+
+    if (!finished) {
+      dist += speed;
+      speed = 2.5 + (dist / maxDist) * 2;
+      py.frame = (py.frame + 0.15) % 2;
+
+      // Jump physics
+      if (py.jumping) {
+        // Variable jump: hold for more height (max 200ms)
+        if (jumpHeld && performance.now() - jumpStartTime < 200) {
+          py.vy -= 0.3;
+        }
+        py.vy += gravity;
+        py.y += py.vy;
+        if (py.y >= groundY) {
+          py.y = groundY;
+          py.vy = 0;
+          py.jumping = false;
+        }
+      }
+
+      // Spawn items
+      nextSpawn -= speed;
+      if (nextSpawn <= 0) {
+        spawnItem();
+        nextSpawn = rand(40, 90);
+      }
+
+      // Update items
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (it.type === 'cork') {
+          it.x += (it.vx || 0) * speed * 0.5 - speed;
+          it.y += it.vy;
+          it.vy += 0.08;
+        } else if (it.type === 'program') {
+          it.vy += 0.02;
+          it.y += it.vy;
+          it.x -= speed * 0.2;
+        } else {
+          it.x -= speed;
+        }
+
+        // Remove off-screen
+        if (it.x < -40 || it.y > H + 40) {
+          items.splice(i, 1);
+          continue;
+        }
+
+        if (it.collected) continue;
+
+        // Collision with player
+        const px = W * 0.2;
+        const pW = 20, pH = 30;
+        if (it.x < px + pW && it.x + it.w > px - pW &&
+            it.y < py.y && it.y + it.h > py.y - pH) {
+          if (it.type === 'petal') {
+            score += 10;
+            it.collected = true;
+            for (let j = 0; j < 5; j++) {
+              particles.push({x: it.x, y: it.y, vx: rand(-2, 2), vy: rand(-3, 0),
+                life: 30, color: '#ffb7c5', size: rand(2, 4)});
+            }
+          } else if (it.type === 'ring') {
+            score += 50;
+            it.collected = true;
+            speed += 0.5;
+            for (let j = 0; j < 8; j++) {
+              particles.push({x: it.x, y: it.y, vx: rand(-2, 2), vy: rand(-3, 0),
+                life: 40, color: '#ffd700', size: rand(2, 5)});
+            }
+          } else if (it.type === 'chair' || it.type === 'cork' || it.type === 'program') {
+            // Hit obstacle — stumble (brief slowdown)
+            speed = Math.max(1.5, speed - 1);
+            it.collected = true;
+            for (let j = 0; j < 4; j++) {
+              particles.push({x: px, y: py.y, vx: rand(-2, 2), vy: rand(-2, 0),
+                life: 20, color: '#ff4444', size: rand(2, 4)});
+            }
+          }
+        }
+      }
+
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      if (dist >= maxDist) {
+        finished = true;
+        scores.game1 = score;
+      }
+    }
+
+    // DRAW
+    ctx.clearRect(0, 0, W, H);
+
+    // Parallax sky/walls
+    const stormAlpha = dist > maxDist * 0.8 ? (dist - maxDist * 0.8) / (maxDist * 0.2) : 0;
+    const skyBase = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+    skyBase.addColorStop(0, '#3a2040');
+    skyBase.addColorStop(1, '#6a4070');
+    ctx.fillStyle = skyBase;
+    ctx.fillRect(0, 0, W, H * 0.3);
+
+    // Windows in background
+    for (let i = 0; i < 3; i++) {
+      const wx = ((i * W/3 + 50 - dist * 0.2) % (W + 100)) - 50;
+      drawGothicWindow(ctx, wx, H * 0.05, 40 * scale, 70 * scale,
+        stormAlpha > 0 ? 'rgba(60,60,80,0.8)' : 'rgba(200,180,255,0.3)', '#8b7355');
+    }
+
+    // Storm clouds in windows
+    if (stormAlpha > 0) {
+      ctx.globalAlpha = stormAlpha * 0.5;
+      ctx.fillStyle = '#2a2a3a';
+      for (let i = 0; i < 4; i++) {
+        const cx = ((i * 100 + t * 30) % (W + 60)) - 30;
+        ctx.beginPath();
+        ctx.ellipse(cx, H * 0.1, 40, 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Walls
+    ctx.fillStyle = '#5a4a60';
+    ctx.fillRect(0, H * 0.28, W, H * 0.15);
+
+    // Columns
+    for (let i = 0; i < 5; i++) {
+      const cx = ((i * W/4 + 30 - dist * 0.5) % (W + 80)) - 40;
+      ctx.fillStyle = '#8b7355';
+      ctx.fillRect(cx, H * 0.25, 14 * scale, H * 0.2);
+      // Column cap
+      ctx.fillStyle = '#a08a60';
+      ctx.fillRect(cx - 3, H * 0.25, 20 * scale, 6);
+    }
+
+    // Tapestries
+    for (let i = 0; i < 3; i++) {
+      const tx = ((i * W/2.5 + 80 - dist * 0.5) % (W + 100)) - 50;
+      ctx.fillStyle = '#8b2252';
+      ctx.fillRect(tx, H * 0.3, 20 * scale, 30 * scale);
+      ctx.fillStyle = '#d4af37';
+      ctx.fillRect(tx + 2, H * 0.3 + 2, 16 * scale, 2);
+    }
+
+    // Pews
+    for (let i = 0; i < 6; i++) {
+      const px = ((i * W/5 + 20 - dist * 1.2) % (W + 80)) - 40;
+      ctx.fillStyle = '#6b4226';
+      ctx.fillRect(px, groundY - 5, 30 * scale, 20 * scale);
+      ctx.fillStyle = '#8b5a3a';
+      ctx.fillRect(px, groundY - 10, 30 * scale, 8);
+    }
+
+    // Carpet
+    ctx.fillStyle = '#8b2232';
+    ctx.fillRect(0, groundY, W, H * 0.08);
+    ctx.fillStyle = '#d4af37';
+    ctx.fillRect(0, groundY, W, 2);
+    ctx.fillRect(0, groundY + H * 0.08 - 2, W, 2);
+
+    // Floor
+    ctx.fillStyle = '#4a3a30';
+    ctx.fillRect(0, groundY + H * 0.08, W, H);
+
+    // Items
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.collected) continue;
+      ctx.save();
+      if (it.type === 'petal') {
+        ctx.fillStyle = '#ffb7c5';
+        ctx.beginPath();
+        ctx.ellipse(it.x + it.w/2, it.y + it.h/2, it.w/2, it.h/3, t * 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (it.type === 'ring') {
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(it.x + it.w/2, it.y + it.h/2, it.w/2, 0, Math.PI * 2);
+        ctx.stroke();
+        // Sparkle
+        ctx.fillStyle = '#fff';
+        ctx.globalAlpha = 0.5 + Math.sin(t * 8) * 0.5;
+        ctx.beginPath();
+        ctx.arc(it.x + it.w/2 + 4, it.y + it.h/2 - 4, 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (it.type === 'chair') {
+        ctx.fillStyle = '#6b4226';
+        ctx.fillRect(it.x, it.y - it.h, it.w, it.h);
+        ctx.fillStyle = '#8b5a3a';
+        ctx.fillRect(it.x + 2, it.y - it.h, it.w - 4, 6);
+      } else if (it.type === 'cork') {
+        ctx.fillStyle = '#c4a86a';
+        ctx.beginPath();
+        ctx.arc(it.x, it.y, it.w/2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (it.type === 'program') {
+        ctx.fillStyle = '#f5f5dc';
+        ctx.fillRect(it.x, it.y, it.w, it.h);
+        ctx.fillStyle = '#333';
+        ctx.font = '6px sans-serif';
+        ctx.fillText('♥', it.x + 4, it.y + 12);
+      }
+      ctx.restore();
+    }
+
+    // Particles
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      ctx.globalAlpha = p.life / 40;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Player
+    const playerX = W * 0.2;
+    drawChibiSprite(ctx, playerX, py.y, scale * 2, {
+      hair: avatar.hair, hairColor: avatar.hairColor,
+      top: avatar.top, bottom: avatar.bottom,
+      shoes: avatar.shoes, acc: avatar.acc,
+      frame: Math.floor(py.frame)
+    });
+
+    // HUD — progress bar
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(20, 10, W - 40, 14);
+    const prog = clamp(dist / maxDist, 0, 1);
+    const progGrad = ctx.createLinearGradient(20, 0, W - 40, 0);
+    progGrad.addColorStop(0, '#ff6b8a');
+    progGrad.addColorStop(1, '#ffd700');
+    ctx.fillStyle = progGrad;
+    ctx.fillRect(20, 10, (W - 40) * prog, 14);
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(20, 10, W - 40, 14);
+
+    // Score
+    drawTextOutline('Score: ' + score, W - 60, 38, 14 * scale, '#ffd700', '#333', 'center');
+
+    // Finish overlay
+    if (finished) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, H * 0.3, W, H * 0.45);
+      drawTextOutline('Aisle Complete!', W/2, H * 0.4, 24 * scale, '#ffd700', '#333', 'center');
+      drawTextOutline('Score: ' + score, W/2, H * 0.5, 20 * scale, '#fff', '#333', 'center');
+      drawButton('Continue', W/2, H * 0.65, 160 * scale, 44 * scale, '#d4af37', '#1a1a3e');
+    }
+
+    animId = requestAnimationFrame(loop);
+  }
+
+  loop();
 }
 
-/* ============================================================
-   SCREEN: GRAND FINALE (DOM)
-   ============================================================ */
+/* ═══════════════════════════════════════════
+   5. STORM TRANSITION
+   ═══════════════════════════════════════════ */
+function initStormTransition() {
+  showScreen('canvas');
+  let t = 0;
+  const rain = [];
+  for (let i = 0; i < 80; i++) {
+    rain.push({x: rand(0, W), y: rand(-H, H), speed: rand(8, 15), len: rand(10, 25)});
+  }
+  let lightningTimer = 0;
+  let lightningAlpha = 0;
+  let showBtn = false;
+  const btnX = W/2, btnY = H * 0.85, btnW = 160 * scale, btnH = 44 * scale;
+
+  function loop() {
+    if (currentScreen !== 'canvas') return;
+    t += 0.016;
+    if (t > 2) showBtn = true;
+    ctx.clearRect(0, 0, W, H);
+
+    // Storm sky
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+    skyGrad.addColorStop(0, '#1a1a2e');
+    skyGrad.addColorStop(1, '#2a2a4e');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H * 0.6);
+
+    // Storm clouds
+    ctx.fillStyle = '#2a2a3e';
+    for (let i = 0; i < 6; i++) {
+      const cx = ((i * W/5 + t * 15) % (W + 80)) - 40;
+      ctx.beginPath();
+      ctx.ellipse(cx, H * 0.08 + (i % 3) * 15, 60 * scale, 22 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Ground
+    ctx.fillStyle = '#2d4a2e';
+    ctx.fillRect(0, H * 0.55, W, H * 0.45);
+
+    // Mansion
+    drawMansion(ctx, W * 0.5, H * 0.42, scale * 0.7, 'storm', W, H);
+
+    // Lightning
+    lightningTimer += 0.016;
+    if (lightningTimer > rand(2, 4)) {
+      lightningAlpha = 0.8;
+      lightningTimer = 0;
+    }
+    if (lightningAlpha > 0) {
+      ctx.fillStyle = 'rgba(255,255,255,' + lightningAlpha + ')';
+      ctx.fillRect(0, 0, W, H);
+      lightningAlpha -= 0.05;
+    }
+
+    // Rain
+    ctx.strokeStyle = 'rgba(180,200,255,0.5)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < rain.length; i++) {
+      const r = rain[i];
+      r.y += r.speed;
+      if (r.y > H) { r.y = -20; r.x = rand(0, W); }
+      ctx.beginPath();
+      ctx.moveTo(r.x, r.y);
+      ctx.lineTo(r.x - 1, r.y + r.len);
+      ctx.stroke();
+    }
+
+    // Text
+    drawTextOutline('A Storm Approaches!', W/2, H * 0.25, 20 * scale, '#aaa', '#000', 'center');
+    drawTextOutline('Lyndhurst Mansion', W/2, H * 0.32, 14 * scale, '#888', '#000', 'center');
+
+    if (showBtn) {
+      drawButton('Continue', btnX, btnY, btnW, btnH, '#6a5acd', '#fff');
+    }
+
+    animId = requestAnimationFrame(loop);
+  }
+
+  setCanvasHandler(function(e) {
+    if (!showBtn) return;
+    const p = getCanvasXY(e);
+    if (hitBtn(p.x, p.y, btnX, btnY, btnW, btnH)) {
+      initWitchIntro();
+    }
+  });
+
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   6. WITCH INTRO
+   ═══════════════════════════════════════════ */
+function initWitchIntro() {
+  showScreen('canvas');
+  let t = 0;
+  let witchX = W + 60;
+  const witchTargetX = W * 0.5;
+  const witchY = H * 0.3;
+  const sparkles = [];
+  const rain = [];
+  for (let i = 0; i < 50; i++) {
+    rain.push({x: rand(0, W), y: rand(-H, H), speed: rand(8, 14), len: rand(10, 20)});
+  }
+
+  const dialogText = 'I am the Wedding Witch! Let me cast a spell to clear these skies!';
+  let charIdx = 0;
+  let showBtn = false;
+  const btnX = W/2, btnY = H * 0.88, btnW = 180 * scale, btnH = 44 * scale;
+
+  function loop() {
+    if (currentScreen !== 'canvas') return;
+    t += 0.016;
+    ctx.clearRect(0, 0, W, H);
+
+    // Storm sky
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+    skyGrad.addColorStop(0, '#1a1a2e');
+    skyGrad.addColorStop(1, '#2a2a4e');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H * 0.6);
+
+    ctx.fillStyle = '#2d4a2e';
+    ctx.fillRect(0, H * 0.55, W, H * 0.45);
+
+    drawMansion(ctx, W * 0.5, H * 0.42, scale * 0.6, 'storm', W, H);
+
+    // Rain
+    ctx.strokeStyle = 'rgba(180,200,255,0.4)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < rain.length; i++) {
+      const r = rain[i];
+      r.y += r.speed;
+      if (r.y > H) { r.y = -20; r.x = rand(0, W); }
+      ctx.beginPath();
+      ctx.moveTo(r.x, r.y);
+      ctx.lineTo(r.x - 1, r.y + r.len);
+      ctx.stroke();
+    }
+
+    // Witch flies in
+    if (witchX > witchTargetX) {
+      witchX -= 2.5;
+    }
+    const witchBob = Math.sin(t * 2) * 8;
+    drawWitch(ctx, witchX, witchY + witchBob, scale * 3);
+
+    // Sparkle trail
+    if (witchX > witchTargetX - 10) {
+      sparkles.push({
+        x: witchX + rand(-10, 10), y: witchY + witchBob + rand(-5, 15),
+        vx: rand(-1, 1), vy: rand(-1, 1),
+        life: 30, color: ['#ffd700','#ff69b4','#7fffd4','#fff'][randInt(0,3)],
+        size: rand(2, 5)
+      });
+    }
+    // Always add some sparkles when witch has arrived
+    if (Math.random() < 0.3) {
+      sparkles.push({
+        x: witchX + rand(-20, 20), y: witchY + witchBob + rand(-10, 20),
+        vx: rand(-1.5, 1.5), vy: rand(-2, 0.5),
+        life: 25, color: ['#ffd700','#ff69b4','#7fffd4'][randInt(0,2)],
+        size: rand(1.5, 4)
+      });
+    }
+
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+      const s = sparkles[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.life--;
+      if (s.life <= 0) { sparkles.splice(i, 1); continue; }
+      ctx.globalAlpha = s.life / 30;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Typewriter
+    if (charIdx < dialogText.length) charIdx += 0.5;
+    const displayText = dialogText.substring(0, Math.floor(charIdx));
+    if (charIdx >= dialogText.length) showBtn = true;
+
+    // Dialog box
+    const dbY = H * 0.68;
+    const dbH = H * 0.14;
+    ctx.fillStyle = 'rgba(40,0,60,0.85)';
+    ctx.beginPath();
+    const r2 = 12;
+    ctx.moveTo(20 + r2, dbY);
+    ctx.lineTo(W - 20 - r2, dbY);
+    ctx.quadraticCurveTo(W - 20, dbY, W - 20, dbY + r2);
+    ctx.lineTo(W - 20, dbY + dbH - r2);
+    ctx.quadraticCurveTo(W - 20, dbY + dbH, W - 20 - r2, dbY + dbH);
+    ctx.lineTo(20 + r2, dbY + dbH);
+    ctx.quadraticCurveTo(20, dbY + dbH, 20, dbY + dbH - r2);
+    ctx.lineTo(20, dbY + r2);
+    ctx.quadraticCurveTo(20, dbY, 20 + r2, dbY);
+    ctx.fill();
+    ctx.strokeStyle = '#9b59b6';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#e0d0ff';
+    ctx.font = (13 * scale) + 'px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Wrap text
+    const words = displayText.split(' ');
+    let line1 = '', line2 = '';
+    for (let i = 0; i < words.length; i++) {
+      const test = line1 + (line1 ? ' ' : '') + words[i];
+      if (ctx.measureText(test).width < W - 60) {
+        line1 = test;
+      } else {
+        line2 += (line2 ? ' ' : '') + words[i];
+      }
+    }
+    ctx.fillText(line1, W/2, dbY + dbH * 0.35);
+    if (line2) ctx.fillText(line2, W/2, dbY + dbH * 0.65);
+
+    if (showBtn) {
+      drawButton('Cast the Spell!', btnX, btnY, btnW, btnH, '#9b59b6', '#fff');
+    }
+
+    animId = requestAnimationFrame(loop);
+  }
+
+  setCanvasHandler(function(e) {
+    if (!showBtn) {
+      charIdx = dialogText.length;
+      showBtn = true;
+      return;
+    }
+    const p = getCanvasXY(e);
+    if (hitBtn(p.x, p.y, btnX, btnY, btnW, btnH)) {
+      initGame2();
+    }
+  });
+
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   7. GAME 2 — DDR RHYTHM GAME
+   ═══════════════════════════════════════════ */
+function initGame2() {
+  showScreen('game2');
+  const g2Canvas = document.getElementById('screen-canvas');
+  // We use the main canvas but show DOM buttons
+
+  // Actually, let's use canvas screen + overlay buttons
+  showScreen('canvas');
+
+  let score = 0;
+  let combo = 0;
+  let maxCombo = 0;
+  let t = 0;
+  const gameDuration = 60; // seconds
+  let gameTime = 0;
+  let finished = false;
+
+  // Arrow pattern
+  const dirs = ['left','down','up','right'];
+  const dirColors = {left:'#ff6b8a', down:'#6bcaff', up:'#6bff8a', right:'#ffcf6b'};
+  const dirSymbols = {left:'◀', down:'▼', up:'▲', right:'▶'};
+
+  const pattern = [];
+  let pTime = 1000; // ms
+  // Build pattern: start simple, get faster
+  for (let i = 0; i < 90; i++) {
+    const progress = i / 90;
+    const gap = progress < 0.3 ? rand(500, 700) : (progress < 0.7 ? rand(350, 550) : rand(280, 420));
+    pattern.push({time: pTime, dir: dirs[randInt(0, 3)], hit: false, missed: false});
+    pTime += gap;
+    // Doubles near end
+    if (progress > 0.8 && Math.random() < 0.3) {
+      const otherDir = dirs[randInt(0, 3)];
+      if (otherDir !== pattern[pattern.length - 1].dir) {
+        pattern.push({time: pTime - gap + 20, dir: otherDir, hit: false, missed: false});
+      }
+    }
+  }
+  const maxPossible = pattern.length * 100; // If all PERFECT
+
+  // Arrow rendering
+  const laneW = W / 6;
+  const laneX = {left: W/2 - laneW * 1.5, down: W/2 - laneW * 0.5, up: W/2 + laneW * 0.5, right: W/2 + laneW * 1.5};
+  const targetY = H * 0.15;
+  const spawnY = H * 0.85;
+  const arrowSpeed = (spawnY - targetY) / 2000; // pixels per ms — 2 sec travel
+
+  // Feedback popups
+  const feedbacks = [];
+
+  // Witch
+  let witchX = W * 0.5;
+  let witchDir = 1;
+
+  // Create DOM buttons
+  const btnContainer = document.createElement('div');
+  btnContainer.id = 'g2buttons';
+  btnContainer.style.cssText = 'position:absolute;bottom:8px;left:0;right:0;display:flex;justify-content:center;gap:8px;z-index:10;';
+  const btnSize = Math.min(72, W / 6);
+
+  dirs.forEach(function(dir) {
+    const btn = document.createElement('button');
+    btn.textContent = dirSymbols[dir];
+    btn.dataset.dir = dir;
+    btn.style.cssText = 'width:' + btnSize + 'px;height:' + btnSize + 'px;border-radius:50%;border:3px solid ' +
+      dirColors[dir] + ';background:rgba(0,0,0,0.7);color:' + dirColors[dir] + ';font-size:' + (btnSize * 0.5) + 'px;' +
+      'cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;';
+    btn.addEventListener('touchstart', function(e) { e.preventDefault(); handleHit(dir); });
+    btn.addEventListener('mousedown', function() { handleHit(dir); });
+    btnContainer.appendChild(btn);
+  });
+  app.appendChild(btnContainer);
+
+  function handleHit(dir) {
+    if (finished) return;
+    const now = gameTime * 1000;
+    let bestDiff = 9999;
+    let bestIdx = -1;
+    for (let i = 0; i < pattern.length; i++) {
+      const a = pattern[i];
+      if (a.hit || a.missed || a.dir !== dir) continue;
+      const diff = Math.abs(a.time - now);
+      if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+    }
+
+    if (bestIdx >= 0 && bestDiff <= 200) {
+      const a = pattern[bestIdx];
+      a.hit = true;
+      let pts = 0;
+      let label = '';
+      let color = '';
+      if (bestDiff <= 30) { pts = 100; label = 'PERFECT!'; color = '#ffd700'; }
+      else if (bestDiff <= 80) { pts = 50; label = 'GREAT!'; color = '#6bff8a'; }
+      else if (bestDiff <= 130) { pts = 25; label = 'GOOD'; color = '#6bcaff'; }
+      else { pts = 10; label = 'OK'; color = '#aaa'; }
+
+      // Combo multiplier
+      combo++;
+      if (combo > maxCombo) maxCombo = combo;
+      let mult = 1;
+      if (combo >= 50) mult = 3;
+      else if (combo >= 25) mult = 2;
+      else if (combo >= 10) mult = 1.5;
+
+      pts = Math.floor(pts * mult);
+      score += pts;
+
+      feedbacks.push({text: label + (mult > 1 ? ' x' + mult : ''), x: laneX[dir], y: targetY, life: 40, color: color});
+
+      // Witch sparkle on PERFECT
+      if (bestDiff <= 30) {
+        for (let j = 0; j < 5; j++) {
+          feedbacks.push({text: '✨', x: witchX + rand(-30, 30), y: H * 0.06 + rand(-10, 10), life: 25, color: '#ffd700'});
+        }
+      }
+    }
+  }
+
+  function loop() {
+    if (currentScreen !== 'canvas') {
+      const btns = document.getElementById('g2buttons');
+      if (btns) btns.remove();
+      return;
+    }
+    t += 0.016;
+    if (!finished) gameTime += 0.016;
+
+    const now = gameTime * 1000;
+
+    // Auto-miss
+    if (!finished) {
+      for (let i = 0; i < pattern.length; i++) {
+        const a = pattern[i];
+        if (!a.hit && !a.missed && now - a.time > 200) {
+          a.missed = true;
+          combo = 0;
+          feedbacks.push({text: 'MISS', x: laneX[a.dir], y: targetY, life: 30, color: '#ff4444'});
+        }
+      }
+    }
+
+    // Check finish
+    if (gameTime >= gameDuration && !finished) {
+      finished = true;
+      scores.game2 = score;
+      scores.game2combo = maxCombo;
+    }
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background — storm clearing
+    const clearProgress = clamp(score / (maxPossible * 0.6), 0, 1);
+    const skyR = Math.floor(lerp(26, 100, clearProgress));
+    const skyG = Math.floor(lerp(26, 150, clearProgress));
+    const skyB = Math.floor(lerp(46, 220, clearProgress));
+    ctx.fillStyle = 'rgb(' + skyR + ',' + skyG + ',' + skyB + ')';
+    ctx.fillRect(0, 0, W, H * 0.3);
+
+    // Clouds
+    ctx.fillStyle = 'rgba(60,60,80,' + (1 - clearProgress) * 0.6 + ')';
+    for (let i = 0; i < 5; i++) {
+      const cx = ((i * W/4 + t * 10) % (W + 80)) - 40;
+      ctx.beginPath();
+      ctx.ellipse(cx, H * 0.06 + (i % 3) * 12, 50 * scale, 18 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Rainbow at 75%+
+    if (clearProgress > 0.75) {
+      const ra = (clearProgress - 0.75) / 0.25;
+      ctx.globalAlpha = ra * 0.5;
+      const rbColors = ['#ff0000','#ff7700','#ffff00','#00ff00','#0000ff','#8b00ff'];
+      for (let i = 0; i < rbColors.length; i++) {
+        ctx.strokeStyle = rbColors[i];
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(W * 0.5, H * 0.35, (80 + i * 8) * scale, Math.PI, 0);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Mansion small
+    drawMansion(ctx, W * 0.5, H * 0.22, scale * 0.35, clearProgress > 0.5 ? 'clear' : 'storm', W, H);
+
+    // Lane backgrounds
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    for (let d = 0; d < dirs.length; d++) {
+      const x = laneX[dirs[d]];
+      ctx.fillRect(x - laneW/2 + 4, targetY - 20, laneW - 8, spawnY - targetY + 20);
+    }
+
+    // Target zones
+    for (let d = 0; d < dirs.length; d++) {
+      const dir = dirs[d];
+      const x = laneX[dir];
+      ctx.strokeStyle = dirColors[dir];
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.2;
+      ctx.strokeRect(x - 18, targetY - 18, 36, 36);
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = dirColors[dir];
+      ctx.fillRect(x - 18, targetY - 18, 36, 36);
+      ctx.globalAlpha = 1;
+    }
+
+    // Arrows
+    for (let i = 0; i < pattern.length; i++) {
+      const a = pattern[i];
+      if (a.hit || a.missed) continue;
+      const elapsed = now - a.time;
+      // Arrow position: at time=0 arrow is at spawnY, at time reaches 0 it should be at targetY
+      // y = spawnY - (elapsed + 2000) * arrowSpeed
+      // Actually: arrow spawns 2000ms before its time
+      const arrowY = spawnY - (elapsed + 2000) * arrowSpeed;
+      if (arrowY < -40 || arrowY > H + 40) continue;
+
+      const x = laneX[a.dir];
+      ctx.fillStyle = dirColors[a.dir];
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(dirSymbols[a.dir], x, arrowY);
+    }
+
+    // Feedbacks
+    for (let i = feedbacks.length - 1; i >= 0; i--) {
+      const f = feedbacks[i];
+      f.y -= 1.5;
+      f.life--;
+      if (f.life <= 0) { feedbacks.splice(i, 1); continue; }
+      ctx.globalAlpha = f.life / 40;
+      ctx.fillStyle = f.color;
+      ctx.font = 'bold ' + (14 * scale) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+
+    // Witch
+    witchX += witchDir * 0.8;
+    if (witchX > W - 30) witchDir = -1;
+    if (witchX < 30) witchDir = 1;
+    drawWitch(ctx, witchX, H * 0.04 + Math.sin(t * 2) * 5, scale * 2);
+
+    // HUD
+    drawTextOutline('Score: ' + score, W/2, H * 0.05 - 12, 12 * scale, '#ffd700', '#000', 'center');
+    const comboText = combo > 1 ? 'Combo: ' + combo + 'x' : '';
+    if (comboText) drawTextOutline(comboText, W/2, H * 0.05, 10 * scale, '#ff69b4', '#000', 'center');
+
+    // Timer
+    const remaining = Math.max(0, Math.ceil(gameDuration - gameTime));
+    drawTextOutline(remaining + 's', W - 30, 14, 12 * scale, '#fff', '#000', 'center');
+
+    // Finish overlay
+    if (finished) {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, H * 0.25, W, H * 0.5);
+      drawTextOutline('Spell Complete!', W/2, H * 0.35, 24 * scale, '#9b59b6', '#000', 'center');
+      drawTextOutline('Score: ' + score, W/2, H * 0.45, 20 * scale, '#ffd700', '#000', 'center');
+      drawTextOutline('Max Combo: ' + maxCombo + 'x', W/2, H * 0.53, 16 * scale, '#ff69b4', '#000', 'center');
+      drawButton('Continue', W/2, H * 0.65, 160 * scale, 44 * scale, '#9b59b6', '#fff');
+
+      // Remove DOM buttons
+      const btns = document.getElementById('g2buttons');
+      if (btns) btns.remove();
+    }
+
+    animId = requestAnimationFrame(loop);
+  }
+
+  setCanvasHandler(function(e) {
+    if (!finished) return;
+    const p = getCanvasXY(e);
+    if (hitBtn(p.x, p.y, W/2, H * 0.65, 160 * scale, 44 * scale)) {
+      const btns = document.getElementById('g2buttons');
+      if (btns) btns.remove();
+      initClearSkies();
+    }
+  });
+
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   8. CLEAR SKIES
+   ═══════════════════════════════════════════ */
+function initClearSkies() {
+  showScreen('canvas');
+  let t = 0;
+  const petals = [];
+  for (let i = 0; i < 20; i++) {
+    petals.push({x: rand(0, W), y: rand(0, H), vx: rand(-0.5, 0.5), vy: rand(0.2, 1), size: rand(2, 5) * scale, alpha: rand(0.3, 0.7)});
+  }
+  const birds = [];
+  for (let i = 0; i < 6; i++) {
+    birds.push({ox: W * 0.3 + i * 15 * scale, oy: H * 0.12 + Math.abs(i - 3) * 8 * scale, phase: rand(0, 6)});
+  }
+  let showBtn = false;
+  const btnX = W/2, btnY = H * 0.88, btnW = 160 * scale, btnH = 44 * scale;
+
+  function loop() {
+    if (currentScreen !== 'canvas') return;
+    t += 0.016;
+    if (t > 1.5) showBtn = true;
+    ctx.clearRect(0, 0, W, H);
+
+    // Bright sky
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+    skyGrad.addColorStop(0, '#4da6ff');
+    skyGrad.addColorStop(1, '#87ceeb');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H * 0.6);
+
+    // Sun
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.arc(W * 0.8, H * 0.1, 30 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    // Sun rays
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.arc(W * 0.8, H * 0.1, 50 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Rainbow
+    const rbColors = ['#ff0000','#ff7700','#ffff00','#00ff00','#0000ff','#4b0082','#8b00ff'];
+    ctx.globalAlpha = 0.6;
+    for (let i = 0; i < rbColors.length; i++) {
+      ctx.strokeStyle = rbColors[i];
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(W * 0.5, H * 0.45, (100 + i * 8) * scale, Math.PI, 0);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // White clouds
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    for (let i = 0; i < 3; i++) {
+      const cx = ((i * W/3 + t * 12) % (W + 80)) - 40;
+      ctx.beginPath();
+      ctx.ellipse(cx, H * 0.08 + i * 20, 40 * scale, 14 * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Lawn
+    ctx.fillStyle = '#4a8c3f';
+    ctx.fillRect(0, H * 0.55, W, H * 0.45);
+
+    // Mansion
+    drawMansion(ctx, W * 0.5, H * 0.42, scale * 0.7, 'clear', W, H);
+
+    // Birds
+    for (let i = 0; i < birds.length; i++) {
+      const b = birds[i];
+      const bx = b.ox + Math.sin(t * 0.3 + b.phase) * 20;
+      const by = b.oy + Math.sin(t * 3 + b.phase) * 3;
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx - 4 * scale, by + Math.sin(t * 4 + b.phase) * 2);
+      ctx.lineTo(bx, by);
+      ctx.lineTo(bx + 4 * scale, by + Math.sin(t * 4 + b.phase + 1) * 2);
+      ctx.stroke();
+    }
+
+    // Witch waves
+    drawWitch(ctx, W * 0.75, H * 0.35 + Math.sin(t * 2) * 5, scale * 2.5);
+
+    // Petals
+    for (let i = 0; i < petals.length; i++) {
+      const p = petals[i];
+      p.x += p.vx + Math.sin(t + i) * 0.3;
+      p.y += p.vy;
+      if (p.y > H) { p.y = -5; p.x = rand(0, W); }
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = '#ffb7c5';
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, p.size, p.size * 0.6, t + i, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    drawTextOutline('The Skies Are Clear!', W/2, H * 0.22, 20 * scale, '#ffd700', '#333', 'center');
+    drawTextOutline('Time for the ceremony!', W/2, H * 0.28, 14 * scale, '#fff', '#333', 'center');
+
+    if (showBtn) {
+      drawButton('Continue', btnX, btnY, btnW, btnH, '#d4af37', '#1a1a3e');
+    }
+
+    animId = requestAnimationFrame(loop);
+  }
+
+  setCanvasHandler(function(e) {
+    if (!showBtn) return;
+    const p = getCanvasXY(e);
+    if (hitBtn(p.x, p.y, btnX, btnY, btnW, btnH)) {
+      initGame3();
+    }
+  });
+
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   9. GAME 3 — MAZEL TOV METER
+   ═══════════════════════════════════════════ */
+function initGame3() {
+  showScreen('canvas');
+
+  let t = 0;
+  let round = 0;
+  const totalRounds = 4;
+  const speeds = [1, 1.3, 1.6, 2.0];
+  let needlePos = 0; // -1 to 1
+  let needleDir = 1;
+  let score = 0;
+  let roundScores = [];
+  let waiting = false; // waiting for tap
+  let roundResult = '';
+  let roundResultTimer = 0;
+  let finished = false;
+  let confetti = [];
+  let showFinalBtn = false;
+
+  // Cannon positions
+  const cannons = [
+    {x: W * 0.08, y: H * 0.45, dir: 1},
+    {x: W * 0.18, y: H * 0.5, dir: 1},
+    {x: W * 0.82, y: H * 0.5, dir: -1},
+    {x: W * 0.92, y: H * 0.45, dir: -1}
+  ];
+
+  waiting = true; // Start with tap prompt
+
+  function fireCannon(idx, intensity) {
+    const c = cannons[idx];
+    const count = intensity >= 80 ? 30 : (intensity >= 40 ? 18 : 8);
+    const colors = ['#ff6b8a','#ffd700','#6bcaff','#ff69b4','#6bff8a','#ff7700','#fff'];
+    for (let i = 0; i < count; i++) {
+      confetti.push({
+        x: c.x, y: c.y,
+        vx: c.dir * rand(2, 8) + rand(-1, 1),
+        vy: rand(-10, -3),
+        life: rand(50, 100),
+        color: colors[randInt(0, colors.length - 1)],
+        size: rand(2, 6),
+        rot: rand(0, Math.PI * 2),
+        rotV: rand(-0.1, 0.1)
+      });
+    }
+  }
+
+  function loop() {
+    if (currentScreen !== 'canvas') return;
+    t += 0.016;
+    ctx.clearRect(0, 0, W, H);
+
+    // Interior scene
+    // Gothic arch ceiling
+    const ceilGrad = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+    ceilGrad.addColorStop(0, '#2a1a30');
+    ceilGrad.addColorStop(1, '#4a3050');
+    ctx.fillStyle = ceilGrad;
+    ctx.fillRect(0, 0, W, H * 0.3);
+
+    // Arch
+    ctx.strokeStyle = '#8b7355';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.1, H * 0.4);
+    ctx.quadraticCurveTo(W * 0.5, -H * 0.05, W * 0.9, H * 0.4);
+    ctx.stroke();
+
+    // Walls
+    ctx.fillStyle = '#5a4a60';
+    ctx.fillRect(0, H * 0.3, W, H * 0.15);
+
+    // Stained glass window
+    drawGothicWindow(ctx, W * 0.5 - 25 * scale, H * 0.05, 50 * scale, 80 * scale, 'rgba(200,150,255,0.3)', '#8b7355');
+
+    // Floor
+    ctx.fillStyle = '#4a3a30';
+    ctx.fillRect(0, H * 0.45, W, H * 0.55);
+    // Carpet
+    ctx.fillStyle = '#8b2232';
+    ctx.fillRect(W * 0.3, H * 0.45, W * 0.4, H * 0.55);
+
+    // Altar
+    ctx.fillStyle = '#f5f5dc';
+    ctx.fillRect(W * 0.4, H * 0.42, W * 0.2, H * 0.05);
+
+    // Couple at altar
+    drawChibiSprite(ctx, W * 0.45, H * 0.43, scale * 2, {hair:2, hairColor:0, top:3, bottom:2, shoes:0, acc:0, frame:0});
+    drawChibiSprite(ctx, W * 0.55, H * 0.43, scale * 2, {hair:4, hairColor:3, top:5, bottom:4, shoes:1, acc:2, frame:0});
+
+    // Confetti cannons
+    for (let i = 0; i < cannons.length; i++) {
+      const c = cannons[i];
+      ctx.fillStyle = '#d4af37';
+      ctx.fillRect(c.x - 6, c.y - 15, 12, 20);
+      ctx.fillStyle = '#8b7355';
+      ctx.beginPath();
+      ctx.arc(c.x, c.y - 15, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Confetti particles
+    for (let i = confetti.length - 1; i >= 0; i--) {
+      const c = confetti[i];
+      c.x += c.vx;
+      c.y += c.vy;
+      c.vy += 0.15;
+      c.vx *= 0.99;
+      c.rot += c.rotV;
+      c.life--;
+      if (c.life <= 0 || c.y > H + 10) { confetti.splice(i, 1); continue; }
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rot);
+      ctx.globalAlpha = Math.min(1, c.life / 20);
+      ctx.fillStyle = c.color;
+      ctx.fillRect(-c.size/2, -c.size/2, c.size, c.size * 0.6);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+
+    if (!finished) {
+      // Mazel Tov Meter
+      const meterX = W * 0.1;
+      const meterW = W * 0.8;
+      const meterY = H * 0.6;
+      const meterH = 30 * scale;
+
+      // Background
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(meterX, meterY, meterW, meterH);
+
+      // Zones (symmetric from center)
+      const centerX = meterX + meterW / 2;
+      // Red zone (full width)
+      ctx.fillStyle = '#cc3333';
+      ctx.fillRect(meterX, meterY, meterW, meterH);
+      // Orange (40% = 20% each side from center)
+      ctx.fillStyle = '#e67e22';
+      ctx.fillRect(centerX - meterW * 0.2, meterY, meterW * 0.4, meterH);
+      // Yellow (20% = 10% each side)
+      ctx.fillStyle = '#f1c40f';
+      ctx.fillRect(centerX - meterW * 0.1, meterY, meterW * 0.2, meterH);
+      // Green (8% = 4% each side)
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(centerX - meterW * 0.04, meterY, meterW * 0.08, meterH);
+
+      // Border
+      ctx.strokeStyle = '#d4af37';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(meterX, meterY, meterW, meterH);
+
+      // Labels
+      ctx.font = (9 * scale) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff';
+      ctx.fillText('PERFECT', centerX, meterY + meterH + 14 * scale);
+
+      // Needle
+      if (waiting && !roundResult) {
+        // Move needle
+        const spd = speeds[Math.min(round, speeds.length - 1)];
+        needlePos += needleDir * 0.025 * spd;
+        if (needlePos > 1) { needlePos = 1; needleDir = -1; }
+        if (needlePos < -1) { needlePos = -1; needleDir = 1; }
+      }
+
+      const needleX = centerX + needlePos * (meterW / 2);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(needleX, meterY - 5);
+      ctx.lineTo(needleX, meterY + meterH + 5);
+      ctx.stroke();
+      // Needle head
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.moveTo(needleX - 6, meterY - 5);
+      ctx.lineTo(needleX + 6, meterY - 5);
+      ctx.lineTo(needleX, meterY + 3);
+      ctx.fill();
+
+      // Round indicator
+      drawTextOutline('Round ' + (round + 1) + '/' + totalRounds, W/2, H * 0.55, 16 * scale, '#ffd700', '#000', 'center');
+
+      // Instruction
+      if (!roundResult) {
+        const pulse = 0.5 + Math.sin(t * 4) * 0.5;
+        ctx.globalAlpha = 0.6 + pulse * 0.4;
+        drawTextOutline('TAP!', W/2, H * 0.78, 22 * scale, '#fff', '#333', 'center');
+        ctx.globalAlpha = 1;
+      }
+
+      // Round result
+      if (roundResult) {
+        drawTextOutline(roundResult, W/2, H * 0.78, 20 * scale, roundResult === 'PERFECT!' ? '#2ecc71' : (roundResult === 'GREAT!' ? '#f1c40f' : (roundResult === 'GOOD!' ? '#e67e22' : '#cc3333')), '#000', 'center');
+        roundResultTimer -= 0.016;
+        if (roundResultTimer <= 0) {
+          roundResult = '';
+          round++;
+          if (round >= totalRounds) {
+            finished = true;
+            scores.game3 = score;
+            showFinalBtn = true;
+            // Big celebration
+            if (score >= 250) {
+              for (let c = 0; c < cannons.length; c++) fireCannon(c, 100);
+            } else if (score >= 150) {
+              for (let c = 0; c < cannons.length; c++) fireCannon(c, 50);
+            } else {
+              fireCannon(0, 20);
+              fireCannon(3, 20);
+            }
+          } else {
+            waiting = true;
+            needleDir = (Math.random() < 0.5) ? 1 : -1;
+          }
+        }
+      }
+
+      // Score
+      drawTextOutline('Score: ' + score, W/2, H * 0.92, 14 * scale, '#ffd700', '#000', 'center');
+    } else {
+      // Finished
+      drawTextOutline('Mazel Tov!', W/2, H * 0.55, 26 * scale, '#ffd700', '#333', 'center');
+      drawTextOutline('Score: ' + score + '/' + (totalRounds * 100), W/2, H * 0.62, 16 * scale, '#fff', '#333', 'center');
+      if (showFinalBtn) {
+        drawButton('See Final Score!', W/2, H * 0.75, 200 * scale, 48 * scale, '#d4af37', '#1a1a3e');
+      }
+    }
+
+    animId = requestAnimationFrame(loop);
+  }
+
+  setCanvasHandler(function(e) {
+    if (finished) {
+      const p = getCanvasXY(e);
+      if (hitBtn(p.x, p.y, W/2, H * 0.75, 200 * scale, 48 * scale)) {
+        initFinale();
+      }
+      return;
+    }
+
+    if (waiting && !roundResult) {
+      // Stop needle, evaluate
+      const absPos = Math.abs(needlePos);
+      let pts = 0;
+      let label = '';
+      if (absPos <= 0.04) { pts = 100; label = 'PERFECT!'; }
+      else if (absPos <= 0.1) { pts = 60; label = 'GREAT!'; }
+      else if (absPos <= 0.2) { pts = 30; label = 'GOOD!'; }
+      else { pts = 0; label = 'MISS!'; }
+
+      score += pts;
+      roundScores.push(pts);
+      roundResult = label;
+      roundResultTimer = 1.5;
+      waiting = false;
+
+      // Fire cannon for this round
+      fireCannon(round % cannons.length, pts);
+    }
+  });
+
+  loop();
+}
+
+/* ═══════════════════════════════════════════
+   10. FINALE
+   ═══════════════════════════════════════════ */
 function initFinale() {
-  const el = document.getElementById('screenFinale');
-  const total = scores.game1 + scores.game2 + scores.game3;
+  showScreen('finale');
+  const el = document.getElementById('screen-finale');
+  if (!el) return;
+
+  const totalScore = scores.game1 + scores.game2 + scores.game3;
 
   // Save to leaderboard
-  let lb = JSON.parse(localStorage.getItem('weddingLB') || '[]');
-  lb.push({ name: playerName, score: total, date: Date.now() });
-  lb.sort((a, b) => b.score - a.score);
-  lb = lb.slice(0, 10);
-  localStorage.setItem('weddingLB', JSON.stringify(lb));
+  let leaderboard = [];
+  try {
+    const lb = localStorage.getItem('wg_leaderboard');
+    if (lb) leaderboard = JSON.parse(lb);
+  } catch(e) {}
+  const entry = {name: playerName, score: totalScore, date: new Date().toLocaleDateString()};
+  leaderboard.push(entry);
+  leaderboard.sort(function(a, b) { return b.score - a.score; });
+  leaderboard = leaderboard.slice(0, 10);
+  try { localStorage.setItem('wg_leaderboard', JSON.stringify(leaderboard)); } catch(e) {}
 
-  const myRank = lb.findIndex(e => e.name === playerName && e.score === total);
+  const currentRank = leaderboard.findIndex(function(e) { return e.name === playerName && e.score === totalScore; });
 
-  el.innerHTML = `
-    <div class="finale-title pixel-font">🎉 MAZEL TOV! 🎉</div>
-    <canvas class="finale-avatar" id="finaleAvatar" width="64" height="64"></canvas>
-    <div class="finale-score pixel-font">${playerName}</div>
-    <div class="finale-score" style="font-size:10px;color:#aaa">
-      Quest: ${scores.game1} | Spell: ${scores.game2} | Kiss: ${scores.game3}
-    </div>
-    <div class="finale-score pixel-font" style="font-size:16px;color:#ffd700" id="finaleTotal">0</div>
-    <div class="finale-lb">
-      <div style="color:#ffd700;font-size:11px;margin-bottom:8px;text-align:center" class="pixel-font">LEADERBOARD</div>
-      ${lb.map((e, i) => `<div class="finale-lb-row ${i === myRank ? 'me' : ''}">${i + 1}. ${e.name}<span>${e.score}</span></div>`).join('')}
-    </div>
-    <button class="finale-btn gold" id="copyScore">📋 Copy Score</button>
-    <a class="finale-btn outline" href="#" style="display:block">📸 Photo Album</a>
-    <button class="finale-btn gold" id="playAgain">🎮 Play Again</button>
-    <div class="finale-footer">Made with ❤️ for Max & Julie's Wedding at Lyndhurst</div>
-  `;
+  // Build leaderboard HTML
+  let lbHtml = '';
+  for (let i = 0; i < leaderboard.length; i++) {
+    const e = leaderboard[i];
+    const isCurrent = i === currentRank;
+    lbHtml += '<div style="padding:4px 8px;border-radius:6px;margin:2px 0;' +
+      'background:' + (isCurrent ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.05)') + ';' +
+      'border:' + (isCurrent ? '1px solid #d4af37' : '1px solid transparent') + ';' +
+      'display:flex;justify-content:space-between;font-size:14px;">' +
+      '<span>' + (i === 0 ? '👑' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1) + '.'))) +
+      ' ' + e.name + '</span>' +
+      '<span style="color:#ffd700;">' + e.score + '</span></div>';
+  }
+
+  // Firework keyframes
+  const fwStyle = document.createElement('style');
+  fwStyle.textContent = '@keyframes fwRise{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-200px);opacity:0}}' +
+    '@keyframes fwBurst{0%{transform:scale(0);opacity:1}50%{opacity:1}100%{transform:scale(1.5);opacity:0}}';
+  document.head.appendChild(fwStyle);
+
+  el.innerHTML =
+    '<div style="padding:16px;max-width:400px;margin:0 auto;color:#fff;text-align:center;position:relative;overflow:hidden;min-height:100%;">' +
+      '<div id="fireworks" style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden;"></div>' +
+      '<h1 style="color:#ffd700;font-size:28px;margin:12px 0 4px;text-shadow:0 0 20px rgba(212,175,55,0.5);">🎉 MAZEL TOV! 🎉</h1>' +
+      '<canvas id="finaleAvatar" width="80" height="100" style="display:block;margin:8px auto;border-radius:12px;' +
+        'background:rgba(0,0,0,0.3);border:2px solid #d4af37;"></canvas>' +
+      '<p style="margin:4px 0;font-size:14px;color:#ccc;">' + playerName + '</p>' +
+      '<div style="margin:12px 0;">' +
+        '<div style="font-size:14px;color:#aaa;margin-bottom:4px;">Total Score</div>' +
+        '<div id="scoreCount" style="font-size:42px;font-weight:bold;color:#ffd700;text-shadow:0 0 20px rgba(212,175,55,0.4);">0</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-around;margin:8px 0;font-size:12px;color:#aaa;">' +
+        '<div>🌸 Aisle: ' + scores.game1 + '</div>' +
+        '<div>🎵 Rhythm: ' + scores.game2 + '</div>' +
+        '<div>🎯 Timing: ' + scores.game3 + '</div>' +
+      '</div>' +
+      '<div style="margin:12px 0;">' +
+        '<div style="font-size:16px;color:#d4af37;margin-bottom:6px;">🏆 Leaderboard</div>' +
+        lbHtml +
+      '</div>' +
+      '<div style="margin:16px 0;display:flex;flex-direction:column;gap:8px;align-items:center;">' +
+        '<button id="copyBtn" style="padding:10px 20px;border:none;border-radius:10px;' +
+          'background:linear-gradient(135deg,#d4af37,#f0d060);color:#1a1a3e;font-weight:bold;font-size:14px;cursor:pointer;' +
+          'width:80%;max-width:280px;">📋 Copy Score</button>' +
+        '<a href="#" style="color:#6bcaff;font-size:14px;">📸 Photo Album</a>' +
+        '<button id="replayBtn" style="padding:10px 20px;border:none;border-radius:10px;' +
+          'background:#4a3060;color:#fff;font-weight:bold;font-size:14px;cursor:pointer;border:2px solid #9b59b6;' +
+          'width:80%;max-width:280px;">🎮 Play Again</button>' +
+      '</div>' +
+      '<p style="font-size:11px;color:#666;margin-top:16px;">Made with ❤️ for Max & Julie\'s Wedding at Lyndhurst</p>' +
+    '</div>';
 
   // Draw avatar
-  const avCanvas = document.getElementById('finaleAvatar');
-  if (avCanvas) {
-    const actx = avCanvas.getContext('2d');
-    actx.clearRect(0, 0, 64, 64);
-    drawAvatar(actx, 0, 0, 1, playerAvatar);
+  setTimeout(function() {
+    const fc = document.getElementById('finaleAvatar');
+    if (fc) {
+      const fCtx = fc.getContext('2d');
+      drawChibiSprite(fCtx, 40, 65, 2.5, {
+        hair: avatar.hair, hairColor: avatar.hairColor,
+        top: avatar.top, bottom: avatar.bottom,
+        shoes: avatar.shoes, acc: avatar.acc, frame: 0
+      });
+    }
+  }, 50);
+
+  // Score count-up animation
+  let countStart = performance.now();
+  function countUp() {
+    const elapsed = performance.now() - countStart;
+    const progress = Math.min(1, elapsed / 2000);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease out cubic
+    const displayScore = Math.floor(eased * totalScore);
+    const el2 = document.getElementById('scoreCount');
+    if (el2) el2.textContent = displayScore;
+    if (progress < 1) requestAnimationFrame(countUp);
   }
+  requestAnimationFrame(countUp);
 
-  // Animate score count-up
-  let countUp = 0;
-  const countInterval = setInterval(() => {
-    countUp += Math.ceil(total / 60);
-    if (countUp >= total) { countUp = total; clearInterval(countInterval); }
-    const totalEl = document.getElementById('finaleTotal');
-    if (totalEl) totalEl.textContent = `TOTAL: ${countUp}`;
-  }, 30);
-
-  // Fireworks
+  // Firework spawner
+  const fwContainer = document.getElementById('fireworks');
   function spawnFirework() {
     if (currentScreen !== 'finale') return;
-    const fw = document.createElement('div');
-    fw.className = 'firework';
-    fw.style.left = Math.random() * 100 + '%';
-    fw.style.top = 20 + Math.random() * 40 + '%';
-    fw.style.background = ['#ffd700', '#ff69b4', '#87ceeb', '#ff4444', '#44ff44'][Math.floor(Math.random() * 5)];
-    fw.style.boxShadow = `0 0 6px ${fw.style.background}`;
-    el.appendChild(fw);
-    setTimeout(() => fw.remove(), 1200);
-    setTimeout(spawnFirework, 300 + Math.random() * 700);
+    const colors = ['#ff6b8a','#ffd700','#6bcaff','#ff69b4','#6bff8a','#ff7700','#9b59b6'];
+    const x = rand(10, 90);
+    const y = rand(10, 60);
+    for (let i = 0; i < 8; i++) {
+      const dot = document.createElement('div');
+      const angle = (i / 8) * Math.PI * 2;
+      const dist = rand(15, 35);
+      dot.style.cssText = 'position:absolute;width:4px;height:4px;border-radius:50%;' +
+        'left:' + x + '%;top:' + y + '%;' +
+        'background:' + colors[randInt(0, colors.length - 1)] + ';' +
+        'animation:fwBurst 1s ease-out forwards;' +
+        'transform-origin:' + (Math.cos(angle) * dist) + 'px ' + (Math.sin(angle) * dist) + 'px;';
+      if (fwContainer) fwContainer.appendChild(dot);
+      setTimeout(function() { if (dot.parentNode) dot.parentNode.removeChild(dot); }, 1200);
+    }
+    setTimeout(spawnFirework, rand(400, 1200));
   }
-  setTimeout(spawnFirework, 500);
+  setTimeout(spawnFirework, 300);
 
-  document.getElementById('copyScore').addEventListener('click', () => {
-    const text = `I scored ${total} at Max & Julie's Wedding Arcade! 🎮💒\nQuest: ${scores.game1} | Spell: ${scores.game2} | Kiss: ${scores.game3}`;
-    navigator.clipboard.writeText(text).then(() => {
-      document.getElementById('copyScore').textContent = '✅ Copied!';
-    }).catch(() => {
-      document.getElementById('copyScore').textContent = '❌ Failed';
+  // Event listeners
+  setTimeout(function() {
+    const copyBtn = document.getElementById('copyBtn');
+    if (copyBtn) copyBtn.addEventListener('click', function() {
+      const text = 'I scored ' + totalScore + ' at Max & Julie\'s Wedding Arcade! 🎮🏰';
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+          copyBtn.textContent = '✅ Copied!';
+          setTimeout(function() { copyBtn.textContent = '📋 Copy Score'; }, 2000);
+        });
+      } else {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); copyBtn.textContent = '✅ Copied!'; } catch(e2) {}
+        document.body.removeChild(ta);
+        setTimeout(function() { copyBtn.textContent = '📋 Copy Score'; }, 2000);
+      }
     });
-  });
 
-  document.getElementById('playAgain').addEventListener('click', () => {
-    scores = { game1: 0, game2: 0, game3: 0 };
-    showScreen('welcome');
-  });
+    const replayBtn = document.getElementById('replayBtn');
+    if (replayBtn) replayBtn.addEventListener('click', function() {
+      initWelcome();
+    });
+  }, 50);
 }
 
-/* ============================================================
-   MAIN LOOP
-   ============================================================ */
-function gameLoop() {
-  requestAnimationFrame(gameLoop);
-  animFrame++;
-  ctx.clearRect(0, 0, W, H);
+/* ═══════════════════════════════════════════
+   INIT / LOAD
+   ═══════════════════════════════════════════ */
+try {
+  const sa = localStorage.getItem('wg_avatar');
+  if (sa) avatar = JSON.parse(sa);
+  const sn = localStorage.getItem('wg_name');
+  if (sn) playerName = sn;
+} catch(e) {}
+initWelcome();
 
-  switch (currentScreen) {
-    case 'welcome': drawWelcome(); break;
-    case 'storyIntro': drawStoryIntro(); break;
-    case 'game1': drawGame1(); break;
-    case 'stormTransition': drawStormTransition(); break;
-    case 'witchIntro': drawWitchIntro(); break;
-    case 'clearSkies': drawClearSkies(); break;
-    case 'game3': drawGame3(); break;
-    default: break;
-  }
-}
-
-// Start
-showScreen('welcome');
-gameLoop();
 </script>
 </body>
 </html>
