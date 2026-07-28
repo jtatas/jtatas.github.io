@@ -515,310 +515,293 @@ function drawDeciduousTree(ctx, x, baseY, s) {
 
 // ============================================================
 // 7. CHIBI SPRITE — configurable pixel art character
+//    16px wide × 22px tall grid. x,y = CENTER of sprite.
+//    ps = pixel size (each grid cell = ps×ps screen pixels)
 // ============================================================
-function drawChibiSprite(ctx, x, y, ps, options) {
-  const opt = options || {};
-  const skinBase = '#e8c4a0';
-  const skinLight = '#f0d4b4';
-  const skinShadow = '#c8a080';
-  const skinDark = '#a89070';
+function drawChibiSprite(ctx, cx, cy, ps, options) {
+  // cx, cy = CENTER of sprite. ps = pixel size. 
+  // Grid: 16 wide x 22 tall. Sprite drawn centered on (cx, cy).
+  var opt = options || {};
+  var hair = opt.hair || 0;
+  var hc = opt.hairColor || 0;
+  var top = opt.top || 0;
+  var bot = opt.bottom || 0;
+  var shoes = opt.shoes || 0;
+  var acc = opt.acc || 0;
 
-  // Hair colors
-  const hairSets = {
-    brown: ['#5c3a1a', '#8b5e3c', '#a0724e'],
-    blonde: ['#8b7a30', '#c4a040', '#d4b860'],
-    black: ['#1a1a2a', '#2a2a3a', '#3a3a4a'],
-    red: ['#6b2a1a', '#a04030', '#c05040']
+  // Offset so (cx,cy) is center
+  var ox = cx - 8 * ps;
+  var oy = cy - 11 * ps;
+
+  function p(gx, gy, c) {
+    ctx.fillStyle = c;
+    ctx.fillRect(Math.round(ox + gx * ps), Math.round(oy + gy * ps), Math.ceil(ps), Math.ceil(ps));
+  }
+
+  // --- COLOR PALETTES ---
+  var S = { base:'#e8c4a0', light:'#f0d4b4', shad:'#c8a480', dark:'#a88860' };
+  var hairColors = [
+    ['#5c3a1a','#8b5e3c','#a07848'],  // brown
+    ['#1a1a2a','#2a2a3a','#3a3a4a'],  // black
+    ['#8b7a30','#c4a040','#d4b860'],  // blonde
+    ['#6b2a1a','#a04030','#c05040'],  // red
+    ['#2a4a6b','#3a6a8b','#4a8aab'],  // blue
+    ['#8b3a6b','#bb4a8b','#db6aab'],  // pink
+    ['#7a7a8a','#a0a0b0','#c0c0d0'],  // silver
+  ];
+  var hcols = hairColors[hc % hairColors.length];
+  var HD = hcols[0], HM = hcols[1], HL = hcols[2];
+
+  var topColors = [
+    ['#1a2040','#2a3060','#3a4080'], // navy suit
+    ['#e8889a','#f4a0b0','#ffc0cc'], // pink bridesmaid
+    ['#d04040','#40a040','#e8c840'], // hawaiian (multicolor)
+    ['#1a1a1a','#2a2a2a','#3a3a3a'], // tux vest
+    ['#e0c0d0','#f0d8e4','#fff0f4'], // floral blouse
+    ['#5a5a6a','#6a6a7a','#7a7a8a'], // hoodie gray
+    ['#e8e8e8','#f4f4f4','#ffffff'], // white crop top
+  ];
+  var TC = topColors[top % topColors.length];
+
+  var botColors = [
+    ['#1a1a1a','#2a2a2a','#333333'], // black pants
+    ['#e888a0','#f4a0b4','#ffc0d0'], // pink skirt
+    ['#b0a070','#c4b488','#d8c8a0'], // khaki shorts
+    ['#c4a030','#d4b040','#e4c060'], // gold gown
+    ['#3a5a8a','#4a6a9a','#5a7aaa'], // jeans
+    ['#c03040','#d04050','#e06070'], // red mini skirt
+  ];
+  var BC = botColors[bot % botColors.length];
+
+  var shoeColors = [
+    ['#1a1a1a','#2a2a2a'], // black dress
+    ['#a02030','#c03040'], // red heels
+    ['#d0d0d0','#e8e8e8'], // white sneakers
+    ['#6b4020','#8b5a30'], // brown boots
+    ['#c4a870','#d4b880'], // tan sandals
+  ];
+  var SC = shoeColors[shoes % shoeColors.length];
+
+  var eyeColor = '#2a9d8f'; // teal default
+  var blush = '#e88ca0';
+  var mouth = '#d06070';
+  var outline = '#2a2020';
+  var white = '#ffffff';
+
+  // --- DRAW ORDER: hair back, body, face, hair front, accessories ---
+
+  // 1. HAIR BACK (behind head for long styles)
+  if (hair === 1 || hair === 2 || hair === 6) { // long, curly, braids
+    for (var hy = 8; hy <= 18; hy++) {
+      p(2, hy, HD); p(3, hy, HM);
+      p(12, hy, HM); p(13, hy, HD);
+    }
+    if (hair === 2) { // curly extra volume
+      for (var cy2 = 9; cy2 <= 16; cy2++) { p(1, cy2, HD); p(14, cy2, HD); }
+    }
+  }
+
+  // 2. SKIN - HEAD (oval face, rows 2-12, cols 4-11)
+  for (var fy = 3; fy <= 11; fy++) {
+    for (var fx = 4; fx <= 11; fx++) {
+      p(fx, fy, S.base);
+    }
+  }
+  // Rounded top
+  p(5,2,S.base);p(6,2,S.base);p(7,2,S.base);p(8,2,S.base);p(9,2,S.base);p(10,2,S.base);
+  // Rounded bottom (chin)
+  p(5,12,S.base);p(6,12,S.base);p(7,12,S.base);p(8,12,S.base);p(9,12,S.base);p(10,12,S.base);
+  // Highlights
+  p(6,3,S.light);p(7,3,S.light);p(8,3,S.light);p(9,3,S.light);
+  p(6,4,S.light);p(7,4,S.light);
+  // Shadows
+  p(4,10,S.shad);p(11,10,S.shad);p(4,11,S.shad);p(11,11,S.shad);
+  p(5,12,S.shad);p(10,12,S.shad);
+
+  // 3. EYES (rows 7-9) — large, expressive
+  // Left eye (cols 5-7)
+  p(5,6,outline);p(6,6,outline);p(7,6,outline); // top outline
+  p(5,7,white);  p(6,7,eyeColor);p(7,7,outline); // white highlight, iris, outline
+  p(5,8,outline);p(6,8,eyeColor);p(7,8,outline); // bottom
+  // Right eye (cols 8-10)
+  p(8,6,outline);p(9,6,outline);p(10,6,outline);
+  p(8,7,outline);p(9,7,eyeColor);p(10,7,white);
+  p(8,7,outline);p(9,8,eyeColor);p(10,8,outline);
+
+  // 4. BLUSH (row 9, below eyes)
+  p(4,9,blush);p(5,9,blush);
+  p(10,9,blush);p(11,9,blush);
+
+  // 5. MOUTH (row 10, centered)
+  p(7,10,mouth);p(8,10,mouth);
+
+  // 6. EYEBROWS (row 5)
+  p(5,5,outline);p(6,5,outline);
+  p(9,5,outline);p(10,5,outline);
+
+  // 7. HAIR FRONT — different styles
+  // All styles cover top of head + sides
+  // Style 0: short crop
+  // Style 1: long flowing
+  // Style 2: curly
+  // Style 3: bun
+  // Style 4: mohawk
+  // Style 5: bob
+  // Style 6: braids
+
+  // Common: top of head hair (rows 0-4)
+  var hairTop = function() {
+    // Row 0
+    p(5,0,HM);p(6,0,HM);p(7,0,HM);p(8,0,HM);p(9,0,HM);p(10,0,HM);
+    // Row 1
+    p(4,1,HD);p(5,1,HM);p(6,1,HL);p(7,1,HL);p(8,1,HM);p(9,1,HM);p(10,1,HM);p(11,1,HD);
+    // Row 2
+    p(3,2,HD);p(4,2,HM);p(5,2,HL);p(6,2,HL);p(7,2,HM);p(8,2,HM);p(9,2,HM);p(10,2,HM);p(11,2,HM);p(12,2,HD);
+    // Row 3 sides
+    p(3,3,HD);p(4,3,HM);p(11,3,HM);p(12,3,HD);
+    // Row 4 sides
+    p(3,4,HD);p(4,4,HM);p(11,4,HM);p(12,4,HD);
   };
-  const hc = hairSets[opt.hairColor || 'brown'];
 
-  // Eye color
-  const eyeColor = opt.eyeColor || '#4488cc';
-
-  // Clothing colors
-  const topColors = [
-    { main: '#1a2a5a', light: '#2a3a6a', dark: '#0a1a4a' },     // 0: suit jacket navy
-    { main: '#f0a0b0', light: '#f8b8c8', dark: '#d88898' },     // 1: bridesmaid pink
-    { main: '#e04040', light: '#f06060', dark: '#40a040', alt: '#4080e0' }, // 2: hawaiian
-    { main: '#1a1a1a', light: '#3a3a3a', dark: '#0a0a0a' },     // 3: tux vest black
-    { main: '#e8e0d0', light: '#f0e8e0', dark: '#d0c8b8', alt: '#d06080' }, // 4: floral blouse
-    { main: '#8a8a8a', light: '#a0a0a0', dark: '#6a6a6a' },     // 5: hoodie gray
-    { main: '#f0f0f0', light: '#ffffff', dark: '#d8d8d8' },     // 6: crop top white
-  ];
-  const bottomColors = [
-    { main: '#1a1a1a', light: '#2a2a2a' },   // 0: dress pants black
-    { main: '#f0a0b0', light: '#f8b8c8' },   // 1: long skirt pink
-    { main: '#c8b890', light: '#d8c8a0' },   // 2: shorts khaki
-    { main: '#c8a820', light: '#d8b830' },   // 3: gown gold
-    { main: '#4060a0', light: '#5070b0' },   // 4: jeans blue
-    { main: '#c02020', light: '#d03030' },   // 5: mini skirt red
-  ];
-  const shoeColors = [
-    '#1a1a1a',  // 0: dress shoes black
-    '#c02020',  // 1: heels red
-    '#f0f0f0',  // 2: sneakers white
-    '#6b4528',  // 3: boots brown
-    '#c8b080',  // 4: sandals tan
-  ];
-
-  const topIdx = opt.top != null ? opt.top : 0;
-  const botIdx = opt.bottom != null ? opt.bottom : 0;
-  const shoeIdx = opt.shoes != null ? opt.shoes : 0;
-  const hairStyle = opt.hair != null ? opt.hair : 0;
-  const accIdx = opt.accessory != null ? opt.accessory : -1;
-
-  const tc = topColors[topIdx] || topColors[0];
-  const bc = bottomColors[botIdx] || bottomColors[0];
-  const sc = shoeColors[shoeIdx] || shoeColors[0];
-
-  // Draw pixel helper
-  function p(col, row, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x + col * ps, y + row * ps, ps, ps);
-  }
-  function pRect(col, row, w, h, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x + col * ps, y + row * ps, w * ps, h * ps);
-  }
-
-  // --- HEAD OUTLINE (rows 0-14) ---
-  // Head is 14 wide (cols 5-18), centered in 24-wide grid
-  // Skin fill
-  pRect(6, 3, 12, 12, skinBase);
-  // Lighter cheek area
-  pRect(6, 5, 3, 5, skinLight);
-  pRect(15, 5, 3, 5, skinLight);
-  // Shadow under chin
-  pRect(7, 13, 10, 1, skinShadow);
-
-  // Ears
-  pRect(5, 7, 1, 3, skinBase);
-  pRect(18, 7, 1, 3, skinBase);
-
-  // --- EYES (large chibi eyes) ---
-  // Left eye: cols 7-10, rows 7-10
-  pRect(7, 7, 4, 1, '#000000');  // top lash
-  p(7, 8, '#000000'); p(10, 8, '#000000'); // sides
-  p(8, 8, '#ffffff'); p(9, 8, '#ffffff');  // sclera top
-  p(7, 9, '#000000');
-  p(8, 9, '#ffffff');  // highlight!
-  p(9, 9, eyeColor);  // iris
-  p(10, 9, eyeColor); // iris
-  p(7, 10, '#000000'); p(8, 10, eyeColor); p(9, 10, eyeColor); p(10, 10, '#000000');
-  pRect(8, 11, 2, 1, '#000000'); // bottom
-
-  // Right eye: cols 13-16, rows 7-10
-  pRect(13, 7, 4, 1, '#000000');
-  p(13, 8, '#000000'); p(16, 8, '#000000');
-  p(14, 8, '#ffffff'); p(15, 8, '#ffffff');
-  p(13, 9, '#000000');
-  p(14, 9, '#ffffff');  // highlight!
-  p(15, 9, eyeColor);
-  p(16, 9, eyeColor);
-  p(13, 10, '#000000'); p(14, 10, eyeColor); p(15, 10, eyeColor); p(16, 10, '#000000');
-  pRect(14, 11, 2, 1, '#000000');
-
-  // --- BLUSH (pink cheeks) ---
-  pRect(7, 11, 2, 1, '#f8a0a0');
-  pRect(15, 11, 2, 1, '#f8a0a0');
-
-  // --- MOUTH ---
-  pRect(11, 12, 2, 1, '#e08080');
-
-  // --- NECK ---
-  pRect(10, 14, 4, 1, skinShadow);
-
-  // --- HAIR (wraps around head) ---
-  function drawHair() {
-    // Top hair (all styles have some top coverage)
-    pRect(5, 1, 14, 3, hc[0]); // dark base layer
-    pRect(6, 0, 12, 2, hc[1]); // mid tone
-    pRect(8, 0, 8, 1, hc[2]);  // highlights
-
-    if (hairStyle === 0) {
-      // Short crop — just top
-      pRect(5, 2, 2, 3, hc[0]);
-      pRect(17, 2, 2, 3, hc[0]);
-    } else if (hairStyle === 1) {
-      // Long wavy — extends past chin
-      pRect(4, 2, 2, 14, hc[0]);
-      pRect(18, 2, 2, 14, hc[0]);
-      pRect(4, 3, 1, 12, hc[1]);
-      pRect(19, 3, 1, 12, hc[1]);
-      // Wavy edges
-      p(3, 6, hc[1]); p(3, 10, hc[1]);
-      p(20, 7, hc[1]); p(20, 11, hc[1]);
-      // Shoulder length ends
-      pRect(4, 16, 2, 3, hc[0]);
-      pRect(18, 16, 2, 3, hc[0]);
-      p(4, 19, hc[1]); p(19, 19, hc[1]);
-    } else if (hairStyle === 2) {
-      // Curly — puffy
-      pRect(3, 2, 3, 12, hc[0]);
-      pRect(18, 2, 3, 12, hc[0]);
-      pRect(2, 4, 2, 8, hc[1]);
-      pRect(20, 4, 2, 8, hc[1]);
-      // Puff bumps
-      p(2, 3, hc[2]); p(21, 3, hc[2]);
-      p(1, 6, hc[1]); p(22, 6, hc[1]);
-      p(2, 10, hc[2]); p(21, 10, hc[2]);
-      p(1, 8, hc[0]); p(22, 8, hc[0]);
-    } else if (hairStyle === 3) {
-      // Bun on top + framing
-      pRect(8, -2, 8, 3, hc[0]); // bun
-      pRect(9, -3, 6, 2, hc[1]);
-      pRect(10, -4, 4, 2, hc[2]);
-      // Side framing
-      pRect(4, 2, 2, 8, hc[0]);
-      pRect(18, 2, 2, 8, hc[0]);
-    } else if (hairStyle === 4) {
-      // Mohawk
-      pRect(9, -3, 6, 4, hc[0]);
-      pRect(10, -4, 4, 3, hc[1]);
-      pRect(11, -5, 2, 2, hc[2]);
-      // Shaved sides (skin visible, just slight shadow)
-      pRect(5, 2, 2, 3, skinShadow);
-      pRect(17, 2, 2, 3, skinShadow);
-    } else if (hairStyle === 5) {
-      // Bob — clean edges at jaw
-      pRect(4, 2, 2, 11, hc[0]);
-      pRect(18, 2, 2, 11, hc[0]);
-      pRect(4, 13, 3, 1, hc[1]); // clean bottom edge
-      pRect(17, 13, 3, 1, hc[1]);
-      pRect(3, 4, 1, 8, hc[1]); // outer edge
-      pRect(20, 4, 1, 8, hc[1]);
+  if (hair === 0) { // short crop
+    hairTop();
+    p(3,5,HD);p(4,5,HM); p(11,5,HM);p(12,5,HD);
+  } else if (hair === 1) { // long flowing
+    hairTop();
+    // Sides extend down
+    for (var ly = 5; ly <= 13; ly++) {
+      p(3,ly,HD);p(4,ly,HM);
+      p(11,ly,HM);p(12,ly,HD);
     }
-  }
-  drawHair();
-
-  // --- BODY (rows 15-24) ---
-  // Torso: cols 7-16
-  const isShortTop = (topIdx === 6); // crop top
-  const bodyTop = 15;
-  const bodyBot = isShortTop ? 20 : 24;
-
-  pRect(7, bodyTop, 10, bodyBot - bodyTop, tc.main);
-  // Shading
-  pRect(7, bodyTop, 2, bodyBot - bodyTop, tc.dark);
-  pRect(15, bodyTop, 2, bodyBot - bodyTop, tc.light);
-
-  // Sleeves / arms
-  pRect(5, 16, 2, 5, tc.main);  // left arm
-  pRect(17, 16, 2, 5, tc.main); // right arm
-  // Hands
-  pRect(5, 21, 2, 1, skinBase);
-  pRect(17, 21, 2, 1, skinBase);
-
-  // Hawaiian shirt pattern
-  if (topIdx === 2) {
-    for (let r = bodyTop + 1; r < bodyBot; r += 2) {
-      p(9, r, tc.alt);
-      p(13, r, '#f0e040');
-      p(11, r + 1, tc.alt);
+    // Bottom widens slightly
+    p(3,14,HD);p(4,14,HM);p(11,14,HM);p(12,14,HD);
+    p(4,15,HD);p(11,15,HD);
+  } else if (hair === 2) { // curly
+    // Bigger, puffier
+    p(4,0,HM);p(5,0,HL);p(6,0,HM);p(7,0,HL);p(8,0,HM);p(9,0,HL);p(10,0,HM);p(11,0,HM);
+    p(3,1,HD);p(4,1,HM);p(5,1,HL);p(6,1,HM);p(7,1,HL);p(8,1,HM);p(9,1,HL);p(10,1,HM);p(11,1,HM);p(12,1,HD);
+    p(2,2,HD);p(3,2,HM);p(4,2,HL);p(5,2,HM);p(10,2,HM);p(11,2,HL);p(12,2,HM);p(13,2,HD);
+    for (var cy3 = 3; cy3 <= 14; cy3++) {
+      p(2,cy3,HD);p(3,cy3,HM);p(12,cy3,HM);p(13,cy3,HD);
+      if (cy3 % 2 === 0) { p(1,cy3,HD); p(14,cy3,HD); }
     }
+    p(4,4,HM);p(11,4,HM);
+    p(4,5,HD);p(11,5,HD);
+  } else if (hair === 3) { // bun
+    hairTop();
+    p(3,5,HD);p(4,5,HM);p(11,5,HM);p(12,5,HD);
+    // Bun on top
+    p(6,-1,HM);p(7,-1,HM);p(8,-1,HM);p(9,-1,HM);
+    p(5,-2,HD);p(6,-2,HM);p(7,-2,HL);p(8,-2,HM);p(9,-2,HM);p(10,-2,HD);
+    p(6,-3,HD);p(7,-3,HM);p(8,-3,HM);p(9,-3,HD);
+  } else if (hair === 4) { // mohawk
+    p(6,0,HM);p(7,0,HL);p(8,0,HM);p(9,0,HM);
+    p(6,-1,HD);p(7,-1,HM);p(8,-1,HL);p(9,-1,HD);
+    p(7,-2,HD);p(8,-2,HM);
+    p(7,-3,HD);
+    p(5,1,HM);p(6,1,HL);p(7,1,HM);p(8,1,HM);p(9,1,HL);p(10,1,HM);
+    p(4,2,HD);p(5,2,HM);p(10,2,HM);p(11,2,HD);
+    p(4,3,HD);p(11,3,HD);
+  } else if (hair === 5) { // bob
+    hairTop();
+    p(3,5,HD);p(4,5,HM);p(11,5,HM);p(12,5,HD);
+    p(3,6,HD);p(4,6,HM);p(11,6,HM);p(12,6,HD);
+    p(3,7,HD);p(4,7,HM);p(11,7,HM);p(12,7,HD);
+    p(4,8,HD);p(11,8,HD);
+  } else if (hair === 6) { // braids
+    hairTop();
+    p(3,5,HD);p(4,5,HM);p(11,5,HM);p(12,5,HD);
+    // Two braids hanging down sides
+    for (var by = 6; by <= 18; by++) {
+      p(3,by, by%2===0?HM:HD);
+      p(12,by, by%2===0?HD:HM);
+    }
+    // Braid ties
+    p(3,18,eyeColor);p(12,18,eyeColor);
   }
-  // Floral blouse pattern
-  if (topIdx === 4) {
-    for (let r = bodyTop + 1; r < bodyBot; r += 3) {
-      p(9, r, tc.alt);
-      p(14, r + 1, tc.alt);
-      p(11, r + 2, '#80b060');
+
+  // 8. BODY / CLOTHING — TOP (rows 13-16)
+  // Neck
+  p(7,12,S.base);p(8,12,S.base);
+
+  // Shoulders and torso
+  for (var ty = 13; ty <= 16; ty++) {
+    var tw = ty === 13 ? 5 : 4; // shoulders slightly wider
+    var txStart = 8 - tw;
+    var txEnd = 7 + tw;
+    for (var tx = txStart; tx <= txEnd; tx++) {
+      var tc = TC[1]; // mid color
+      if (tx === txStart || ty === 16) tc = TC[0]; // shadow on left edge and bottom
+      if (tx === txEnd) tc = TC[0]; // shadow on right
+      if (ty === 13 && tx > txStart + 1 && tx < txEnd - 1) tc = TC[2]; // highlight on top
+      p(tx, ty, tc);
     }
   }
 
-  // If crop top, show skin midriff
-  if (isShortTop) {
-    pRect(7, 21, 10, 3, skinBase);
+  // Hawaiian shirt special: add color patches
+  if (top === 2) {
+    p(6,14,'#40a040');p(8,14,'#e8c840');p(9,15,'#40a040');p(7,15,'#e8c840');
+  }
+  // Tux vest: add gold tie
+  if (top === 3) {
+    p(7,13,'#d4a030');p(8,13,'#d4a030');
+    p(7,14,'#d4a030');p(8,14,'#b88020');
+    p(7,15,'#b88020');p(8,15,'#d4a030');
   }
 
-  // --- BOTTOM (rows 22/24-30) ---
-  const legTop = isShortTop ? 24 : 24;
-  const isShort = (botIdx === 2 || botIdx === 5); // shorts or mini skirt
-  const legBot = isShort ? 27 : 30;
+  // Arms (extend from sides row 14-15)
+  p(3,14,TC[1]);p(2,14,TC[0]);p(2,15,S.base);p(1,15,S.base); // left arm + hand
+  p(12,14,TC[1]);p(13,14,TC[0]);p(13,15,S.base);p(14,15,S.base); // right arm + hand
 
-  // Draw bottom garment
-  pRect(7, legTop, 10, legBot - legTop, bc.main);
-  pRect(7, legTop, 2, legBot - legTop, bc.light); // highlight
-
-  // Leg split line
-  pRect(12, legTop + 1, 1, legBot - legTop - 1, bc.light);
-
-  // Exposed skin for shorts/mini
-  if (isShort) {
-    pRect(7, legBot, 4, 31 - legBot, skinBase);
-    pRect(13, legBot, 4, 31 - legBot, skinBase);
-  }
-
-  // Gown flare (bottom === 3)
-  if (botIdx === 3) {
-    pRect(5, 27, 14, 3, bc.main);
-    pRect(4, 29, 16, 1, bc.light);
-  }
-
-  // --- SHOES (rows 30-31) ---
-  pRect(7, 30, 4, 2, sc);
-  pRect(13, 30, 4, 2, sc);
-
-  // Heels (shoe 1) - add heel pixel
-  if (shoeIdx === 1) {
-    p(7, 31, sc);
-    p(13, 31, sc);
-    // Slight heel rise
-    p(7, 29, sc);
-    p(13, 29, sc);
-  }
-  // Boots (shoe 3) - taller
-  if (shoeIdx === 3) {
-    pRect(7, 28, 4, 4, sc);
-    pRect(13, 28, 4, 4, sc);
-  }
-
-  // --- ACCESSORIES ---
-  if (accIdx === 0) {
-    // Bowtie
-    p(10, 15, '#c8a820');
-    p(11, 15, '#e0c030');
-    p(12, 15, '#c8a820');
-    p(11, 14, '#d8b828');
-  } else if (accIdx === 1) {
-    // Pearl necklace
-    for (let i = 9; i <= 14; i++) {
-      p(i, 15, i % 2 === 0 ? '#f0ece0' : '#e8e0d0');
+  // 9. BODY / CLOTHING — BOTTOM (rows 17-19)
+  for (var by2 = 17; by2 <= 19; by2++) {
+    var bw = (bot === 1 || bot === 3 || bot === 5) ? 5 : 3; // skirts/gown wider
+    var bxStart = 8 - bw;
+    var bxEnd = 7 + bw;
+    for (var bx = bxStart; bx <= bxEnd; bx++) {
+      var bc = BC[1];
+      if (bx === bxStart || bx === bxEnd) bc = BC[0];
+      if (by2 === 17 && bx > bxStart && bx < bxEnd) bc = BC[2];
+      p(bx, by2, bc);
     }
-  } else if (accIdx === 2) {
-    // Sunglasses
-    pRect(7, 8, 4, 2, '#1a1a1a');
-    pRect(13, 8, 4, 2, '#1a1a1a');
-    pRect(11, 8, 2, 1, '#1a1a1a'); // bridge
-    // Lens reflection
-    p(8, 8, '#4060a0');
-    p(14, 8, '#4060a0');
-  } else if (accIdx === 3) {
-    // Flower crown
-    const flowerC = ['#ff6080', '#ff80a0', '#ffa0c0', '#80c040', '#60a030'];
-    for (let i = 5; i <= 18; i += 2) {
-      p(i, 1, flowerC[i % flowerC.length]);
-      if (i % 3 === 0) p(i, 0, flowerC[(i + 1) % flowerC.length]);
-    }
-    // Leaves
-    p(6, 2, '#60a030');
-    p(10, 2, '#80c040');
-    p(16, 2, '#60a030');
-  } else if (accIdx === 4) {
-    // Top hat
-    pRect(7, -4, 10, 5, '#1a1a1a');
-    pRect(5, 0, 14, 2, '#1a1a1a');
-    pRect(7, -1, 10, 1, '#3a2a1a'); // hat band
-  } else if (accIdx === 5) {
-    // Tiara
-    pRect(7, 1, 10, 1, '#c0c0d0');
-    p(9, 0, '#c0c0d0');
-    p(12, 0, '#c0c0d0');
-    p(15, 0, '#c0c0d0');
-    // Gems
-    p(9, 0, '#60a0ff');
-    p(12, -1, '#ff60a0');
-    p(15, 0, '#60a0ff');
+  }
+
+  // 10. LEGS + SHOES (rows 20-21)
+  // Left leg
+  p(6,20,BC[0]);p(7,20,BC[0]);
+  p(6,21,SC[0]);p(7,21,SC[0]);
+  // Right leg
+  p(8,20,BC[0]);p(9,20,BC[0]);
+  p(8,21,SC[0]);p(9,21,SC[0]);
+  // Shoe detail
+  p(5,21,SC[1]);p(10,21,SC[1]);
+
+  // 11. ACCESSORIES
+  if (acc === 0) { // bowtie
+    p(7,13,'#d4af37');p(8,13,'#d4af37');
+    p(6,12,'#d4af37');p(9,12,'#d4af37');
+  } else if (acc === 1) { // necklace
+    p(6,12,'#d0d0e0');p(7,12,'#e8e8f0');p(8,12,'#e8e8f0');p(9,12,'#d0d0e0');
+    p(7,13,'#f0f0ff');
+  } else if (acc === 2) { // sunglasses
+    p(4,6,'#1a1a1a');p(5,6,'#1a1a1a');p(6,6,'#2a2a3a');p(7,6,'#2a2a3a');
+    p(8,6,'#1a1a1a');p(9,6,'#2a2a3a');p(10,6,'#2a2a3a');p(11,6,'#1a1a1a');
+    p(5,7,'#2a2a3a');p(6,7,'#3a3a5a');p(7,7,'#3a3a5a');
+    p(9,7,'#3a3a5a');p(10,7,'#3a3a5a');
+  } else if (acc === 3) { // flower crown
+    p(4,1,'#f08090');p(6,0,'#f4a0b0');p(8,0,'#f08090');p(10,0,'#f4a0b0');p(12,1,'#f08090');
+    p(5,0,'#60b060');p(7,0,'#60b060');p(9,0,'#60b060');p(11,0,'#60b060');
+  } else if (acc === 4) { // top hat
+    p(5,-1,outline);p(6,-1,outline);p(7,-1,outline);p(8,-1,outline);p(9,-1,outline);p(10,-1,outline);
+    p(5,-2,outline);p(6,-2,'#1a1a2a');p(7,-2,'#1a1a2a');p(8,-2,'#1a1a2a');p(9,-2,'#1a1a2a');p(10,-2,outline);
+    p(5,-3,outline);p(6,-3,'#1a1a2a');p(7,-3,'#2a2a3a');p(8,-3,'#2a2a3a');p(9,-3,'#1a1a2a');p(10,-3,outline);
+    p(5,-4,outline);p(6,-4,'#2a2a3a');p(7,-4,'#2a2a3a');p(8,-4,'#2a2a3a');p(9,-4,'#2a2a3a');p(10,-4,outline);
+    p(4,-1,outline);p(11,-1,outline); // brim
+    p(6,-1,'#d4af37');p(7,-1,'#d4af37');p(8,-1,'#d4af37');p(9,-1,'#d4af37'); // gold band
+  } else if (acc === 5) { // tiara
+    p(5,0,'#c0c0e0');p(6,0,'#d0d0f0');p(7,-1,'#e0e0ff');p(8,0,'#d0d0f0');p(9,-1,'#e0e0ff');p(10,0,'#c0c0e0');
+    p(7,0,'#f0f0ff');p(9,0,'#f0f0ff');
+    p(8,-1,'#ff6090'); // jewel
   }
 }
 
@@ -1415,7 +1398,7 @@ function initCharCreator() {
             'style="font-size:16px;padding:6px 10px;border-radius:8px;border:2px solid #d4af37;' +
             'background:#1a1a3e;color:#fff;text-align:center;width:180px;margin-top:4px;">' +
         '</div>' +
-        '<canvas id="ccPreview" width="120" height="160" ' +
+        '<canvas id="ccPreview" width="200" height="240" ' +
           'style="display:block;margin:0 auto 8px;background:rgba(0,0,0,0.3);border-radius:12px;border:2px solid #d4af37;"></canvas>' +
         '<div id="ccTabs" style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">' +
           buildTabs() +
@@ -1515,8 +1498,8 @@ function initCharCreator() {
     const pc = document.getElementById('ccPreview');
     if (!pc) return;
     const pCtx = pc.getContext('2d');
-    pCtx.clearRect(0, 0, 120, 160);
-    drawChibiSprite(pCtx, 60, 100, 3.5, {
+    pCtx.clearRect(0, 0, 200, 240);
+    drawChibiSprite(pCtx, 100, 110, 5, {
       hair: avatar.hair,
       hairColor: avatar.hairColor,
       top: avatar.top,
