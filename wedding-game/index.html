@@ -518,8 +518,9 @@ function drawDeciduousTree(ctx, x, baseY, s) {
 //    16px wide × 22px tall grid. x,y = CENTER of sprite.
 //    ps = pixel size (each grid cell = ps×ps screen pixels)
 // ============================================================
-function drawChibiSprite(ctx, cx, cy, ps, options) {
-  // Emmadreamstar-style chibi. 22 wide x 30 tall grid. cx,cy = center.
+function drawChibiSprite(ctx, cx, cy, sz, options) {
+  // High-res chibi using Canvas 2D primitives (arcs, curves, gradients)
+  // sz = overall height in pixels (~120 default). cx,cy = center of sprite.
   var o = options || {};
   var hair = o.hair || 0;
   var hc = o.hairColor || 0;
@@ -528,305 +529,548 @@ function drawChibiSprite(ctx, cx, cy, ps, options) {
   var shoeC = o.shoes || 0;
   var acc = o.acc || 0;
 
-  var ox = cx - 11 * ps;
-  var oy = cy - 15 * ps;
+  var s = sz / 120; // scale factor (120px = base height)
+  var headR = 32 * s; // head radius
+  var headCX = cx;
+  var headCY = cy - 28 * s; // head center
+  var bodyTop = headCY + headR * 0.75; // where body starts
+  
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
 
-  function p(gx, gy, c) {
-    ctx.fillStyle = c;
-    ctx.fillRect(Math.round(ox + gx * ps), Math.round(oy + gy * ps), Math.ceil(ps), Math.ceil(ps));
+  // --- COLOR PALETTES ---
+  var skinBase = '#f0c8a0';
+  var skinLight = '#f8dcc0';
+  var skinShad = '#d8a880';
+  var skinLine = '#b08060';
+
+  var hairPals = [
+    {d:'#3a2010',m:'#6b4020',l:'#8b5830',h:'#a07040'}, // brown
+    {d:'#0a0a18',m:'#1a1a28',l:'#2a2a38',h:'#3a3a48'}, // black
+    {d:'#7a6a20',m:'#a89030',l:'#c8b048',h:'#d8c868'}, // blonde
+    {d:'#5a1810',m:'#8a2818',l:'#b04028',h:'#d05838'}, // red
+    {d:'#1a3858',m:'#2a5878',l:'#3a7898',h:'#5a98b8'}, // blue
+    {d:'#6a1858',m:'#9a2878',l:'#ca4898',h:'#ea68b8'}, // pink
+    {d:'#585868',m:'#888898',l:'#a8a8b8',h:'#c8c8d8'}, // silver
+  ];
+  var HP = hairPals[hc % hairPals.length];
+
+  var eyeColor = '#6060c0'; // purple-blue like the reference
+
+  // Wedding-appropriate formal outfits
+  var topPals = [
+    {name:'Navy Suit Jacket', d:'#0a1838',m:'#182850',l:'#283868',btn:'#d4af37'}, // 0
+    {name:'Blush Cocktail Top',d:'#c87088',m:'#e890a8',l:'#f8b0c0',btn:null}, // 1
+    {name:'Black Tuxedo',d:'#080808',m:'#151515',l:'#222222',btn:'#d4af37'}, // 2
+    {name:'Emerald Blazer',d:'#0a3828',m:'#185038',l:'#286848',btn:'#c0c0c0'}, // 3
+    {name:'Ivory Dress Shirt',d:'#d0c8b8',m:'#e8e0d0',l:'#f8f0e8',btn:'#d0d0d0'}, // 4
+    {name:'Burgundy Velvet',d:'#4a0818',m:'#6a1828',l:'#8a2838',btn:null}, // 5
+    {name:'Champagne Wrap',d:'#c0a870',m:'#d8c088',l:'#e8d8a8',btn:null}, // 6
+    {name:'Lavender Blouse',d:'#8878a8',m:'#a898c0',l:'#c0b0d8',btn:null}, // 7
+  ];
+  var TC = topPals[topC % topPals.length];
+
+  var botPals = [
+    {name:'Black Dress Pants',d:'#080808',m:'#151515',l:'#222222',skirt:false}, // 0
+    {name:'Blush Midi Skirt',d:'#c87088',m:'#e890a8',l:'#f8b0c0',skirt:true}, // 1
+    {name:'Navy Trousers',d:'#0a1838',m:'#182850',l:'#283868',skirt:false}, // 2
+    {name:'Gold Evening Gown',d:'#b89028',m:'#d0a838',l:'#e8c858',skirt:true}, // 3
+    {name:'Charcoal Slacks',d:'#282828',m:'#383838',l:'#484848',skirt:false}, // 4
+    {name:'Sage Wrap Skirt',d:'#506840',m:'#688858',l:'#80a070',skirt:true}, // 5
+  ];
+  var BC = botPals[botC % botPals.length];
+
+  var shoePals = [
+    {name:'Black Dress Shoes',d:'#080808',m:'#181818'}, // 0
+    {name:'Nude Heels',d:'#c8a080',m:'#d8b898'}, // 1
+    {name:'Gold Pumps',d:'#b89028',m:'#d0a838'}, // 2
+    {name:'Burgundy Loafers',d:'#4a0818',m:'#6a1828'}, // 3
+    {name:'Silver Heels',d:'#989898',m:'#b0b0b0'}, // 4
+  ];
+  var SC = shoePals[shoeC % shoePals.length];
+
+  // ===== HELPER FUNCTIONS =====
+  function ellipse(x, y, rx, ry, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
-  function row(gy, pairs) {
-    for (var i = 0; i < pairs.length; i += 2) {
-      p(pairs[i], gy, pairs[i+1]);
-    }
+  function ellipseStroke(x, y, rx, ry, color, lw) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw || 1.5 * s;
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  function rect(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+  }
+  function roundRect(x, y, w, h, r, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.fill();
   }
 
-  // --- PALETTES ---
-  var SK = '#e8c8a0';  // skin base
-  var SL = '#f0d8b8';  // skin light
-  var SD = '#d0a880';  // skin shadow
-  var SX = '#c09068';  // skin dark shadow
-  var BL = '#1a1a1a';  // black outline
-  var WT = '#ffffff';  // white
-  var BH = '#e88898';  // blush
-  var MP = '#d06878';  // mouth pink
-  var TH = '#f0e8e0';  // teeth
-
-  // Hair colors: [darkest, dark, medium, light]
-  var hPals = [
-    ['#3a2210','#5c3a1a','#8b5e3c','#a87850'], // brown
-    ['#0f0f18','#1a1a28','#2a2a38','#3a3a48'], // black
-    ['#6b5a20','#9a8030','#c4a848','#d8c068'], // blonde
-    ['#4a1810','#7a2818','#a04028','#c05838'], // red
-    ['#1a3050','#2a4868','#3a6888','#4a88a8'], // blue
-    ['#5a1848','#8a2868','#ba3888','#da58a8'], // pink
-    ['#585868','#787888','#989898','#b8b8b8'], // silver
-  ];
-  var H = hPals[hc % hPals.length];
-
-  var eyeColor = '#2a9d8f'; // teal default
-
-  // Top colors [dark, mid, light]
-  var tops = [
-    ['#182040','#283868','#385080'], // navy suit
-    ['#c87088','#e890a8','#f8b0c0'], // pink bridesmaid
-    ['#c83838','#38a038','#d8c038'], // hawaiian
-    ['#101010','#1a1a1a','#282828'], // tux
-    ['#d0b0c0','#e8c8d8','#f8e0f0'], // floral
-    ['#484858','#585868','#686878'], // hoodie
-    ['#d8d8d8','#e8e8e8','#f8f8f8'], // white
-  ];
-  var TC = tops[topC % tops.length];
-
-  // Bottom colors
-  var bots = [
-    ['#101010','#1a1a1a','#282828'], // black pants
-    ['#c87088','#e890a8','#f8b0c0'], // pink skirt
-    ['#988860','#b0a078','#c8b890'], // khaki
-    ['#b89028','#d0a838','#e0c050'], // gold gown
-    ['#284870','#385888','#486898'], // jeans
-    ['#a82838','#c83848','#d85060'], // red skirt
-  ];
-  var BC = bots[botC % bots.length];
-
-  // Shoe colors
-  var shos = [
-    ['#101010','#1a1a1a'], // black
-    ['#882028','#a83038'], // red
-    ['#c0c0c0','#d8d8d8'], // white
-    ['#584020','#785830'], // brown
-    ['#b09868','#c8b080'], // tan
-  ];
-  var ShC = shos[shoeC % shos.length];
-
-  // ===== DRAW THE SPRITE =====
-  // Order: hair back, skin, eyes, mouth, blush, hair front, body, legs, accessories
-
-  // 1. HAIR BACK LAYER (for long/flowing styles)
-  if (hair === 1 || hair === 2 || hair === 6) {
-    for (var hby = 8; hby <= 22; hby++) {
-      var hbShade = hby < 12 ? H[2] : (hby < 17 ? H[1] : H[0]);
-      if (hair === 2) { // curly - extra wide
-        p(1, hby, H[0]); p(2, hby, hbShade); p(19, hby, hbShade); p(20, hby, H[0]);
+  // ===== 1. HAIR BACK (behind head for long styles) =====
+  if (hair === 1 || hair === 2 || hair === 5) { // long, curly, braids
+    var hairW = hair === 2 ? headR * 2.4 : headR * 2.0;
+    var hairExtend = hair === 2 ? 50 * s : 40 * s;
+    // Hair cascade behind body
+    roundRect(headCX - hairW/2, headCY - 5*s, hairW, headR + hairExtend, 8*s, HP.m);
+    // Darker inner layer
+    roundRect(headCX - hairW/2 + 3*s, headCY, hairW - 6*s, headR + hairExtend - 5*s, 6*s, HP.d);
+    if (hair === 2) { // curly bumps on sides
+      for (var cb = 0; cb < 5; cb++) {
+        var cby = headCY + cb * 10 * s;
+        ellipse(headCX - hairW/2 - 2*s, cby, 5*s, 4*s, HP.m);
+        ellipse(headCX + hairW/2 + 2*s, cby, 5*s, 4*s, HP.m);
       }
-      p(3, hby, H[0]); p(4, hby, hbShade);
-      p(17, hby, hbShade); p(18, hby, H[0]);
-    }
-    if (hair === 2) { // curly bumps
-      for (var cb = 9; cb <= 20; cb += 2) {
-        p(0, cb, H[0]); p(21, cb, H[0]);
-      }
     }
   }
 
-  // 2. SKIN - FACE (rows 4-14, cols 6-15)
-  // Forehead (rows 4-6)
-  for (var fy = 4; fy <= 6; fy++) {
-    for (var fx = 6; fx <= 15; fx++) {
-      p(fx, fy, fy === 4 ? SL : SK);
+  // ===== 2. BODY (draw before head so head overlaps) =====
+  var bodyW = 22 * s;
+  var bodyH = 20 * s;
+  var shoulderW = 28 * s;
+  
+  // Neck
+  rect(headCX - 5*s, bodyTop - 4*s, 10*s, 10*s, skinBase);
+  ctx.strokeStyle = skinLine;
+  ctx.lineWidth = 1 * s;
+  
+  // Torso
+  ctx.fillStyle = TC.m;
+  ctx.beginPath();
+  ctx.moveTo(headCX - shoulderW/2, bodyTop + 2*s);
+  ctx.lineTo(headCX + shoulderW/2, bodyTop + 2*s);
+  ctx.lineTo(headCX + bodyW/2, bodyTop + bodyH);
+  ctx.lineTo(headCX - bodyW/2, bodyTop + bodyH);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Torso highlight (left side)
+  ctx.fillStyle = TC.l;
+  ctx.beginPath();
+  ctx.moveTo(headCX - shoulderW/2, bodyTop + 2*s);
+  ctx.lineTo(headCX, bodyTop + 2*s);
+  ctx.lineTo(headCX - 2*s, bodyTop + bodyH);
+  ctx.lineTo(headCX - bodyW/2, bodyTop + bodyH);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Torso shadow (right edge)
+  ctx.fillStyle = TC.d;
+  ctx.beginPath();
+  ctx.moveTo(headCX + shoulderW/2 - 4*s, bodyTop + 2*s);
+  ctx.lineTo(headCX + shoulderW/2, bodyTop + 2*s);
+  ctx.lineTo(headCX + bodyW/2, bodyTop + bodyH);
+  ctx.lineTo(headCX + bodyW/2 - 4*s, bodyTop + bodyH);
+  ctx.closePath();
+  ctx.fill();
+
+  // Collar / neckline
+  ctx.strokeStyle = TC.d;
+  ctx.lineWidth = 1.5 * s;
+  ctx.beginPath();
+  ctx.moveTo(headCX - 8*s, bodyTop + 2*s);
+  ctx.quadraticCurveTo(headCX, bodyTop + 8*s, headCX + 8*s, bodyTop + 2*s);
+  ctx.stroke();
+
+  // Buttons (for suit/blazer)
+  if (TC.btn) {
+    ctx.fillStyle = TC.btn;
+    for (var bi = 0; bi < 3; bi++) {
+      ctx.beginPath();
+      ctx.arc(headCX, bodyTop + 8*s + bi * 5*s, 1.5*s, 0, Math.PI*2);
+      ctx.fill();
     }
   }
-  // Mid face (rows 7-11)
-  for (var fy2 = 7; fy2 <= 11; fy2++) {
-    for (var fx2 = 5; fx2 <= 16; fx2++) {
-      p(fx2, fy2, SK);
-    }
+  
+  // Arms
+  var armLen = 22 * s;
+  // Left arm
+  ctx.fillStyle = TC.m;
+  ctx.beginPath();
+  ctx.moveTo(headCX - shoulderW/2, bodyTop + 3*s);
+  ctx.lineTo(headCX - shoulderW/2 - 5*s, bodyTop + armLen);
+  ctx.lineTo(headCX - shoulderW/2 - 5*s + 6*s, bodyTop + armLen);
+  ctx.lineTo(headCX - shoulderW/2 + 4*s, bodyTop + 3*s);
+  ctx.closePath();
+  ctx.fill();
+  // Left hand
+  ellipse(headCX - shoulderW/2 - 3*s, bodyTop + armLen + 2*s, 4*s, 4*s, skinBase);
+  
+  // Right arm
+  ctx.fillStyle = TC.d;
+  ctx.beginPath();
+  ctx.moveTo(headCX + shoulderW/2, bodyTop + 3*s);
+  ctx.lineTo(headCX + shoulderW/2 + 5*s, bodyTop + armLen);
+  ctx.lineTo(headCX + shoulderW/2 + 5*s - 6*s, bodyTop + armLen);
+  ctx.lineTo(headCX + shoulderW/2 - 4*s, bodyTop + 3*s);
+  ctx.closePath();
+  ctx.fill();
+  // Right hand
+  ellipse(headCX + shoulderW/2 + 3*s, bodyTop + armLen + 2*s, 4*s, 4*s, skinShad);
+
+  // ===== 3. BOTTOM (skirt or pants) =====
+  var botTop = bodyTop + bodyH;
+  var legLen = 18 * s;
+  
+  if (BC.skirt) {
+    // Skirt (A-line trapezoid)
+    var skirtBottom = botTop + 16 * s;
+    ctx.fillStyle = BC.m;
+    ctx.beginPath();
+    ctx.moveTo(headCX - bodyW/2, botTop);
+    ctx.lineTo(headCX + bodyW/2, botTop);
+    ctx.lineTo(headCX + bodyW/2 + 8*s, skirtBottom);
+    ctx.lineTo(headCX - bodyW/2 - 8*s, skirtBottom);
+    ctx.closePath();
+    ctx.fill();
+    // Skirt highlight
+    ctx.fillStyle = BC.l;
+    ctx.beginPath();
+    ctx.moveTo(headCX - bodyW/2, botTop);
+    ctx.lineTo(headCX - 2*s, botTop);
+    ctx.lineTo(headCX + 2*s, skirtBottom);
+    ctx.lineTo(headCX - bodyW/2 - 8*s, skirtBottom);
+    ctx.closePath();
+    ctx.fill();
+    // Skirt fold line
+    ctx.strokeStyle = BC.d;
+    ctx.lineWidth = 1 * s;
+    ctx.beginPath();
+    ctx.moveTo(headCX + 5*s, botTop + 2*s);
+    ctx.lineTo(headCX + 8*s, skirtBottom);
+    ctx.stroke();
+    
+    // Legs below skirt
+    var legTop = skirtBottom;
+    rect(headCX - 6*s, legTop, 5*s, 10*s, skinBase);
+    rect(headCX + 1*s, legTop, 5*s, 10*s, skinShad);
+    // Shoes
+    roundRect(headCX - 8*s, legTop + 10*s, 8*s, 5*s, 2*s, SC.m);
+    roundRect(headCX + 0*s, legTop + 10*s, 8*s, 5*s, 2*s, SC.d);
+  } else {
+    // Pants (two legs)
+    var pantBot = botTop + legLen;
+    // Left leg
+    ctx.fillStyle = BC.m;
+    ctx.beginPath();
+    ctx.moveTo(headCX - bodyW/2, botTop);
+    ctx.lineTo(headCX - 2*s, botTop);
+    ctx.lineTo(headCX - 3*s, pantBot);
+    ctx.lineTo(headCX - bodyW/2 + 2*s, pantBot);
+    ctx.closePath();
+    ctx.fill();
+    // Right leg
+    ctx.fillStyle = BC.d;
+    ctx.beginPath();
+    ctx.moveTo(headCX + 2*s, botTop);
+    ctx.lineTo(headCX + bodyW/2, botTop);
+    ctx.lineTo(headCX + bodyW/2 - 2*s, pantBot);
+    ctx.lineTo(headCX + 3*s, pantBot);
+    ctx.closePath();
+    ctx.fill();
+    // Shoes
+    roundRect(headCX - bodyW/2, pantBot, 10*s, 5*s, 2*s, SC.m);
+    roundRect(headCX + 2*s, pantBot, 10*s, 5*s, 2*s, SC.d);
   }
-  // Lower face/chin (rows 12-14)
-  for (var fy3 = 12; fy3 <= 13; fy3++) {
-    for (var fx3 = 6; fx3 <= 15; fx3++) {
-      p(fx3, fy3, fy3 === 13 ? SD : SK);
-    }
-  }
-  row(14, [7,SD, 8,SD, 9,SD, 10,SD, 11,SD, 12,SD, 13,SD, 14,SD]);
-  // Highlights
-  row(4, [8,SL, 9,SL, 10,WT, 11,SL, 12,SL]);
-  row(5, [7,SL, 8,SL]);
 
-  // 3. EYES (rows 8-10) — LARGE, teal/colored, with white sclera
-  // Left eye (cols 6-9): thick black eyelid top, white+iris below
-  row(7, [6,BL, 7,BL, 8,BL, 9,BL]);  // eyelid top thick
-  row(8, [5,BL, 6,WT, 7,WT, 8,eyeColor, 9,eyeColor, 10,BL]); // white sclera + colored iris
-  row(9, [6,BL, 7,WT, 8,eyeColor, 9,BL]); // bottom of eye
+  // ===== 4. HEAD =====
+  // Head base (large circle)
+  ellipse(headCX, headCY, headR, headR * 0.95, skinBase);
+  // Forehead highlight
+  ellipse(headCX - 3*s, headCY - 8*s, headR * 0.5, headR * 0.35, skinLight);
+  // Cheek shadows
+  ellipse(headCX - headR * 0.55, headCY + 5*s, 8*s, 6*s, skinShad);
+  ellipse(headCX + headR * 0.55, headCY + 5*s, 8*s, 6*s, skinShad);
+  // Head outline
+  ellipseStroke(headCX, headCY, headR, headR * 0.95, skinLine, 1.8*s);
 
-  // Right eye (cols 12-15)
-  row(7, [12,BL, 13,BL, 14,BL, 15,BL]);
-  row(8, [11,BL, 12,eyeColor, 13,eyeColor, 14,WT, 15,WT, 16,BL]);
-  row(9, [12,BL, 13,eyeColor, 14,WT, 15,BL]);
+  // ===== 5. EYES (THE MOST IMPORTANT PART) =====
+  var eyeSpacing = 10 * s;
+  var eyeY = headCY + 2 * s;
+  var eyeW = 9 * s;  // eye width
+  var eyeH = 10 * s; // eye height
+  
+  // Left eye
+  var leX = headCX - eyeSpacing;
+  // White sclera
+  ellipse(leX, eyeY, eyeW, eyeH, '#ffffff');
+  // Iris (large, gradient)
+  var irisGrad = ctx.createRadialGradient(leX, eyeY - 1*s, 1*s, leX, eyeY, 7*s);
+  irisGrad.addColorStop(0, '#8080e0');
+  irisGrad.addColorStop(0.4, eyeColor);
+  irisGrad.addColorStop(1, '#303080');
+  ellipse(leX, eyeY + 1*s, 6.5*s, 7*s, irisGrad);
+  // Pupil
+  ellipse(leX, eyeY + 2*s, 3*s, 3.5*s, '#0a0a1a');
+  // Highlight sparkles (2 white dots — THIS makes it cute)
+  ellipse(leX - 2.5*s, eyeY - 2.5*s, 2.5*s, 2.5*s, '#ffffff');
+  ellipse(leX + 1.5*s, eyeY + 1*s, 1.2*s, 1.2*s, '#ffffff');
+  // Upper eyelid (thick dark line)
+  ctx.strokeStyle = '#1a1020';
+  ctx.lineWidth = 2.5 * s;
+  ctx.beginPath();
+  ctx.arc(leX, eyeY, eyeW, Math.PI * 1.15, Math.PI * 1.85);
+  ctx.stroke();
+  // Eyelashes
+  ctx.lineWidth = 1.5 * s;
+  ctx.beginPath();
+  ctx.moveTo(leX - eyeW + 1*s, eyeY - 2*s);
+  ctx.lineTo(leX - eyeW - 2*s, eyeY - 5*s);
+  ctx.stroke();
+  
+  // Right eye (mirror)
+  var reX = headCX + eyeSpacing;
+  ellipse(reX, eyeY, eyeW, eyeH, '#ffffff');
+  var irisGrad2 = ctx.createRadialGradient(reX, eyeY - 1*s, 1*s, reX, eyeY, 7*s);
+  irisGrad2.addColorStop(0, '#8080e0');
+  irisGrad2.addColorStop(0.4, eyeColor);
+  irisGrad2.addColorStop(1, '#303080');
+  ellipse(reX, eyeY + 1*s, 6.5*s, 7*s, irisGrad2);
+  ellipse(reX, eyeY + 2*s, 3*s, 3.5*s, '#0a0a1a');
+  ellipse(reX - 1.5*s, eyeY - 2.5*s, 2.5*s, 2.5*s, '#ffffff');
+  ellipse(reX + 2.5*s, eyeY + 1*s, 1.2*s, 1.2*s, '#ffffff');
+  ctx.strokeStyle = '#1a1020';
+  ctx.lineWidth = 2.5 * s;
+  ctx.beginPath();
+  ctx.arc(reX, eyeY, eyeW, Math.PI * 1.15, Math.PI * 1.85);
+  ctx.stroke();
+  ctx.lineWidth = 1.5 * s;
+  ctx.beginPath();
+  ctx.moveTo(reX + eyeW - 1*s, eyeY - 2*s);
+  ctx.lineTo(reX + eyeW + 2*s, eyeY - 5*s);
+  ctx.stroke();
 
-  // 4. BLUSH (row 11) — bold pink
-  row(11, [5,BH, 6,BH, 7,BH, 14,BH, 15,BH, 16,BH]);
+  // ===== 6. BLUSH =====
+  ctx.globalAlpha = 0.4;
+  ellipse(headCX - 16*s, eyeY + 10*s, 6*s, 4*s, '#ff8090');
+  ellipse(headCX + 16*s, eyeY + 10*s, 6*s, 4*s, '#ff8090');
+  ctx.globalAlpha = 1;
 
-  // 5. MOUTH (rows 12-13) — wide smile with white teeth
-  row(12, [8,MP, 9,MP, 10,MP, 11,MP, 12,MP, 13,MP]); // upper lip
-  row(13, [9,TH, 10,TH, 11,TH, 12,TH]); // teeth showing
-  row(13, [8,MP, 13,MP]); // lip corners
+  // ===== 7. MOUTH =====
+  var mouthY = eyeY + 14 * s;
+  ctx.strokeStyle = '#c06070';
+  ctx.lineWidth = 1.5 * s;
+  ctx.beginPath();
+  ctx.moveTo(headCX - 4*s, mouthY);
+  ctx.quadraticCurveTo(headCX, mouthY + 3*s, headCX + 4*s, mouthY);
+  ctx.stroke();
+  // Small teeth highlight
+  ctx.fillStyle = '#fff8f0';
+  ctx.beginPath();
+  ctx.moveTo(headCX - 2.5*s, mouthY + 0.5*s);
+  ctx.quadraticCurveTo(headCX, mouthY + 2*s, headCX + 2.5*s, mouthY + 0.5*s);
+  ctx.fill();
 
-  // 6. HAIR FRONT — covers top of head + frames face
-  // All styles: top of head (rows 0-4)
-  var hairTopFn = function() {
-    // Row 0 - top of hair
-    row(0, [6,H[1], 7,H[2], 8,H[2], 9,H[3], 10,H[3], 11,H[2], 12,H[2], 13,H[2], 14,H[1], 15,H[1]]);
-    // Row 1
-    row(1, [5,H[0], 6,H[1], 7,H[2], 8,H[3], 9,H[3], 10,H[2], 11,H[3], 12,H[2], 13,H[2], 14,H[1], 15,H[1], 16,H[0]]);
-    // Row 2
-    row(2, [4,H[0], 5,H[1], 6,H[2], 7,H[3], 8,H[2], 9,H[2], 10,H[3], 11,H[2], 12,H[3], 13,H[2], 14,H[1], 15,H[1], 16,H[0], 17,H[0]]);
-    // Row 3
-    row(3, [4,H[0], 5,H[1], 6,H[2], 7,H[1], 14,H[2], 15,H[1], 16,H[1], 17,H[0]]);
-    // Row 4 - side bangs
-    row(4, [4,H[0], 5,H[1], 6,H[2], 15,H[2], 16,H[1], 17,H[0]]);
-    // Row 5 - sides
-    row(5, [4,H[0], 5,H[1], 16,H[1], 17,H[0]]);
-    // Row 6
-    row(6, [4,H[0], 5,H[1], 16,H[1], 17,H[0]]);
+  // ===== 8. NOSE (tiny) =====
+  ctx.fillStyle = skinShad;
+  ctx.beginPath();
+  ctx.arc(headCX, eyeY + 8*s, 1.5*s, 0, Math.PI*2);
+  ctx.fill();
+
+  // ===== 9. HAIR FRONT =====
+  // Hair covers top ~40% of head + frames sides
+  
+  var drawHairBase = function() {
+    // Main hair mass on top of head
+    ctx.fillStyle = HP.m;
+    ctx.beginPath();
+    ctx.ellipse(headCX, headCY - 10*s, headR + 4*s, headR * 0.7, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+    // Highlight
+    ctx.fillStyle = HP.l;
+    ctx.beginPath();
+    ctx.ellipse(headCX - 5*s, headCY - 16*s, headR * 0.5, headR * 0.3, -0.2, Math.PI, Math.PI * 2);
+    ctx.fill();
+    // Top edge
+    ctx.fillStyle = HP.h;
+    ctx.beginPath();
+    ctx.ellipse(headCX - 3*s, headCY - 20*s, headR * 0.35, headR * 0.15, -0.1, Math.PI, Math.PI * 2);
+    ctx.fill();
   };
 
   if (hair === 0) { // short crop
-    hairTopFn();
-    row(7, [4,H[0], 5,H[1], 16,H[1], 17,H[0]]);
+    drawHairBase();
+    // Side hair
+    ellipse(headCX - headR - 1*s, headCY - 4*s, 6*s, 12*s, HP.d);
+    ellipse(headCX + headR + 1*s, headCY - 4*s, 6*s, 12*s, HP.d);
   } else if (hair === 1) { // long flowing
-    hairTopFn();
-    for (var ly = 7; ly <= 14; ly++) {
-      row(ly, [4,H[0], 5,H[1], 16,H[1], 17,H[0]]);
+    drawHairBase();
+    // Side curtains
+    roundRect(headCX - headR - 3*s, headCY - 10*s, 8*s, 45*s, 3*s, HP.d);
+    roundRect(headCX - headR - 1*s, headCY - 8*s, 6*s, 42*s, 3*s, HP.m);
+    roundRect(headCX + headR - 5*s, headCY - 10*s, 8*s, 45*s, 3*s, HP.d);
+    roundRect(headCX + headR - 3*s, headCY - 8*s, 6*s, 42*s, 3*s, HP.m);
+    // Bangs
+    ctx.fillStyle = HP.l;
+    ctx.beginPath();
+    ctx.moveTo(headCX - 12*s, headCY - 8*s);
+    ctx.quadraticCurveTo(headCX - 5*s, headCY + 2*s, headCX + 2*s, headCY - 6*s);
+    ctx.quadraticCurveTo(headCX + 10*s, headCY + 0*s, headCX + 14*s, headCY - 8*s);
+    ctx.lineTo(headCX + 14*s, headCY - 14*s);
+    ctx.lineTo(headCX - 12*s, headCY - 14*s);
+    ctx.fill();
+  } else if (hair === 2) { // curly/voluminous
+    // Extra big hair
+    ctx.fillStyle = HP.m;
+    ctx.beginPath();
+    ctx.ellipse(headCX, headCY - 8*s, headR + 10*s, headR * 0.85, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = HP.l;
+    ctx.beginPath();
+    ctx.ellipse(headCX - 5*s, headCY - 18*s, headR * 0.6, headR * 0.35, -0.1, Math.PI, Math.PI * 2);
+    ctx.fill();
+    // Curly sides
+    for (var ci = 0; ci < 6; ci++) {
+      var ccy = headCY - 10*s + ci * 9*s;
+      ellipse(headCX - headR - 5*s - Math.sin(ci)*3*s, ccy, 7*s, 5*s, ci%2===0 ? HP.m : HP.l);
+      ellipse(headCX + headR + 5*s + Math.sin(ci)*3*s, ccy, 7*s, 5*s, ci%2===0 ? HP.l : HP.m);
     }
-  } else if (hair === 2) { // curly
-    // Extra volume on top
-    row(-1, [7,H[1], 8,H[2], 9,H[1], 10,H[2], 11,H[1], 12,H[2], 13,H[1], 14,H[1]]);
-    row(0, [5,H[0], 6,H[1], 7,H[2], 8,H[3], 9,H[2], 10,H[3], 11,H[2], 12,H[3], 13,H[2], 14,H[1], 15,H[1], 16,H[0]]);
-    row(1, [4,H[0], 5,H[1], 6,H[2], 7,H[3], 8,H[2], 9,H[3], 10,H[2], 11,H[3], 12,H[2], 13,H[3], 14,H[1], 15,H[1], 16,H[0], 17,H[0]]);
-    row(2, [3,H[0], 4,H[1], 5,H[2], 6,H[3], 7,H[2], 12,H[2], 13,H[3], 14,H[2], 15,H[1], 16,H[1], 17,H[0], 18,H[0]]);
-    row(3, [3,H[0], 4,H[1], 5,H[2], 6,H[1], 15,H[2], 16,H[1], 17,H[0], 18,H[0]]);
-    for (var cy4 = 4; cy4 <= 14; cy4++) {
-      row(cy4, [3,H[0], 4,H[1], 5,H[cy4%2===0?2:1], 16,H[cy4%2===0?1:2], 17,H[0], 18,H[0]]);
-    }
-  } else if (hair === 3) { // bun
-    hairTopFn();
-    row(7, [4,H[0], 5,H[1], 16,H[1], 17,H[0]]);
+  } else if (hair === 3) { // updo/bun
+    drawHairBase();
+    ellipse(headCX - headR - 1*s, headCY - 4*s, 5*s, 10*s, HP.d);
+    ellipse(headCX + headR + 1*s, headCY - 4*s, 5*s, 10*s, HP.d);
     // Bun on top
-    row(-3, [8,H[1], 9,H[2], 10,H[2], 11,H[2], 12,H[1]]);
-    row(-2, [7,H[0], 8,H[2], 9,H[3], 10,H[3], 11,H[2], 12,H[2], 13,H[0]]);
-    row(-1, [7,H[0], 8,H[1], 9,H[2], 10,H[3], 11,H[2], 12,H[1], 13,H[0]]);
-  } else if (hair === 4) { // mohawk
-    row(-2, [9,H[1], 10,H[2], 11,H[1]]);
-    row(-1, [8,H[0], 9,H[2], 10,H[3], 11,H[2], 12,H[0]]);
-    row(0, [7,H[0], 8,H[1], 9,H[3], 10,H[3], 11,H[2], 12,H[1], 13,H[0]]);
-    row(1, [6,H[0], 7,H[1], 8,H[2], 9,H[3], 10,H[2], 11,H[3], 12,H[2], 13,H[1], 14,H[0]]);
-    row(2, [5,H[0], 6,H[1], 7,H[2], 8,H[1], 12,H[1], 13,H[2], 14,H[1], 15,H[0]]);
-    row(3, [5,H[0], 6,H[1], 15,H[1], 16,H[0]]);
-    row(4, [5,H[0], 16,H[0]]);
-  } else if (hair === 5) { // bob
-    hairTopFn();
-    for (var bby = 7; bby <= 10; bby++) {
-      row(bby, [4,H[0], 5,H[1], 16,H[1], 17,H[0]]);
-    }
-    row(11, [5,H[0], 16,H[0]]);
-  } else if (hair === 6) { // braids
-    hairTopFn();
-    for (var bry = 7; bry <= 8; bry++) {
-      row(bry, [4,H[0], 5,H[1], 16,H[1], 17,H[0]]);
-    }
-    // Braid strands
-    for (var br = 9; br <= 22; br++) {
-      p(4, br, br%2===0 ? H[2] : H[1]);
-      p(5, br, br%2===0 ? H[1] : H[2]);
-      p(16, br, br%2===0 ? H[1] : H[2]);
-      p(17, br, br%2===0 ? H[2] : H[1]);
+    ellipse(headCX, headCY - headR - 10*s, 12*s, 10*s, HP.m);
+    ellipse(headCX - 2*s, headCY - headR - 12*s, 8*s, 6*s, HP.l);
+    ellipse(headCX + 1*s, headCY - headR - 14*s, 5*s, 4*s, HP.h);
+  } else if (hair === 4) { // pixie
+    ctx.fillStyle = HP.m;
+    ctx.beginPath();
+    ctx.ellipse(headCX + 2*s, headCY - 12*s, headR + 2*s, headR * 0.6, 0.15, Math.PI, Math.PI * 2);
+    ctx.fill();
+    // Swept bangs
+    ctx.fillStyle = HP.l;
+    ctx.beginPath();
+    ctx.moveTo(headCX + headR, headCY - 6*s);
+    ctx.quadraticCurveTo(headCX + 5*s, headCY - 2*s, headCX - 15*s, headCY - 4*s);
+    ctx.lineTo(headCX - 15*s, headCY - 14*s);
+    ctx.lineTo(headCX + headR, headCY - 14*s);
+    ctx.fill();
+    // Short sides
+    ellipse(headCX - headR, headCY - 2*s, 4*s, 8*s, HP.d);
+    ellipse(headCX + headR, headCY - 2*s, 4*s, 8*s, HP.d);
+  } else if (hair === 5) { // braids
+    drawHairBase();
+    ellipse(headCX - headR - 1*s, headCY - 4*s, 5*s, 10*s, HP.d);
+    ellipse(headCX + headR + 1*s, headCY - 4*s, 5*s, 10*s, HP.d);
+    // Two braids
+    for (var bi2 = 0; bi2 < 7; bi2++) {
+      var bby = headCY + 5*s + bi2 * 6*s;
+      ellipse(headCX - headR - 2*s, bby, 4*s, 3*s, bi2%2===0 ? HP.m : HP.l);
+      ellipse(headCX + headR + 2*s, bby, 4*s, 3*s, bi2%2===0 ? HP.l : HP.m);
     }
     // Ties
-    p(4,23,eyeColor); p(5,23,eyeColor);
-    p(16,23,eyeColor); p(17,23,eyeColor);
+    ellipse(headCX - headR - 2*s, headCY + 47*s, 3*s, 3*s, '#ff8090');
+    ellipse(headCX + headR + 2*s, headCY + 47*s, 3*s, 3*s, '#ff8090');
   }
 
-  // 7. NECK (row 15)
-  row(15, [9,SK, 10,SK, 11,SK, 12,SK]);
-
-  // 8. BODY — TOP (rows 16-20)
-  for (var ty = 16; ty <= 20; ty++) {
-    var tw = ty === 16 ? 6 : 5;
-    for (var tx = 11 - tw; tx <= 10 + tw; tx++) {
-      var shade = TC[1];
-      if (tx <= 11 - tw + 1 || tx >= 10 + tw - 1) shade = TC[0];
-      if (ty === 16 && tx > 11 - tw + 1 && tx < 10 + tw - 1) shade = TC[2];
-      p(tx, ty, shade);
+  // ===== 10. ACCESSORIES =====
+  if (acc === 0) { // Gold bowtie
+    ctx.fillStyle = '#d4af37';
+    ctx.beginPath();
+    ctx.moveTo(headCX, bodyTop + 3*s);
+    ctx.lineTo(headCX - 8*s, bodyTop);
+    ctx.lineTo(headCX - 8*s, bodyTop + 6*s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(headCX, bodyTop + 3*s);
+    ctx.lineTo(headCX + 8*s, bodyTop);
+    ctx.lineTo(headCX + 8*s, bodyTop + 6*s);
+    ctx.closePath();
+    ctx.fill();
+    ellipse(headCX, bodyTop + 3*s, 2*s, 2*s, '#b89020');
+  } else if (acc === 1) { // Pearl necklace
+    ctx.strokeStyle = '#d8d8e8';
+    ctx.lineWidth = 1 * s;
+    ctx.beginPath();
+    ctx.arc(headCX, bodyTop - 2*s, 10*s, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+    for (var pi = 0; pi < 5; pi++) {
+      var pa = 0.2 + pi * (Math.PI - 0.4) / 4;
+      var ppx = headCX + Math.cos(pa) * 10*s;
+      var ppy = bodyTop - 2*s + Math.sin(pa) * 10*s;
+      ellipse(ppx, ppy, 2*s, 2*s, '#f0f0ff');
+    }
+  } else if (acc === 2) { // Corsage/boutonniere
+    ellipse(headCX - shoulderW/2 + 5*s, bodyTop + 6*s, 4*s, 4*s, '#f0a0b0');
+    ellipse(headCX - shoulderW/2 + 4*s, bodyTop + 5*s, 2.5*s, 2.5*s, '#f8c0d0');
+    ellipse(headCX - shoulderW/2 + 6*s, bodyTop + 5*s, 2*s, 2*s, '#ffd8e0');
+    // Leaf
+    ctx.fillStyle = '#60a060';
+    ctx.beginPath();
+    ctx.ellipse(headCX - shoulderW/2 + 3*s, bodyTop + 9*s, 3*s, 1.5*s, 0.5, 0, Math.PI*2);
+    ctx.fill();
+  } else if (acc === 3) { // Flower crown
+    for (var fi = 0; fi < 7; fi++) {
+      var fa = Math.PI + fi * Math.PI / 6;
+      var ffx = headCX + Math.cos(fa) * (headR + 2*s);
+      var ffy = headCY - 10*s + Math.sin(fa) * (headR * 0.6);
+      ellipse(ffx, ffy, 4*s, 4*s, fi%2===0 ? '#f090a0' : '#f8b8c8');
+      ellipse(ffx, ffy, 2*s, 2*s, fi%2===0 ? '#ffd0d8' : '#ffe0e8');
+    }
+    // Vine
+    ctx.strokeStyle = '#50a050';
+    ctx.lineWidth = 1.5 * s;
+    ctx.beginPath();
+    ctx.arc(headCX, headCY - 10*s, headR + 1*s, Math.PI + 0.1, Math.PI * 2 - 0.1);
+    ctx.stroke();
+  } else if (acc === 4) { // Fascinator/cocktail hat
+    ctx.fillStyle = '#2a2838';
+    ctx.beginPath();
+    ctx.ellipse(headCX + 10*s, headCY - headR - 2*s, 12*s, 4*s, 0.3, 0, Math.PI*2);
+    ctx.fill();
+    roundRect(headCX + 6*s, headCY - headR - 12*s, 10*s, 10*s, 3*s, '#2a2838');
+    // Feather
+    ctx.strokeStyle = '#f8c8d0';
+    ctx.lineWidth = 1.5 * s;
+    ctx.beginPath();
+    ctx.moveTo(headCX + 14*s, headCY - headR - 10*s);
+    ctx.quadraticCurveTo(headCX + 20*s, headCY - headR - 25*s, headCX + 16*s, headCY - headR - 28*s);
+    ctx.stroke();
+  } else if (acc === 5) { // Tiara
+    ctx.strokeStyle = '#c0c0e0';
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.arc(headCX, headCY - 8*s, headR + 2*s, Math.PI + 0.3, Math.PI * 2 - 0.3);
+    ctx.stroke();
+    // Jewel points
+    for (var ti = 0; ti < 5; ti++) {
+      var ta = Math.PI + 0.4 + ti * (Math.PI - 0.8) / 4;
+      var ttx = headCX + Math.cos(ta) * (headR + 2*s);
+      var tty = headCY - 8*s + Math.sin(ta) * (headR + 2*s);
+      var th = ti === 2 ? 8*s : 5*s;
+      ctx.fillStyle = '#d0d0f0';
+      ctx.beginPath();
+      ctx.moveTo(ttx - 2*s, tty);
+      ctx.lineTo(ttx, tty - th);
+      ctx.lineTo(ttx + 2*s, tty);
+      ctx.closePath();
+      ctx.fill();
+      if (ti === 2) {
+        ellipse(ttx, tty - th + 2*s, 2*s, 2*s, '#ff6090');
+      }
     }
   }
 
-  // Hawaiian shirt patches
-  if (topC === 2) {
-    p(8,18,'#38a038'); p(10,18,'#d8c038'); p(12,17,'#38a038');
-    p(9,19,'#d8c038'); p(11,19,'#38a038'); p(13,18,'#d8c038');
-  }
-  // Tux: gold/orange tie
-  if (topC === 3) {
-    row(16, [10,'#d0a030', 11,'#d0a030']);
-    row(17, [10,'#c89028', 11,'#d0a030']);
-    row(18, [10,'#c89028', 11,'#c89028']);
-    row(19, [10,'#b88020', 11,'#b88020']);
-  }
-
-  // ARMS (rows 17-19) — skin at hands
-  row(17, [4,TC[1], 5,TC[0]]);
-  row(18, [3,TC[0], 4,TC[1]]);
-  row(19, [2,SD, 3,SK]);
-  row(20, [2,SK, 3,SD]);
-
-  row(17, [16,TC[0], 17,TC[1]]);
-  row(18, [17,TC[1], 18,TC[0]]);
-  row(19, [18,SK, 19,SD]);
-  row(20, [18,SD, 19,SK]);
-
-  // 9. BODY — BOTTOM (rows 21-24)
-  var isSkirt = (botC === 1 || botC === 3 || botC === 5);
-  for (var by = 21; by <= 24; by++) {
-    var bw = isSkirt ? (6 + (by - 21)) : 5;
-    for (var bx = 11 - bw; bx <= 10 + bw; bx++) {
-      var bs = BC[1];
-      if (bx <= 11 - bw + 1 || bx >= 10 + bw - 1) bs = BC[0];
-      if (by === 21 && bx > 11 - bw + 1 && bx < 10 + bw - 1) bs = BC[2];
-      p(bx, by, bs);
-    }
-  }
-
-  // 10. LEGS + SHOES (rows 25-28)
-  // Left leg
-  for (var lg = 25; lg <= 27; lg++) {
-    p(8, lg, BC[0]); p(9, lg, BC[0]); p(10, lg, BC[0]);
-  }
-  // Right leg
-  for (var rg = 25; rg <= 27; rg++) {
-    p(11, rg, BC[0]); p(12, rg, BC[0]); p(13, rg, BC[0]);
-  }
-  // Shoes
-  row(28, [7,ShC[0], 8,ShC[0], 9,ShC[1], 10,ShC[0]]);
-  row(28, [11,ShC[0], 12,ShC[1], 13,ShC[0], 14,ShC[0]]);
-
-  // 11. ACCESSORIES
-  if (acc === 0) { // gold bowtie
-    row(15, [8,BL, 9,'#d4af37', 10,'#d4af37', 11,'#d4af37', 12,'#d4af37', 13,BL]);
-    row(16, [9,'#d4af37', 12,'#d4af37']);
-  } else if (acc === 1) { // pearl necklace
-    row(15, [7,'#d8d8e8', 8,'#e8e8f0', 9,'#f0f0ff', 10,'#e8e8f0', 11,'#f0f0ff', 12,'#e8e8f0', 13,'#d8d8e8']);
-    p(10, 16, '#f8f8ff');
-  } else if (acc === 2) { // sunglasses
-    row(7, [5,BL, 6,BL, 7,BL, 8,BL, 9,BL, 10,BL, 11,BL, 12,BL, 13,BL, 14,BL, 15,BL, 16,BL]);
-    row(8, [5,BL, 6,'#2a2a50', 7,'#3a3a60', 8,'#2a2a50', 9,BL, 10,BL, 11,BL, 12,BL, 13,'#2a2a50', 14,'#3a3a60', 15,'#2a2a50', 16,BL]);
-    row(9, [6,BL, 7,BL, 8,BL, 13,BL, 14,BL, 15,BL]);
-  } else if (acc === 3) { // flower crown
-    row(0, [5,'#50a050', 6,'#f090a0', 7,'#50a050', 8,'#f0b0c0', 9,'#50a050', 10,'#f090a0',
-            11,'#50a050', 12,'#f0b0c0', 13,'#50a050', 14,'#f090a0', 15,'#50a050', 16,'#f0b0c0']);
-    row(-1, [7,'#f8c0d0', 9,'#f8c0d0', 11,'#f8c0d0', 13,'#f8c0d0']);
-  } else if (acc === 4) { // top hat
-    for (var th = -4; th <= -1; th++) {
-      row(th, [7,BL, 8,'#1a1a28', 9,'#1a1a28', 10,'#2a2a38', 11,'#2a2a38', 12,'#1a1a28', 13,'#1a1a28', 14,BL]);
-    }
-    row(-1, [6,BL, 7,BL, 8,'#d4af37', 9,'#d4af37', 10,'#d4af37', 11,'#d4af37', 12,'#d4af37', 13,'#d4af37', 14,BL, 15,BL]);
-    row(0, [6,BL, 15,BL]);
-  } else if (acc === 5) { // tiara
-    row(-1, [8,'#c0c0e0', 9,'#d0d0f0', 10,'#e8e8ff', 11,'#e8e8ff', 12,'#d0d0f0', 13,'#c0c0e0']);
-    row(-2, [9,'#d0d0f0', 10,'#ff6090', 11,'#ff6090', 12,'#d0d0f0']);
-    row(-3, [10,'#e8e8ff', 11,'#e8e8ff']);
-  }
+  ctx.restore();
 }
+
 
 // ============================================================
 // 8. PIXEL HEART
@@ -1522,7 +1766,7 @@ function initCharCreator() {
     if (!pc) return;
     const pCtx = pc.getContext('2d');
     pCtx.clearRect(0, 0, 200, 240);
-    drawChibiSprite(pCtx, 100, 125, 4, {
+    drawChibiSprite(pCtx, 100, 130, 160, {
       hair: avatar.hair,
       hairColor: avatar.hairColor,
       top: avatar.top,
@@ -1968,7 +2212,7 @@ function initGame1() {
 
     // Player
     const playerX = W * 0.2;
-    drawChibiSprite(ctx, playerX, py.y, scale * 2, {
+    drawChibiSprite(ctx, playerX, py.y, 60 * scale, {
       hair: avatar.hair, hairColor: avatar.hairColor,
       top: avatar.top, bottom: avatar.bottom,
       shoes: avatar.shoes, acc: avatar.acc,
@@ -2750,8 +2994,8 @@ function initGame3() {
     ctx.fillRect(W * 0.4, H * 0.42, W * 0.2, H * 0.05);
 
     // Couple at altar
-    drawChibiSprite(ctx, W * 0.45, H * 0.43, scale * 2, {hair:2, hairColor:0, top:3, bottom:2, shoes:0, acc:0, frame:0});
-    drawChibiSprite(ctx, W * 0.55, H * 0.43, scale * 2, {hair:4, hairColor:3, top:5, bottom:4, shoes:1, acc:2, frame:0});
+    drawChibiSprite(ctx, W * 0.45, H * 0.43, 55 * scale, {hair:2, hairColor:0, top:3, bottom:2, shoes:0, acc:0, frame:0});
+    drawChibiSprite(ctx, W * 0.55, H * 0.43, 55 * scale, {hair:4, hairColor:3, top:5, bottom:4, shoes:1, acc:2, frame:0});
 
     // Confetti cannons
     for (let i = 0; i < cannons.length; i++) {
@@ -3011,7 +3255,7 @@ function initFinale() {
     const fc = document.getElementById('finaleAvatar');
     if (fc) {
       const fCtx = fc.getContext('2d');
-      drawChibiSprite(fCtx, 40, 65, 2.5, {
+      drawChibiSprite(fCtx, 40, 65, 80, {
         hair: avatar.hair, hairColor: avatar.hairColor,
         top: avatar.top, bottom: avatar.bottom,
         shoes: avatar.shoes, acc: avatar.acc, frame: 0
