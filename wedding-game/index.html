@@ -41,15 +41,15 @@ input[type="text"]:focus{border-color:var(--pink)}
 <div id="app">
 <canvas id="gameCanvas"></canvas>
 <div id="screenWelcome" class="screen canvas-screen active"></div>
-<div id="screenCharCreator" class="screen"></div>
+<div id="screenCharCreator" class="screen" style="background:#1a1a3e;overflow-y:auto;z-index:20"></div>
 <div id="screenStoryIntro" class="screen canvas-screen"></div>
 <div id="screenGame1" class="screen canvas-screen"></div>
 <div id="screenStormTransition" class="screen canvas-screen"></div>
 <div id="screenWitchIntro" class="screen canvas-screen"></div>
-<div id="screenGame2" class="screen"></div>
+<div id="screenGame2" class="screen" style="background:#1a1a2e;z-index:20"></div>
 <div id="screenClearSkies" class="screen canvas-screen"></div>
 <div id="screenGame3" class="screen canvas-screen"></div>
-<div id="screenFinale" class="screen"></div>
+<div id="screenFinale" class="screen" style="background:#1a1a2e;overflow-y:auto;z-index:20"></div>
 </div>
 <script>
 // ===== ART FUNCTIONS =====
@@ -1145,6 +1145,11 @@ resize();
 function showScreen(name) {
   currentScreen = name;
   if (animId) { cancelAnimationFrame(animId); animId = null; }
+  // Clear canvas when switching to DOM screens so it doesn't bleed through
+  const domScreens = ['charCreator', 'game2', 'finale'];
+  if (domScreens.indexOf(name) !== -1) {
+    ctx.clearRect(0, 0, C.width, C.height);
+  }
   const screens = document.querySelectorAll('.screen');
   for (let i = 0; i < screens.length; i++) {
     screens[i].classList.remove('active');
@@ -3078,7 +3083,11 @@ function initFinale() {
    ═══════════════════════════════════════════ */
 try {
   const sa = localStorage.getItem('wg_avatar');
-  if (sa) avatar = JSON.parse(sa);
+  if (sa) {
+    const parsed = JSON.parse(sa);
+    avatar = {hair:0, hairColor:0, top:0, bottom:0, shoes:0, acc:0};
+    for (var k in parsed) { if (parsed.hasOwnProperty(k)) avatar[k] = parsed[k]; }
+  }
   const sn = localStorage.getItem('wg_name');
   if (sn) playerName = sn;
 } catch(e) {}
