@@ -1991,6 +1991,7 @@ let playerName = 'Guest';
 let avatar = {hair:0, hairColor:0, top:0, bottom:0, shoes:0, acc:0};
 let scores = {game1:0, game2:0, game2combo:0, game3:0};
 let animId = null;
+var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || ('ontouchstart' in window);
 
 function resize() {
   const dpr = window.devicePixelRatio || 1;
@@ -2115,6 +2116,76 @@ function setCanvasHandler(fn) {
   _canvasTouch = function(e) { e.preventDefault(); fn(e); };
   C.addEventListener('click', _canvasClick);
   C.addEventListener('touchstart', _canvasTouch, {passive: false});
+}
+
+/* ═══════════════════════════════════════════
+   INSTRUCTION SCREEN HELPER
+   ═══════════════════════════════════════════ */
+function showInstructions(title, lines, controlText, onStart) {
+  showScreen('instructions');
+  var startBtnY = H * 0.78;
+  var startBtnW = 180 * scale;
+  var startBtnH = 50 * scale;
+
+  function draw() {
+    if (currentScreen !== 'instructions') return;
+    ctx.clearRect(0, 0, W, H);
+
+    // Dark gradient background
+    var bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#1a1a3e');
+    bg.addColorStop(1, '#2d1b4e');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Decorative border
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 3 * scale;
+    ctx.strokeRect(20 * scale, 30 * scale, W - 40 * scale, H - 60 * scale);
+
+    // Title
+    drawTextOutline(title, W / 2, H * 0.15, 28 * scale, '#ffd700', '#333', 'center');
+
+    // Divider line
+    ctx.strokeStyle = 'rgba(212,175,55,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.2, H * 0.22);
+    ctx.lineTo(W * 0.8, H * 0.22);
+    ctx.stroke();
+
+    // Instruction lines
+    var lineY = H * 0.32;
+    var lineSpacing = 36 * scale;
+    for (var i = 0; i < lines.length; i++) {
+      drawTextOutline('• ' + lines[i], W / 2, lineY + i * lineSpacing, 14 * scale, '#fff', '#222', 'center');
+    }
+
+    // Control hint box
+    var hintY = H * 0.32 + lines.length * lineSpacing + 20 * scale;
+    ctx.fillStyle = 'rgba(212,175,55,0.15)';
+    var hintBoxW = W * 0.8;
+    var hintBoxH = 44 * scale;
+    ctx.fillRect(W / 2 - hintBoxW / 2, hintY - hintBoxH / 2, hintBoxW, hintBoxH);
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(W / 2 - hintBoxW / 2, hintY - hintBoxH / 2, hintBoxW, hintBoxH);
+    drawTextOutline(controlText, W / 2, hintY + 4 * scale, 15 * scale, '#ffdd57', '#333', 'center');
+
+    // Start button
+    drawButton('START!', W / 2, startBtnY, startBtnW, startBtnH, '#ff6b8a', '#fff');
+
+    animId = requestAnimationFrame(draw);
+  }
+
+  setCanvasHandler(function(e) {
+    var p = getCanvasXY(e);
+    if (hitBtn(p.x, p.y, W / 2, startBtnY, startBtnW, startBtnH)) {
+      onStart();
+    }
+  });
+
+  draw();
 }
 
 /* ═══════════════════════════════════════════
@@ -2553,7 +2624,7 @@ function initStoryIntro() {
     }
     const p = getCanvasXY(e);
     if (hitBtn(p.x, p.y, btnX, btnY, btnW, btnH)) {
-      initGame1();
+      initWitchIntro();
     }
   });
 
@@ -2580,32 +2651,45 @@ function initGame1() {
   // Collectibles & obstacles
   const items = [];
   let nextSpawn = 50;
+  let spawnCycle = 0; // predictable spawn pattern
 
   // Particles
   const particles = [];
+
+  // Petal trail
+  const petalTrail = [];
 
   // State
   let finished = false;
   let jumpHeld = false;
   let jumpStartTime = 0;
+  let invincibleUntil = 0; // invincibility timer after hit
+
+  // Predictable spawn pattern: cycle through types
+  const spawnPattern = ['petal','petal','chair','petal','ring','petal','cork','petal','petal','chair','ring','program'];
 
   function spawnItem() {
-    const r = Math.random();
-    if (r < 0.35) {
-      // Petal
+    const type = spawnPattern[spawnCycle % spawnPattern.length];
+    spawnCycle++;
+    if (type === 'petal') {
       items.push({type:'petal', x: W + 20, y: groundY - rand(20, 80), w:16, h:16, collected:false});
-    } else if (r < 0.5) {
-      // Ring
+    } else if (type === 'ring') {
       items.push({type:'ring', x: W + 20, y: groundY - rand(40, 100), w:18, h:18, collected:false});
-    } else if (r < 0.7) {
-      // Chair
+    } else if (type === 'chair') {
       items.push({type:'chair', x: W + 20, y: groundY, w:24, h:28, collected:false});
-    } else if (r < 0.85) {
-      // Cork (arc)
+    } else if (type === 'cork') {
       items.push({type:'cork', x: W + 20, y: groundY - 60, w:12, h:12, collected:false, vy:-2, vx:-1});
-    } else {
-      // Program (falling)
+    } else if (type === 'program') {
       items.push({type:'program', x: W * 0.3 + rand(0, W * 0.5), y: -20, w:16, h:20, collected:false, vy:1.5});
+    }
+  }
+
+  function doJump() {
+    if (!py.jumping && !finished) {
+      py.jumping = true;
+      py.vy = -10;
+      jumpHeld = true;
+      jumpStartTime = performance.now();
     }
   }
 
@@ -2615,19 +2699,39 @@ function initGame1() {
     if (finished) {
       const p = getCanvasXY(e);
       if (hitBtn(p.x, p.y, W/2, H * 0.65, 160 * scale, 44 * scale)) {
-        initStormTransition();
+        cleanup();
+        initClearSkies();
       }
       return;
     }
-    if (!py.jumping) {
-      py.jumping = true;
-      py.vy = -10;
-      jumpHeld = true;
-      jumpStartTime = performance.now();
-    }
+    doJump();
   }
   function onUp() {
     jumpHeld = false;
+  }
+
+  // Keyboard support
+  function onKeyDown(e) {
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault();
+      if (finished) return;
+      doJump();
+    }
+  }
+  function onKeyUp(e) {
+    if (e.code === 'Space' || e.key === ' ') {
+      jumpHeld = false;
+    }
+  }
+
+  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup', onKeyUp);
+
+  function cleanup() {
+    document.removeEventListener('keydown', onKeyDown);
+    document.removeEventListener('keyup', onKeyUp);
+    C.removeEventListener('touchend', onUp);
+    C.removeEventListener('mouseup', onUp);
   }
 
   setCanvasHandler(onDown);
@@ -2635,7 +2739,7 @@ function initGame1() {
   C.addEventListener('mouseup', onUp);
 
   function loop() {
-    if (currentScreen !== 'game1') return;
+    if (currentScreen !== 'game1') { cleanup(); return; }
     t += 0.016;
 
     if (!finished) {
@@ -2658,14 +2762,32 @@ function initGame1() {
         }
       }
 
-      // Spawn items
+      // Petal trail behind player
+      if (Math.random() < 0.3) {
+        petalTrail.push({
+          x: W * 0.2 - rand(5, 15),
+          y: py.y - rand(2, 10),
+          life: 25,
+          size: rand(1.5, 3.5),
+          alpha: rand(0.4, 0.8)
+        });
+      }
+      for (let i = petalTrail.length - 1; i >= 0; i--) {
+        petalTrail[i].x -= speed * 0.5;
+        petalTrail[i].life--;
+        if (petalTrail[i].life <= 0) petalTrail.splice(i, 1);
+      }
+
+      // Spawn items - more predictable spacing
       nextSpawn -= speed;
       if (nextSpawn <= 0) {
         spawnItem();
-        nextSpawn = rand(40, 90);
+        nextSpawn = rand(50, 85);
       }
 
       // Update items
+      const now = performance.now();
+      const isInvincible = now < invincibleUntil;
       for (let i = items.length - 1; i >= 0; i--) {
         const it = items[i];
         if (it.type === 'cork') {
@@ -2708,10 +2830,11 @@ function initGame1() {
               particles.push({x: it.x, y: it.y, vx: rand(-2, 2), vy: rand(-3, 0),
                 life: 40, color: '#ffd700', size: rand(2, 5)});
             }
-          } else if (it.type === 'chair' || it.type === 'cork' || it.type === 'program') {
-            // Hit obstacle — stumble (brief slowdown)
+          } else if ((it.type === 'chair' || it.type === 'cork' || it.type === 'program') && !isInvincible) {
+            // Hit obstacle — stumble (brief slowdown + invincibility)
             speed = Math.max(1.5, speed - 1);
             it.collected = true;
+            invincibleUntil = now + 500; // 0.5s invincibility
             for (let j = 0; j < 4; j++) {
               particles.push({x: px, y: py.y, vx: rand(-2, 2), vy: rand(-2, 0),
                 life: 20, color: '#ff4444', size: rand(2, 4)});
@@ -2733,6 +2856,7 @@ function initGame1() {
       if (dist >= maxDist) {
         finished = true;
         scores.game1 = score;
+        cleanup();
       }
     }
 
@@ -2810,6 +2934,17 @@ function initGame1() {
     ctx.fillStyle = '#4a3a30';
     ctx.fillRect(0, groundY + H * 0.08, W, H);
 
+    // Petal trail
+    for (let i = 0; i < petalTrail.length; i++) {
+      const pt = petalTrail[i];
+      ctx.globalAlpha = (pt.life / 25) * pt.alpha;
+      ctx.fillStyle = '#ffb7c5';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
     // Items
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
@@ -2847,7 +2982,7 @@ function initGame1() {
         ctx.fillRect(it.x, it.y, it.w, it.h);
         ctx.fillStyle = '#333';
         ctx.font = '6px sans-serif';
-        ctx.fillText('♥', it.x + 4, it.y + 12);
+        ctx.fillText('\u2665', it.x + 4, it.y + 12);
       }
       ctx.restore();
     }
@@ -2863,14 +2998,15 @@ function initGame1() {
     }
     ctx.globalAlpha = 1;
 
-    // Player
+    // Player (with invincibility flash)
     const playerX = W * 0.2;
-    drawChibiSprite(ctx, playerX, py.y, scale * 3, {
-      hair: avatar.hair, hairColor: avatar.hairColor,
-      top: avatar.top, bottom: avatar.bottom,
-      shoes: avatar.shoes, acc: avatar.acc,
-      frame: Math.floor(py.frame)
-    });
+    const nowDraw = performance.now();
+    const isFlashing = nowDraw < invincibleUntil;
+    if (!isFlashing || Math.floor(nowDraw / 80) % 2 === 0) {
+      drawChibiSprite(ctx, playerX, py.y, scale * 3.5, {
+        frame: Math.floor(py.frame)
+      });
+    }
 
     // HUD — progress bar
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -2987,7 +3123,12 @@ function initStormTransition() {
     if (!showBtn) return;
     const p = getCanvasXY(e);
     if (hitBtn(p.x, p.y, btnX, btnY, btnW, btnH)) {
-      initWitchIntro();
+      showInstructions(
+        'Quest to the Altar',
+        ['Run down the aisle!', 'Collect petals (+10) and rings (+50)', 'Avoid chairs, corks, and programs', 'Reach the altar to win!'],
+        isMobile ? 'TAP anywhere to jump' : 'Press SPACE or click to jump',
+        function() { initGame1(); }
+      );
     }
   });
 
@@ -3142,7 +3283,12 @@ function initWitchIntro() {
     }
     const p = getCanvasXY(e);
     if (hitBtn(p.x, p.y, btnX, btnY, btnW, btnH)) {
-      initGame2();
+      showInstructions(
+        'Aunt vs. The Rain',
+        ['Max\'s aunt is clearing the storm!', 'Hit the arrows as they reach the top', 'Build combos for bonus points!', 'Clear the sky for the ceremony!'],
+        isMobile ? 'TAP the arrow buttons at the bottom' : 'Use ARROW KEYS \u2190 \u2193 \u2191 \u2192',
+        function() { initGame2(); }
+      );
     }
   });
 
@@ -3451,7 +3597,7 @@ function initGame2() {
     if (hitBtn(p.x, p.y, W/2, H * 0.65, 160 * scale, 44 * scale)) {
       const btns = document.getElementById('g2buttons');
       if (btns) btns.remove();
-      initClearSkies();
+      initStormTransition();
     }
   });
 
@@ -3574,7 +3720,12 @@ function initClearSkies() {
     if (!showBtn) return;
     const p = getCanvasXY(e);
     if (hitBtn(p.x, p.y, btnX, btnY, btnW, btnH)) {
-      initGame3();
+      showInstructions(
+        'The First Kiss',
+        ['Time the confetti cannons perfectly!', 'Wait for the needle to hit the sweet spot', 'Perfect timing = massive celebration!'],
+        isMobile ? 'TAP when the needle is in the gold zone' : 'Press SPACE or click at the right moment',
+        function() { initGame3(); }
+      );
     }
   });
 
