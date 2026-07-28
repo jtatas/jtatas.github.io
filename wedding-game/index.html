@@ -1149,7 +1149,21 @@ function showScreen(name) {
   for (let i = 0; i < screens.length; i++) {
     screens[i].classList.remove('active');
   }
-  const target = document.getElementById('screen-' + name);
+  // Map short names to HTML IDs
+  const idMap = {
+    'welcome': 'screenWelcome',
+    'charCreator': 'screenCharCreator',
+    'storyIntro': 'screenStoryIntro',
+    'game1': 'screenGame1',
+    'stormTransition': 'screenStormTransition',
+    'witchIntro': 'screenWitchIntro',
+    'game2': 'screenGame2',
+    'clearSkies': 'screenClearSkies',
+    'game3': 'screenGame3',
+    'finale': 'screenFinale',
+    'canvas': 'screenWelcome'  // canvas-only screens reuse welcome's canvas-screen div
+  };
+  const target = document.getElementById(idMap[name] || ('screen' + name.charAt(0).toUpperCase() + name.slice(1)));
   if (target) target.classList.add('active');
 }
 
@@ -1234,7 +1248,7 @@ function setCanvasHandler(fn) {
    1. WELCOME SCREEN
    ═══════════════════════════════════════════ */
 function initWelcome() {
-  showScreen('canvas');
+  showScreen('welcome');
   scores = {game1:0, game2:0, game2combo:0, game3:0};
 
   const petals = [];
@@ -1260,7 +1274,7 @@ function initWelcome() {
 
   let t = 0;
   function loop() {
-    if (currentScreen !== 'canvas') return;
+    if (currentScreen !== 'welcome') return;
     t += 0.016;
     ctx.clearRect(0, 0, W, H);
 
@@ -1379,7 +1393,7 @@ function initWelcome() {
    ═══════════════════════════════════════════ */
 function initCharCreator() {
   showScreen('charCreator');
-  const el = document.getElementById('screen-charCreator');
+  const el = document.getElementById('screenCharCreator');
   if (!el) return;
 
   const maxOpts = {hair:6, top:6, bottom:5, shoes:4, acc:5};
@@ -1515,7 +1529,7 @@ function initCharCreator() {
    3. STORY INTRO
    ═══════════════════════════════════════════ */
 function initStoryIntro() {
-  showScreen('canvas');
+  showScreen('storyIntro');
   const dialogLines = [
     'Oh no! The wedding is about to start...',
     'But the flower petals are scattered!',
@@ -1530,7 +1544,7 @@ function initStoryIntro() {
   const btnX = W/2, btnY = H * 0.88, btnW = 160 * scale, btnH = 44 * scale;
 
   function loop() {
-    if (currentScreen !== 'canvas') return;
+    if (currentScreen !== 'storyIntro') return;
     t += 0.016;
     ctx.clearRect(0, 0, W, H);
 
@@ -1642,7 +1656,7 @@ function initStoryIntro() {
    4. GAME 1 — AISLE RUNNER
    ═══════════════════════════════════════════ */
 function initGame1() {
-  showScreen('canvas');
+  showScreen('game1');
 
   let dist = 0;
   const maxDist = 1500;
@@ -1713,7 +1727,7 @@ function initGame1() {
   C.addEventListener('mouseup', onUp);
 
   function loop() {
-    if (currentScreen !== 'canvas') return;
+    if (currentScreen !== 'game1') return;
     t += 0.016;
 
     if (!finished) {
@@ -1985,7 +1999,7 @@ function initGame1() {
    5. STORM TRANSITION
    ═══════════════════════════════════════════ */
 function initStormTransition() {
-  showScreen('canvas');
+  showScreen('stormTransition');
   let t = 0;
   const rain = [];
   for (let i = 0; i < 80; i++) {
@@ -1997,7 +2011,7 @@ function initStormTransition() {
   const btnX = W/2, btnY = H * 0.85, btnW = 160 * scale, btnH = 44 * scale;
 
   function loop() {
-    if (currentScreen !== 'canvas') return;
+    if (currentScreen !== 'stormTransition') return;
     t += 0.016;
     if (t > 2) showBtn = true;
     ctx.clearRect(0, 0, W, H);
@@ -2076,7 +2090,7 @@ function initStormTransition() {
    6. WITCH INTRO
    ═══════════════════════════════════════════ */
 function initWitchIntro() {
-  showScreen('canvas');
+  showScreen('witchIntro');
   let t = 0;
   let witchX = W + 60;
   const witchTargetX = W * 0.5;
@@ -2093,7 +2107,7 @@ function initWitchIntro() {
   const btnX = W/2, btnY = H * 0.88, btnW = 180 * scale, btnH = 44 * scale;
 
   function loop() {
-    if (currentScreen !== 'canvas') return;
+    if (currentScreen !== 'witchIntro') return;
     t += 0.016;
     ctx.clearRect(0, 0, W, H);
 
@@ -2232,11 +2246,11 @@ function initWitchIntro() {
    ═══════════════════════════════════════════ */
 function initGame2() {
   showScreen('game2');
-  const g2Canvas = document.getElementById('screen-canvas');
+  const g2Canvas = document.getElementById('screenGame2');
   // We use the main canvas but show DOM buttons
 
   // Actually, let's use canvas screen + overlay buttons
-  showScreen('canvas');
+  showScreen('game2');
 
   let score = 0;
   let combo = 0;
@@ -2348,7 +2362,7 @@ function initGame2() {
   }
 
   function loop() {
-    if (currentScreen !== 'canvas') {
+    if (currentScreen !== 'game2') {
       const btns = document.getElementById('g2buttons');
       if (btns) btns.remove();
       return;
@@ -2517,7 +2531,7 @@ function initGame2() {
    8. CLEAR SKIES
    ═══════════════════════════════════════════ */
 function initClearSkies() {
-  showScreen('canvas');
+  showScreen('clearSkies');
   let t = 0;
   const petals = [];
   for (let i = 0; i < 20; i++) {
@@ -2531,7 +2545,7 @@ function initClearSkies() {
   const btnX = W/2, btnY = H * 0.88, btnW = 160 * scale, btnH = 44 * scale;
 
   function loop() {
-    if (currentScreen !== 'canvas') return;
+    if (currentScreen !== 'clearSkies') return;
     t += 0.016;
     if (t > 1.5) showBtn = true;
     ctx.clearRect(0, 0, W, H);
@@ -2640,7 +2654,7 @@ function initClearSkies() {
    9. GAME 3 — MAZEL TOV METER
    ═══════════════════════════════════════════ */
 function initGame3() {
-  showScreen('canvas');
+  showScreen('game3');
 
   let t = 0;
   let round = 0;
@@ -2686,7 +2700,7 @@ function initGame3() {
   }
 
   function loop() {
-    if (currentScreen !== 'canvas') return;
+    if (currentScreen !== 'game3') return;
     t += 0.016;
     ctx.clearRect(0, 0, W, H);
 
@@ -2910,7 +2924,7 @@ function initGame3() {
    ═══════════════════════════════════════════ */
 function initFinale() {
   showScreen('finale');
-  const el = document.getElementById('screen-finale');
+  const el = document.getElementById('screenFinale');
   if (!el) return;
 
   const totalScore = scores.game1 + scores.game2 + scores.game3;
