@@ -701,10 +701,10 @@ function drawChibiSprite(ctx, cx, cy, ps, options) {
   p(15, 12, BH); p(16, 12, BH);
 
   // 7. MOUTH (rows 14-15) — 6 wide × 2 tall, centered cols 8-13
-  // Top row: pink, 4 white teeth, pink
-  p(8, 14, MP); p(9, 14, TH); p(10, 14, TH); p(11, 14, TH); p(12, 14, TH); p(13, 14, MP);
-  // Bottom row: pink lip smile
-  p(8, 15, MP); p(9, 15, MP); p(10, 15, MP); p(11, 15, MP); p(12, 15, MP); p(13, 15, MP);
+  // Top row: pink edges, 3 white teeth, pink edges (5px wide)
+  p(8, 14, MP); p(9, 14, TH); p(10, 14, TH); p(11, 14, TH); p(12, 14, MP);
+  // Bottom row: pink lip smile (5px wide)
+  p(8, 15, MP); p(9, 15, MP); p(10, 15, MP); p(11, 15, MP); p(12, 15, MP);
 
   // 8. NECK (rows 16-17)
   p(9, 16, SK); p(10, 16, SK); p(11, 16, SK); p(12, 16, SK);
