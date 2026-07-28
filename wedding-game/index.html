@@ -1306,12 +1306,12 @@ function initWelcome() {
     ctx.fillRect(0, H * 0.58, W, H * 0.42);
 
     // Trees
-    drawEvergreenTree(ctx, W * 0.08, H * 0.58, scale * 0.7);
-    drawCherryBlossomTree(ctx, W * 0.22, H * 0.57, scale * 0.8);
-    drawEvergreenTree(ctx, W * 0.88, H * 0.58, scale * 0.65);
+    drawEvergreenTree(ctx, W * 0.08, H * 0.62, scale * 0.7);
+    drawCherryBlossomTree(ctx, W * 0.22, H * 0.61, scale * 0.8);
+    drawEvergreenTree(ctx, W * 0.88, H * 0.62, scale * 0.65);
 
     // Mansion
-    drawMansion(ctx, W * 0.5, H * 0.45, scale * 0.8, 'golden', W, H);
+    drawMansion(ctx, W * 0.5, H * 0.62, scale * 0.8, 'golden', W, H);
 
     // Birds
     for (let i = 0; i < birds.length; i++) {
@@ -1555,10 +1555,10 @@ function initStoryIntro() {
     ctx.fill();
 
     // Mansion (smaller, background)
-    drawMansion(ctx, W * 0.5, H * 0.32, scale * 0.5, 'golden', W, H);
+    drawMansion(ctx, W * 0.5, H * 0.44, scale * 0.5, 'golden', W, H);
 
     // Cherry blossom tree
-    drawCherryBlossomTree(ctx, W * 0.15, H * 0.48, scale * 0.6);
+    drawCherryBlossomTree(ctx, W * 0.15, H * 0.44, scale * 0.6);
 
     // Characters on path
     const bounce = Math.sin(t * 3) * 3;
@@ -2023,7 +2023,7 @@ function initStormTransition() {
     ctx.fillRect(0, H * 0.55, W, H * 0.45);
 
     // Mansion
-    drawMansion(ctx, W * 0.5, H * 0.42, scale * 0.7, 'storm', W, H);
+    drawMansion(ctx, W * 0.5, H * 0.57, scale * 0.7, 'storm', W, H);
 
     // Lightning
     lightningTimer += 0.016;
@@ -2107,7 +2107,7 @@ function initWitchIntro() {
     ctx.fillStyle = '#2d4a2e';
     ctx.fillRect(0, H * 0.55, W, H * 0.45);
 
-    drawMansion(ctx, W * 0.5, H * 0.42, scale * 0.6, 'storm', W, H);
+    drawMansion(ctx, W * 0.5, H * 0.57, scale * 0.6, 'storm', W, H);
 
     // Rain
     ctx.strokeStyle = 'rgba(180,200,255,0.4)';
@@ -2412,7 +2412,7 @@ function initGame2() {
     }
 
     // Mansion small
-    drawMansion(ctx, W * 0.5, H * 0.22, scale * 0.35, clearProgress > 0.5 ? 'clear' : 'storm', W, H);
+    drawMansion(ctx, W * 0.5, H * 0.25, scale * 0.35, clearProgress > 0.5 ? 'clear' : 'storm', W, H);
 
     // Lane backgrounds
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -2582,7 +2582,7 @@ function initClearSkies() {
     ctx.fillRect(0, H * 0.55, W, H * 0.45);
 
     // Mansion
-    drawMansion(ctx, W * 0.5, H * 0.42, scale * 0.7, 'clear', W, H);
+    drawMansion(ctx, W * 0.5, H * 0.57, scale * 0.7, 'clear', W, H);
 
     // Birds
     for (let i = 0; i < birds.length; i++) {
