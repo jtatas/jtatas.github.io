@@ -52,24 +52,1181 @@ input[type="text"]:focus{border-color:var(--pink)}
 <div id="screenFinale" class="screen" style="background:#1a1a2e;overflow-y:auto;z-index:20"></div>
 </div>
 <script>
-// Default character sprite
-var defaultCharImg = new Image();
-defaultCharImg.src = 'sprites/default_character.png';
+// Retro Antlitz Kartei - pixel avatar generator (MIT license)
+// https://github.com/DracoBlue/retro-antlitz-kartei
+(function() {
+// src/palettes.ts
+var PARTS = {
+  hat: ["none", "top-hat", "crown", "hard-hat", "peaked-cap", "tyrolean-hat", "pickelhaube", "halo"],
+  hair: ["bald", "side-part", "tousled", "mullet", "blow-wave", "mohawk", "bun", "messy", "receding", "long"],
+  ears: ["normal", "sail-ears", "pointed", "small", "sticking-out", "floppy", "elf", "huge"],
+  nose: ["button", "aquiline", "bulbous", "pointed", "wide", "hooked", "snub", "clown"],
+  mouth: ["smile", "grimace", "pout", "grin", "scream", "line", "snarl", "whistle"],
+  top: ["suit", "shirt", "uniform", "sweater", "hawaiian", "robe", "hi-vis-vest", "leather-jacket"],
+  trousers: ["suit-trousers", "jeans", "cargo", "shorts", "bell-bottoms", "sweatpants", "lederhosen", "plaid", "dress", "mini-skirt"],
+  build: ["thin", "small", "medium", "large"],
+  accessory: ["none", "nerd-glasses", "round-glasses", "sunglasses", "monocle", "full-beard", "moustache", "goatee", "lashes"],
+  shoes: ["sneakers", "boots", "dress-shoes", "sandals", "heels", "rubber-boots", "clown-shoes", "none"]
+};
+var PART_LABELS = {
+  hat: ["None", "Top Hat", "Crown", "Hard Hat", "Peaked Cap", "Tyrolean Hat", "Pickelhaube", "Halo"],
+  hair: ["Bald", "Side Part", "Tousled", "Mullet", "Blow Wave", "Mohawk", "Bun", "Messy", "Receding", "Long"],
+  ears: ["Normal", "Sail Ears", "Pointed", "Small", "Sticking Out", "Floppy", "Elf", "Huge"],
+  nose: ["Button", "Aquiline", "Bulbous", "Pointed", "Wide", "Hooked", "Snub", "Clown"],
+  mouth: ["Smile", "Grimace", "Pout", "Grin", "Scream", "Line", "Snarl", "Whistle"],
+  top: ["Suit", "Shirt", "Uniform", "Sweater", "Hawaiian", "Robe", "Hi-Vis Vest", "Leather Jacket"],
+  trousers: ["Suit Trousers", "Jeans", "Cargo", "Shorts", "Bell-Bottoms", "Sweatpants", "Lederhosen", "Plaid", "Dress", "Mini Skirt"],
+  build: ["Thin", "Small", "Medium", "Large"],
+  accessory: ["None", "Nerd Glasses", "Round Glasses", "Sunglasses", "Monocle", "Full Beard", "Moustache", "Goatee", "Lashes"],
+  shoes: ["Sneakers", "Boots", "Dress Shoes", "Sandals", "Heels", "Rubber Boots", "Clown Shoes", "Barefoot"]
+};
+function partIndex(key, id) {
+  return PARTS[key].indexOf(id);
+}
+function partLabel(key, id) {
+  const i = partIndex(key, id);
+  return i >= 0 ? PART_LABELS[key][i] : id;
+}
+var SKIN = ["#ffe0bd", "#f2c79a", "#e0ac69", "#c68642", "#8d5524", "#ff9d5c"];
+var CLOTH = ["#e63946", "#2a9d8f", "#3a86ff", "#f4a261", "#9b5de5", "#00bbf9", "#f15bb5", "#ffd60a"];
+var BG = ["#ff5d8f", "#3a86ff", "#06d6a0", "#ffd166", "#8338ec", "#fb5607", "#118ab2", "#2b2d42"];
+var PANTS = ["#2b3a55", "#3a6ea5", "#5a6b4a", "#c9a14a", "#7a4a8a", "#9aa0a6", "#6b4a2a", "#b5563a"];
+var HAIR = "#33240f";
+var HAIRS = ["#1a1a1f", "#33240f", "#6b4a2a", "#b5563a", "#e3c06a", "#9aa0a6", "#e8e8e8", "#e63946", "#06d6a0"];
+
+// src/color.ts
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = n >> 16 & 255;
+  let g = n >> 8 & 255;
+  let b = n & 255;
+  if (f < 0) {
+    const k = 1 + f;
+    r *= k;
+    g *= k;
+    b *= k;
+  } else {
+    r += (255 - r) * f;
+    g += (255 - g) * f;
+    b += (255 - b) * f;
+  }
+  return "#" + [r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+}
+
+// src/canvas.ts
+function createCanvas(width, height) {
+  if (typeof OffscreenCanvas !== "undefined") {
+    const canvas = new OffscreenCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("retro-antlitz-kartei: OffscreenCanvas 2D context unavailable");
+    return { canvas, ctx };
+  }
+  if (typeof document !== "undefined") {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("retro-antlitz-kartei: canvas 2D context unavailable");
+    return { canvas, ctx };
+  }
+  throw new Error(
+    "retro-antlitz-kartei: no Canvas implementation found. Provide an OffscreenCanvas polyfill (e.g. node-canvas) in non-DOM environments."
+  );
+}
+
+// src/parts.ts
+var COLS = 32;
+var ROWS = 40;
+function P(g, x, y, w, h, c) {
+  g.fillStyle = c;
+  g.fillRect(x, y, w, h);
+}
+function px(g, x, y, c) {
+  g.fillStyle = c;
+  g.fillRect(x, y, 1, 1);
+}
+function clr(g, x, y) {
+  g.clearRect(x, y, 1, 1);
+}
+function drawTrousers(g, id, color, skin) {
+  const PC = color;
+  const d = shade(PC, -0.28);
+  const hi = shade(PC, 0.18);
+  P(g, 9, 33, 14, 2, PC);
+  if (id === "shorts") {
+    P(g, 9, 35, 5, 3, PC);
+    P(g, 18, 35, 5, 3, PC);
+    P(g, 9, 38, 5, 2, skin);
+    P(g, 18, 38, 5, 2, skin);
+    P(g, 8, 39, 6, 1, shade(skin, -0.25));
+    P(g, 18, 39, 6, 1, shade(skin, -0.25));
+  } else if (id === "bell-bottoms") {
+    P(g, 9, 35, 5, 3, PC);
+    P(g, 18, 35, 5, 3, PC);
+    P(g, 8, 38, 6, 2, PC);
+    P(g, 17, 38, 6, 2, PC);
+    P(g, 8, 39, 6, 1, d);
+    P(g, 17, 39, 6, 1, d);
+  } else if (id === "dress") {
+    P(g, 9, 35, 14, 1, PC);
+    P(g, 8, 36, 16, 2, PC);
+    P(g, 7, 38, 18, 2, PC);
+    P(g, 7, 39, 18, 1, d);
+    P(g, 13, 35, 1, 5, d);
+    P(g, 18, 36, 1, 3, d);
+  } else if (id === "mini-skirt") {
+    P(g, 9, 35, 14, 1, PC);
+    P(g, 8, 36, 16, 1, PC);
+    P(g, 8, 37, 16, 1, d);
+    P(g, 10, 37, 4, 3, skin);
+    P(g, 18, 37, 4, 3, skin);
+    P(g, 9, 39, 5, 1, shade(skin, -0.25));
+    P(g, 18, 39, 5, 1, shade(skin, -0.25));
+  } else {
+    P(g, 9, 35, 5, 5, PC);
+    P(g, 18, 35, 5, 5, PC);
+    P(g, 13, 35, 1, 5, d);
+    P(g, 18, 35, 1, 5, d);
+  }
+  P(g, 9, 33, 14, 1, hi);
+  if (id === "suit-trousers") {
+    P(g, 9, 33, 14, 1, "#1c2740");
+    px(g, 15, 33, "#d9b34a");
+  }
+  if (id === "cargo") {
+    P(g, 10, 36, 2, 1, d);
+    P(g, 19, 36, 2, 1, d);
+  }
+  if (id === "lederhosen") {
+    P(g, 14, 33, 1, 4, shade(PC, -0.4));
+    P(g, 17, 33, 1, 4, shade(PC, -0.4));
+  }
+  if (id === "plaid") {
+    for (let yy = 35; yy < 40; yy++)
+      for (let xx = 9; xx < 23; xx++) {
+        if (xx >= 14 && xx < 18) continue;
+        if (xx + yy & 1) px(g, xx, yy, d);
+      }
+  }
+}
+function drawTop(g, id, cloth, skin) {
+  const d = shade(cloth, -0.26);
+  const hi = shade(cloth, 0.2);
+  P(g, 5, 25, 2, 7, cloth);
+  P(g, 25, 25, 2, 7, cloth);
+  P(g, 5, 25, 1, 7, d);
+  P(g, 26, 25, 1, 7, d);
+  P(g, 5, 32, 2, 1, skin);
+  P(g, 25, 32, 2, 1, skin);
+  P(g, 7, 24, 18, 9, cloth);
+  P(g, 7, 24, 18, 1, hi);
+  P(g, 23, 25, 1, 8, d);
+  clr(g, 7, 24);
+  clr(g, 24, 24);
+  switch (id) {
+    case "suit":
+      P(g, 13, 24, 6, 9, "#f4f4f4");
+      P(g, 15, 25, 2, 6, "#c01622");
+      P(g, 11, 24, 2, 5, shade(cloth, -0.18));
+      P(g, 19, 24, 2, 5, shade(cloth, -0.18));
+      px(g, 14, 30, "#d9d9d9");
+      break;
+    case "shirt":
+      P(g, 14, 24, 4, 4, shade(cloth, 0.3));
+      px(g, 15, 27, d);
+      px(g, 15, 30, d);
+      break;
+    case "uniform":
+      P(g, 7, 24, 3, 2, "#d9b34a");
+      P(g, 22, 24, 3, 2, "#d9b34a");
+      P(g, 15, 25, 1, 7, d);
+      px(g, 15, 26, "#ffe08a");
+      px(g, 15, 28, "#ffe08a");
+      px(g, 15, 30, "#ffe08a");
+      P(g, 9, 26, 2, 2, "#c0392b");
+      break;
+    case "sweater":
+      P(g, 7, 31, 18, 2, d);
+      P(g, 13, 24, 6, 2, d);
+      break;
+    case "hawaiian":
+      for (let yy = 25; yy < 32; yy += 2) for (let xx = 8; xx < 24; xx += 3) px(g, xx, yy, "#ffe08a");
+      for (let yy = 26; yy < 32; yy += 2) for (let xx = 10; xx < 24; xx += 3) px(g, xx, yy, "#ff5d8f");
+      P(g, 13, 24, 6, 3, shade(cloth, 0.35));
+      break;
+    case "robe":
+      P(g, 14, 24, 4, 9, shade(cloth, -0.22));
+      P(g, 13, 24, 6, 2, shade(cloth, 0.28));
+      break;
+    case "hi-vis-vest":
+      P(g, 7, 24, 18, 9, "#ff7a00");
+      P(g, 9, 26, 14, 1, "#e8e8e8");
+      P(g, 9, 29, 14, 1, "#e8e8e8");
+      P(g, 13, 24, 6, 9, cloth);
+      break;
+    case "leather-jacket":
+      P(g, 15, 24, 1, 9, "#6a6a72");
+      P(g, 11, 25, 1, 6, "#6a6a72");
+      P(g, 19, 25, 1, 6, "#6a6a72");
+      break;
+  }
+}
+function drawHead(g, skin) {
+  const d = shade(skin, -0.22);
+  const hi = shade(skin, 0.16);
+  P(g, 14, 21, 4, 3, d);
+  P(g, 9, 8, 14, 14, skin);
+  P(g, 21, 9, 1, 12, d);
+  P(g, 10, 20, 12, 1, d);
+  P(g, 10, 9, 2, 1, hi);
+  clr(g, 9, 8);
+  clr(g, 22, 8);
+  clr(g, 9, 21);
+  clr(g, 22, 21);
+  clr(g, 9, 9);
+  clr(g, 22, 9);
+  clr(g, 9, 20);
+  clr(g, 22, 20);
+}
+function drawEars(g, id, skin) {
+  const d = shade(skin, -0.28);
+  const E = (x, y, w, h) => {
+    P(g, x, y, w, h, skin);
+  };
+  switch (id) {
+    case "normal":
+      E(7, 13, 2, 3);
+      E(23, 13, 2, 3);
+      break;
+    case "sail-ears":
+      E(7, 11, 3, 5);
+      E(22, 11, 3, 5);
+      break;
+    case "pointed":
+      E(8, 12, 2, 2);
+      px(g, 8, 11, skin);
+      px(g, 9, 11, skin);
+      E(22, 12, 2, 2);
+      px(g, 22, 11, skin);
+      px(g, 23, 11, skin);
+      break;
+    case "small":
+      E(9, 13, 1, 2);
+      E(22, 13, 1, 2);
+      break;
+    case "sticking-out":
+      E(7, 12, 3, 3);
+      E(22, 12, 3, 3);
+      break;
+    case "floppy":
+      E(8, 13, 2, 4);
+      E(22, 13, 2, 4);
+      break;
+    case "elf":
+      px(g, 9, 13, skin);
+      px(g, 8, 11, skin);
+      px(g, 8, 12, skin);
+      px(g, 22, 13, skin);
+      px(g, 23, 11, skin);
+      px(g, 23, 12, skin);
+      break;
+    case "huge":
+      E(6, 10, 4, 6);
+      E(22, 10, 4, 6);
+      break;
+  }
+  px(g, 8, 14, d);
+  px(g, 23, 14, d);
+}
+function drawNose(g, id, skin) {
+  const d = shade(skin, -0.3);
+  const dd = shade(skin, -0.45);
+  switch (id) {
+    case "button":
+      P(g, 15, 16, 2, 2, d);
+      break;
+    case "aquiline":
+      P(g, 15, 15, 2, 4, skin);
+      P(g, 15, 18, 2, 1, d);
+      px(g, 16, 15, dd);
+      break;
+    case "bulbous":
+      P(g, 14, 17, 4, 2, skin);
+      P(g, 14, 18, 4, 1, d);
+      px(g, 15, 17, shade(skin, 0.1));
+      break;
+    case "pointed":
+      P(g, 15, 15, 1, 4, d);
+      px(g, 15, 18, dd);
+      break;
+    case "wide":
+      P(g, 14, 17, 4, 2, d);
+      break;
+    case "hooked":
+      P(g, 15, 15, 2, 2, skin);
+      px(g, 15, 17, d);
+      px(g, 14, 18, d);
+      break;
+    case "snub":
+      P(g, 15, 17, 2, 1, d);
+      px(g, 15, 16, skin);
+      break;
+    case "clown":
+      P(g, 14, 16, 4, 3, "#e63946");
+      px(g, 15, 17, "#ff8080");
+      clr(g, 14, 16);
+      clr(g, 17, 16);
+      break;
+  }
+}
+function drawMouth(g, id) {
+  const m = "#7a2e22";
+  const t = "#fff";
+  switch (id) {
+    case "smile":
+      P(g, 13, 19, 6, 1, m);
+      px(g, 12, 18, m);
+      px(g, 19, 18, m);
+      break;
+    case "grimace":
+      P(g, 13, 19, 6, 1, m);
+      px(g, 13, 18, m);
+      px(g, 18, 20, m);
+      break;
+    case "pout":
+      P(g, 14, 18, 4, 2, m);
+      px(g, 15, 19, "#b5544a");
+      break;
+    case "grin":
+      P(g, 12, 18, 8, 2, m);
+      P(g, 13, 19, 6, 1, t);
+      break;
+    case "scream":
+      P(g, 14, 18, 4, 3, "#3a0f0a");
+      P(g, 15, 19, 2, 1, "#b5544a");
+      break;
+    case "line":
+      P(g, 13, 19, 6, 1, m);
+      break;
+    case "snarl":
+      P(g, 12, 18, 8, 2, t);
+      for (let x = 12; x < 20; x += 2) px(g, x, 18, m);
+      P(g, 12, 20, 8, 1, m);
+      break;
+    case "whistle":
+      P(g, 13, 19, 4, 1, m);
+      P(g, 17, 18, 2, 3, "#5a3a2a");
+      P(g, 18, 17, 2, 1, "#caa");
+      break;
+  }
+}
+function drawBeard(g, id, color) {
+  const h = color;
+  const hd = shade(h, -0.2);
+  if (id === "moustache") {
+    P(g, 12, 18, 7, 1, h);
+    px(g, 12, 17, h);
+    px(g, 18, 17, h);
+    return;
+  }
+  if (id === "goatee") {
+    P(g, 12, 18, 7, 1, h);
+    P(g, 14, 21, 4, 1, h);
+    P(g, 15, 20, 2, 1, h);
+    return;
+  }
+  P(g, 10, 18, 12, 4, h);
+  clr(g, 14, 19);
+  clr(g, 15, 19);
+  clr(g, 16, 19);
+  clr(g, 17, 19);
+  clr(g, 14, 20);
+  clr(g, 17, 20);
+  P(g, 8, 16, 1, 5, h);
+  P(g, 23, 16, 1, 5, h);
+  P(g, 13, 21, 6, 1, hd);
+}
+function drawHair(g, id, color) {
+  if (id === "bald") return;
+  const h = color;
+  const hd = shade(h, -0.22);
+  const hh = shade(h, 0.18);
+  switch (id) {
+    case "side-part":
+      P(g, 10, 6, 12, 3, h);
+      P(g, 9, 7, 1, 5, h);
+      P(g, 22, 7, 1, 4, h);
+      P(g, 10, 6, 12, 1, hh);
+      P(g, 15, 7, 1, 2, hd);
+      break;
+    case "tousled":
+      P(g, 9, 5, 14, 4, h);
+      P(g, 8, 7, 1, 4, h);
+      P(g, 23, 7, 1, 4, h);
+      px(g, 9, 4, h);
+      px(g, 12, 4, h);
+      px(g, 15, 4, h);
+      px(g, 18, 4, h);
+      px(g, 21, 4, h);
+      P(g, 9, 5, 14, 1, hh);
+      break;
+    case "mullet":
+      P(g, 10, 6, 12, 2, h);
+      P(g, 9, 6, 1, 3, h);
+      P(g, 22, 6, 1, 3, h);
+      P(g, 9, 18, 2, 5, h);
+      P(g, 21, 18, 2, 5, h);
+      P(g, 10, 6, 12, 1, hh);
+      break;
+    case "blow-wave":
+      P(g, 9, 4, 14, 4, h);
+      P(g, 8, 6, 2, 3, h);
+      P(g, 22, 6, 2, 3, h);
+      P(g, 9, 4, 14, 1, hh);
+      P(g, 9, 7, 14, 1, shade(h, -0.2));
+      break;
+    case "mohawk":
+      P(g, 15, 3, 2, 6, h);
+      P(g, 14, 4, 1, 4, h);
+      P(g, 17, 4, 1, 4, h);
+      P(g, 15, 3, 2, 1, hh);
+      break;
+    case "bun":
+      P(g, 10, 7, 12, 2, h);
+      P(g, 9, 7, 1, 3, h);
+      P(g, 22, 7, 1, 3, h);
+      P(g, 14, 3, 4, 3, h);
+      P(g, 14, 3, 4, 1, hh);
+      break;
+    case "messy":
+      P(g, 9, 5, 14, 3, h);
+      px(g, 8, 5, h);
+      px(g, 10, 3, h);
+      px(g, 13, 4, h);
+      px(g, 16, 3, h);
+      px(g, 19, 4, h);
+      px(g, 23, 5, h);
+      P(g, 8, 7, 1, 3, h);
+      P(g, 23, 7, 1, 3, h);
+      break;
+    case "long":
+      P(g, 9, 5, 14, 4, h);
+      P(g, 9, 5, 14, 1, hh);
+      P(g, 8, 8, 2, 13, h);
+      P(g, 22, 8, 2, 13, h);
+      P(g, 7, 20, 2, 9, h);
+      P(g, 23, 20, 2, 9, h);
+      P(g, 7, 27, 2, 2, hd);
+      P(g, 23, 27, 2, 2, hd);
+      px(g, 15, 7, hd);
+      break;
+    case "receding":
+      P(g, 11, 7, 10, 1, h);
+      P(g, 10, 8, 12, 1, h);
+      P(g, 9, 8, 1, 6, h);
+      P(g, 22, 8, 1, 6, h);
+      P(g, 11, 7, 10, 1, hh);
+      clr(g, 10, 8);
+      clr(g, 21, 8);
+      px(g, 16, 8, hd);
+      break;
+  }
+}
+function drawHat(g, id, cloth) {
+  switch (id) {
+    case "none":
+      return;
+    case "top-hat":
+      P(g, 8, 7, 16, 1, "#15151a");
+      P(g, 11, 1, 10, 6, "#1c1c24");
+      P(g, 11, 3, 10, 1, "#c01622");
+      P(g, 11, 1, 10, 1, "#33333d");
+      break;
+    case "crown":
+      P(g, 10, 4, 12, 3, "#f2c200");
+      P(g, 10, 4, 12, 1, "#fff0a0");
+      px(g, 10, 2, "#f2c200");
+      px(g, 13, 2, "#f2c200");
+      px(g, 16, 2, "#f2c200");
+      px(g, 19, 2, "#f2c200");
+      px(g, 21, 2, "#f2c200");
+      px(g, 12, 2, "#e63946");
+      px(g, 16, 2, "#3a86ff");
+      px(g, 20, 2, "#06d6a0");
+      break;
+    case "hard-hat":
+      P(g, 9, 6, 14, 1, "#e6a700");
+      P(g, 11, 2, 10, 4, "#ffc400");
+      P(g, 15, 2, 2, 4, "#e6a700");
+      P(g, 11, 2, 10, 1, "#ffe08a");
+      break;
+    case "peaked-cap":
+      P(g, 10, 4, 12, 3, cloth);
+      P(g, 8, 6, 8, 1, shade(cloth, -0.3));
+      P(g, 10, 4, 12, 1, shade(cloth, 0.2));
+      P(g, 14, 5, 4, 1, "#fff");
+      break;
+    case "tyrolean-hat":
+      P(g, 8, 6, 16, 1, "#3a5a2a");
+      P(g, 11, 2, 10, 4, "#4a6a33");
+      P(g, 11, 2, 10, 1, "#6a8a4a");
+      P(g, 12, 3, 1, 3, "#fff");
+      P(g, 13, 2, 1, 2, "#c01622");
+      break;
+    case "pickelhaube":
+      P(g, 10, 4, 12, 3, "#2a2a30");
+      P(g, 9, 6, 14, 1, "#d9b34a");
+      P(g, 15, 1, 2, 3, "#d9b34a");
+      P(g, 15, 0, 2, 1, "#d9b34a");
+      break;
+    case "halo":
+      P(g, 10, 2, 12, 1, "#fff7c0");
+      P(g, 9, 3, 1, 1, "#fff7c0");
+      P(g, 22, 3, 1, 1, "#fff7c0");
+      P(g, 11, 2, 10, 1, "#ffe066");
+      break;
+  }
+}
+function drawGlasses(g, id) {
+  const f = "#1c1c22";
+  const l = "rgba(180,220,255,0.6)";
+  const ring = (x0) => {
+    P(g, x0, 12, 4, 1, f);
+    P(g, x0, 15, 4, 1, f);
+    px(g, x0, 13, f);
+    px(g, x0, 14, f);
+    px(g, x0 + 3, 13, f);
+    px(g, x0 + 3, 14, f);
+  };
+  if (id === "sunglasses") {
+    P(g, 10, 12, 4, 4, f);
+    P(g, 18, 12, 4, 4, f);
+    px(g, 11, 13, "#3a5a7a");
+    px(g, 19, 13, "#3a5a7a");
+    P(g, 14, 12, 4, 1, f);
+    px(g, 9, 13, f);
+    px(g, 22, 13, f);
+    return;
+  }
+  if (id === "monocle") {
+    ring(18);
+    P(g, 19, 13, 2, 1, l);
+    px(g, 21, 16, "#d9b34a");
+    px(g, 21, 18, "#d9b34a");
+    px(g, 20, 17, "#d9b34a");
+    return;
+  }
+  ring(10);
+  ring(18);
+  if (id === "round-glasses") {
+    clr(g, 10, 12);
+    clr(g, 13, 12);
+    clr(g, 10, 15);
+    clr(g, 13, 15);
+    clr(g, 18, 12);
+    clr(g, 21, 12);
+    clr(g, 18, 15);
+    clr(g, 21, 15);
+  }
+  P(g, 14, 13, 4, 1, f);
+  px(g, 9, 13, f);
+  px(g, 22, 13, f);
+  P(g, 11, 13, 2, 1, l);
+  P(g, 19, 13, 2, 1, l);
+}
+function drawShoes(g, id, skin) {
+  if (id === "none") {
+    const d = shade(skin, -0.25);
+    P(g, 9, 39, 5, 1, skin);
+    P(g, 18, 39, 5, 1, skin);
+    px(g, 12, 39, d);
+    px(g, 21, 39, d);
+    return;
+  }
+  shoeFront(g, 9, id, -1, skin);
+  shoeFront(g, 18, id, 1, skin);
+}
+function shoeFront(g, x, id, side, skin) {
+  switch (id) {
+    case "sneakers":
+      P(g, x, 38, 5, 1, "#eef0f4");
+      P(g, x, 39, 5, 1, "#3a86ff");
+      px(g, x + 2, 38, "#c9ccd6");
+      break;
+    case "boots":
+      P(g, x, 37, 5, 3, "#5a3a1a");
+      P(g, x, 37, 5, 1, "#6b4a2a");
+      P(g, x, 39, 5, 1, "#2a1a0a");
+      break;
+    case "dress-shoes":
+      P(g, x, 38, 5, 2, "#1c1c22");
+      px(g, x + 1, 38, "#3a3a44");
+      break;
+    case "sandals":
+      P(g, x, 38, 5, 2, skin);
+      P(g, x, 39, 5, 1, "#5a3a2a");
+      px(g, x + 1, 38, "#5a3a2a");
+      px(g, x + 3, 38, "#5a3a2a");
+      break;
+    case "heels":
+      P(g, x, 38, 5, 2, "#c01622");
+      px(g, x + 2, 38, "#ff6b78");
+      px(g, side < 0 ? x : x + 4, 39, "#7a0e16");
+      break;
+    case "rubber-boots":
+      P(g, x, 37, 5, 3, "#ffd166");
+      P(g, x, 37, 5, 1, "#ffe09a");
+      break;
+    case "clown-shoes": {
+      const x0 = side < 0 ? x - 2 : x;
+      P(g, x0, 38, 7, 2, "#e63946");
+      P(g, x0, 39, 7, 1, "#b51e2b");
+      px(g, side < 0 ? x0 : x0 + 6, 38, "#ff8a93");
+      break;
+    }
+  }
+}
+var SIDE_SHOE_COLOR = {
+  sneakers: "#eef0f4",
+  boots: "#5a3a1a",
+  "dress-shoes": "#1c1c22",
+  sandals: "#7a5a3a",
+  heels: "#c01622",
+  "rubber-boots": "#ffd166",
+  "clown-shoes": "#e63946",
+  none: "#000000"
+};
+function drawShoesSide(g, id, skin) {
+  if (id === "none") {
+    P(g, 11, 39, 5, 1, shade(skin, -0.2));
+    P(g, 15, 39, 6, 1, skin);
+    return;
+  }
+  const c = SIDE_SHOE_COLOR[id];
+  const c2 = shade(c, -0.28);
+  if (id === "clown-shoes") {
+    P(g, 11, 39, 5, 1, c2);
+    P(g, 15, 39, 9, 1, c);
+    px(g, 23, 39, "#ff8a93");
+    return;
+  }
+  P(g, 11, 39, 5, 1, c2);
+  P(g, 15, 39, 6, 1, c);
+  if (id === "boots" || id === "rubber-boots") {
+    P(g, 15, 38, 4, 1, c);
+    P(g, 12, 38, 3, 1, c2);
+  }
+  if (id === "dress-shoes") px(g, 19, 39, shade(c, 0.6));
+  if (id === "sandals") {
+    px(g, 16, 39, "#3a2a1a");
+    px(g, 18, 39, "#3a2a1a");
+  }
+}
+function drawLashes(g, color) {
+  px(g, 10, 12, color);
+  px(g, 10, 13, color);
+  px(g, 20, 12, color);
+  px(g, 20, 13, color);
+  px(g, 9, 12, color);
+  px(g, 21, 12, color);
+}
+function drawSide(g, s, skin, cloth, pants, hairColor, build) {
+  const sd = shade(skin, -0.22);
+  const h = hairColor;
+  const PC = pants;
+  if (s.trousers === "dress") {
+    P(g, 11, 33, 9, 2, shade(PC, 0.15));
+    P(g, 11, 35, 9, 2, PC);
+    P(g, 10, 37, 11, 3, PC);
+    P(g, 10, 39, 11, 1, shade(PC, -0.28));
+  } else if (s.trousers === "mini-skirt") {
+    P(g, 11, 33, 9, 2, shade(PC, 0.15));
+    P(g, 11, 35, 9, 2, PC);
+    P(g, 10, 36, 11, 1, shade(PC, -0.28));
+    P(g, 13, 37, 5, 3, skin);
+  } else {
+    P(g, 11, 33, 5, 7, shade(PC, -0.2));
+    P(g, 15, 33, 5, 7, PC);
+    P(g, 11, 33, 9, 2, shade(PC, 0.15));
+  }
+  drawShoesSide(g, s.shoes, skin);
+  const suit = s.top === "suit";
+  const tcol = s.top === "hi-vis-vest" ? "#ff7a00" : cloth;
+  P(g, 9, 24, 12, 9, tcol);
+  P(g, 9, 24, 12, 1, shade(tcol, 0.2));
+  P(g, 8, 25, 1, 8, shade(tcol, -0.3));
+  P(g, 20, 26, 1, 6, shade(tcol, -0.15));
+  P(g, 17, 25, 3, 7, shade(tcol, -0.08));
+  P(g, 17, 32, 3, 1, skin);
+  if (suit) {
+    P(g, 15, 24, 3, 6, "#f4f4f4");
+    P(g, 16, 25, 1, 5, "#c01622");
+  }
+  if (s.top === "hi-vis-vest") {
+    P(g, 9, 27, 12, 1, "#e8e8e8");
+    P(g, 9, 30, 12, 1, "#e8e8e8");
+  }
+  if (build === "small" || build === "thin") for (let y = 26; y <= 32; y++) clr(g, 20, y);
+  if (build === "thin") for (let y = 26; y <= 32; y++) clr(g, 8, y);
+  P(g, 12, 21, 5, 3, sd);
+  P(g, 8, 8, 13, 14, skin);
+  clr(g, 8, 8);
+  clr(g, 9, 8);
+  clr(g, 8, 9);
+  clr(g, 8, 21);
+  P(g, 8, 9, 1, 11, sd);
+  P(g, 20, 11, 1, 4, skin);
+  P(g, 11, 14, 2, 3, skin);
+  px(g, 12, 15, sd);
+  P(g, 16, 13, 2, 2, "#fff");
+  px(g, 17, 14, "#26324a");
+  P(g, 15, 12, 3, 1, h);
+  switch (s.nose) {
+    case "aquiline":
+      P(g, 21, 13, 1, 4, skin);
+      px(g, 21, 16, sd);
+      px(g, 20, 16, sd);
+      break;
+    case "bulbous":
+      P(g, 21, 15, 2, 2, skin);
+      px(g, 22, 16, sd);
+      break;
+    case "pointed":
+      P(g, 21, 14, 1, 2, skin);
+      px(g, 22, 14, skin);
+      break;
+    case "wide":
+      P(g, 21, 14, 1, 3, skin);
+      break;
+    case "hooked":
+      P(g, 21, 13, 1, 3, skin);
+      px(g, 21, 16, sd);
+      px(g, 20, 16, sd);
+      break;
+    case "snub":
+      P(g, 21, 15, 1, 1, skin);
+      px(g, 21, 14, skin);
+      break;
+    case "clown":
+      P(g, 21, 14, 2, 3, "#e63946");
+      break;
+    default:
+      P(g, 21, 14, 1, 2, skin);
+  }
+  const m = "#7a2e22";
+  if (s.mouth === "grin" || s.mouth === "snarl") {
+    P(g, 18, 19, 3, 2, m);
+    P(g, 18, 19, 3, 1, "#fff");
+  } else if (s.mouth === "scream") {
+    P(g, 18, 19, 2, 2, "#3a0f0a");
+  } else if (s.mouth === "smile") {
+    P(g, 18, 19, 3, 1, m);
+    px(g, 20, 18, m);
+  } else {
+    P(g, 18, 19, 3, 1, m);
+  }
+  P(g, 18, 20, 3, 1, sd);
+  if (build === "large") {
+    P(g, 17, 21, 4, 1, sd);
+    P(g, 20, 19, 1, 2, skin);
+  } else if (build === "small" || build === "thin") {
+    clr(g, 20, 21);
+    clr(g, 19, 21);
+  }
+  const glasses = s.accessory === "nerd-glasses" || s.accessory === "round-glasses" || s.accessory === "sunglasses" || s.accessory === "monocle";
+  const beard = s.accessory === "full-beard" || s.accessory === "moustache" || s.accessory === "goatee";
+  if (glasses) {
+    const f = "#1c1c22";
+    if (s.accessory === "sunglasses") {
+      P(g, 15, 12, 4, 3, f);
+    } else {
+      P(g, 15, 12, 4, 1, f);
+      P(g, 15, 14, 4, 1, f);
+      px(g, 15, 13, f);
+      px(g, 18, 13, f);
+    }
+    P(g, 12, 13, 3, 1, f);
+    if (s.accessory === "monocle") {
+      clr(g, 15, 12);
+      clr(g, 15, 14);
+      px(g, 18, 16, "#d9b34a");
+    }
+  } else if (beard) {
+    if (s.accessory === "moustache") {
+      P(g, 18, 18, 3, 1, h);
+    } else if (s.accessory === "goatee") {
+      P(g, 18, 18, 3, 1, h);
+      P(g, 18, 21, 3, 1, h);
+    } else {
+      P(g, 16, 17, 5, 5, h);
+      clr(g, 18, 19);
+      clr(g, 19, 19);
+      P(g, 13, 16, 3, 4, h);
+    }
+  } else if (s.accessory === "lashes") {
+    px(g, 18, 13, h);
+    px(g, 18, 12, h);
+  }
+  if (s.hair !== "bald") {
+    const hc = h;
+    if (s.hair === "mohawk") {
+      P(g, 9, 5, 12, 4, hc);
+      for (let x = 9; x <= 19; x += 2) P(g, x, 3, 1, 2, hc);
+      P(g, 9, 5, 12, 1, shade(hc, 0.2));
+    } else if (s.hair === "receding") {
+      P(g, 8, 6, 9, 2, hc);
+      P(g, 8, 8, 2, 2, hc);
+      P(g, 7, 9, 2, 7, hc);
+    } else if (s.hair === "long") {
+      P(g, 8, 6, 13, 3, hc);
+      P(g, 7, 8, 5, 13, hc);
+      P(g, 7, 20, 4, 9, hc);
+      P(g, 7, 27, 4, 2, shade(hc, -0.22));
+    } else {
+      P(g, 8, 6, 13, 3, hc);
+      P(g, 7, 8, 2, 9, hc);
+      if (s.hair === "mullet") {
+        P(g, 6, 16, 2, 6, hc);
+      }
+      if (s.hair === "bun") {
+        P(g, 6, 8, 3, 3, hc);
+      }
+      if (s.hair === "tousled" || s.hair === "messy") {
+        px(g, 7, 5, hc);
+        px(g, 10, 4, hc);
+        px(g, 13, 5, hc);
+      }
+    }
+  }
+  drawHat(g, s.hat, cloth);
+}
+
+// src/compose.ts
+var GLASSES = ["nerd-glasses", "round-glasses", "sunglasses", "monocle"];
+var BEARDS = ["full-beard", "moustache", "goatee"];
+function composeSprite(config, view = config.view) {
+  const { canvas, ctx: g } = createCanvas(COLS, ROWS);
+  g.imageSmoothingEnabled = false;
+  const { skin, topColor, accessory, hairColor, build } = config;
+  if (view === "left" || view === "right") {
+    drawSide(
+      g,
+      {
+        hat: config.hat,
+        hair: config.hair,
+        nose: config.nose,
+        mouth: config.mouth,
+        accessory: config.accessory,
+        top: config.top,
+        trousers: config.trousers,
+        shoes: config.shoes
+      },
+      skin,
+      topColor,
+      config.trousersColor,
+      hairColor,
+      build
+    );
+  } else {
+    const slim = build === "small" || build === "thin";
+    drawTrousers(g, config.trousers, config.trousersColor, skin);
+    drawShoes(g, config.shoes, skin);
+    drawTop(g, config.top, topColor, skin);
+    if (slim) {
+      clr(g, 8, 24);
+      clr(g, 23, 24);
+    }
+    if (build === "thin") {
+      clr(g, 8, 25);
+      clr(g, 23, 25);
+      for (let y = 26; y <= 31; y++) {
+        clr(g, 5, y);
+        clr(g, 26, y);
+      }
+    }
+    drawHead(g, skin);
+    if (slim) {
+      clr(g, 10, 21);
+      clr(g, 21, 21);
+      clr(g, 9, 20);
+      clr(g, 22, 20);
+    } else if (build === "large") {
+      P(g, 9, 21, 1, 1, skin);
+      P(g, 22, 21, 1, 1, skin);
+      P(g, 10, 21, 12, 1, shade(skin, -0.22));
+    }
+    drawEars(g, config.ears, skin);
+    P(g, 11, 12, 2, 1, hairColor);
+    P(g, 18, 12, 2, 1, hairColor);
+    P(g, 11, 13, 2, 2, "#fff");
+    P(g, 18, 13, 2, 2, "#fff");
+    px(g, 12, 14, "#26324a");
+    px(g, 18, 14, "#26324a");
+    drawNose(g, config.nose, skin);
+    if (BEARDS.includes(accessory)) drawBeard(g, accessory, hairColor);
+    drawMouth(g, config.mouth);
+    drawHair(g, config.hair, hairColor);
+    if (GLASSES.includes(accessory)) drawGlasses(g, accessory);
+    if (accessory === "lashes") drawLashes(g, hairColor);
+    drawHat(g, config.hat, topColor);
+  }
+  outline(g);
+  return canvas;
+}
+function outline(g) {
+  const img = g.getImageData(0, 0, COLS, ROWS).data;
+  const op = (x, y) => x < 0 || y < 0 || x >= COLS || y >= ROWS ? 0 : img[(y * COLS + x) * 4 + 3];
+  const edge = [];
+  for (let y = 0; y < ROWS; y++)
+    for (let x = 0; x < COLS; x++) {
+      if (op(x, y) === 0 && (op(x - 1, y) || op(x + 1, y) || op(x, y - 1) || op(x, y + 1) || op(x - 1, y - 1) || op(x + 1, y - 1) || op(x - 1, y + 1) || op(x + 1, y + 1)))
+        edge.push([x, y]);
+    }
+  g.fillStyle = "#181018";
+  for (const [x, y] of edge) g.fillRect(x, y, 1, 1);
+}
+
+// src/render.ts
+function drawBackground(ctx, w, h, bg, floor = true) {
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, shade(bg, 0.12));
+  grad.addColorStop(1, shade(bg, -0.32));
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+  if (floor) {
+    ctx.fillStyle = shade(bg, -0.42);
+    ctx.fillRect(0, h - 30, w, 30);
+  }
+}
+function renderAvatar(canvas, config, opts = {}) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("retro-antlitz-kartei: target canvas has no 2D context");
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, w, h);
+  const { background = true, floor = true, sprite } = opts;
+  if (background !== false) {
+    const bg = typeof background === "string" ? background : config.background;
+    drawBackground(ctx, w, h, bg, floor);
+  }
+  const off = sprite ?? composeSprite(config, config.view);
+  const scale = Math.floor(Math.min(w / COLS, h / ROWS));
+  const dw = COLS * scale;
+  const dh = ROWS * scale;
+  const dx = Math.floor((w - dw) / 2);
+  const dy = Math.floor((h - dh) / 2) - 6;
+  ctx.save();
+  if (config.view === "left") {
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(off, 0, 0, COLS, ROWS, dx, dy, dw, dh);
+  ctx.restore();
+}
+
+// src/rng.ts
+function xmur3(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = h << 13 | h >>> 19;
+  }
+  return () => {
+    h = Math.imul(h ^ h >>> 16, 2246822507);
+    h = Math.imul(h ^ h >>> 13, 3266489909);
+    h ^= h >>> 16;
+    return h >>> 0;
+  };
+}
+function mulberry32(a) {
+  return () => {
+    a |= 0;
+    a = a + 1831565813 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function createRng(seed) {
+  const seeder = xmur3(seed);
+  return mulberry32(seeder());
+}
+
+// src/config.ts
+var DEFAULT_CONFIG = Object.freeze({
+  hat: "top-hat",
+  hair: "side-part",
+  ears: "normal",
+  nose: "button",
+  mouth: "smile",
+  top: "suit",
+  trousers: "suit-trousers",
+  build: "medium",
+  accessory: "none",
+  shoes: "dress-shoes",
+  skin: SKIN[2],
+  // #e0ac69
+  hairColor: HAIR,
+  // #33240f
+  topColor: CLOTH[2],
+  // #3a86ff
+  trousersColor: PANTS[0],
+  // #2b3a55
+  background: BG[1],
+  // #3a86ff
+  view: "front"
+});
+var VIEWS = ["front", "left", "right"];
+var HEX_RE = /^#[0-9a-fA-F]{6}$/;
+function normPart(key, value) {
+  return PARTS[key].includes(value) ? value : DEFAULT_CONFIG[key];
+}
+function normColor(value, fallback) {
+  return typeof value === "string" && HEX_RE.test(value) ? value.toLowerCase() : fallback;
+}
+function normalizeConfig(input = {}) {
+  return {
+    hat: normPart("hat", input.hat),
+    hair: normPart("hair", input.hair),
+    ears: normPart("ears", input.ears),
+    nose: normPart("nose", input.nose),
+    mouth: normPart("mouth", input.mouth),
+    top: normPart("top", input.top),
+    trousers: normPart("trousers", input.trousers),
+    build: normPart("build", input.build),
+    accessory: normPart("accessory", input.accessory),
+    shoes: normPart("shoes", input.shoes),
+    skin: normColor(input.skin, DEFAULT_CONFIG.skin),
+    hairColor: normColor(input.hairColor, DEFAULT_CONFIG.hairColor),
+    topColor: normColor(input.topColor, DEFAULT_CONFIG.topColor),
+    trousersColor: normColor(input.trousersColor, DEFAULT_CONFIG.trousersColor),
+    background: normColor(input.background, DEFAULT_CONFIG.background),
+    view: typeof input.view === "string" && VIEWS.includes(input.view) ? input.view : DEFAULT_CONFIG.view
+  };
+}
+function toBase64(s) {
+  if (typeof Buffer !== "undefined") return Buffer.from(s, "utf-8").toString("base64");
+  const bytes = new TextEncoder().encode(s);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+function fromBase64(b) {
+  if (typeof Buffer !== "undefined") return Buffer.from(b, "base64").toString("utf-8");
+  const bin = atob(b);
+  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+}
+function encodeConfig(config) {
+  return toBase64(JSON.stringify(normalizeConfig(config)));
+}
+function decodeConfig(code, fallback = DEFAULT_CONFIG) {
+  try {
+    const data = JSON.parse(fromBase64(code.trim()));
+    if (!data || typeof data !== "object") return normalizeConfig(fallback);
+    return normalizeConfig({ ...normalizeConfig(fallback), ...data });
+  } catch {
+    return normalizeConfig(fallback);
+  }
+}
+var pickId = (rng, key) => PARTS[key][Math.floor(rng() * PARTS[key].length)];
+var pickColor = (rng, palette) => palette[Math.floor(rng() * palette.length)];
+function buildConfig(rng) {
+  return {
+    hat: pickId(rng, "hat"),
+    hair: pickId(rng, "hair"),
+    ears: pickId(rng, "ears"),
+    nose: pickId(rng, "nose"),
+    mouth: pickId(rng, "mouth"),
+    top: pickId(rng, "top"),
+    trousers: pickId(rng, "trousers"),
+    skin: pickColor(rng, SKIN),
+    topColor: pickColor(rng, CLOTH),
+    background: pickColor(rng, BG),
+    build: pickId(rng, "build"),
+    accessory: pickId(rng, "accessory"),
+    // Appended last so existing seeds keep all their other parts unchanged.
+    shoes: pickId(rng, "shoes"),
+    trousersColor: pickColor(rng, PANTS),
+    hairColor: pickColor(rng, HAIRS),
+    view: "front"
+  };
+}
+function randomConfig(rng = Math.random) {
+  return buildConfig(rng);
+}
+function configFromSeed(seed) {
+  return buildConfig(createRng(seed));
+}
+
+
+// Expose to global scope
+window.RAK = {
+  PARTS: PARTS,
+  PART_LABELS: PART_LABELS,
+  renderAvatar: renderAvatar,
+  randomConfig: randomConfig,
+  configFromSeed: configFromSeed,
+  normalizeConfig: normalizeConfig,
+  composeSprite: composeSprite,
+  encodeConfig: encodeConfig,
+  decodeConfig: decodeConfig,
+  createCanvas: createCanvas,
+  drawBackground: drawBackground,
+  COLS: COLS,
+  ROWS: ROWS,
+  SKIN: SKIN,
+  CLOTH: CLOTH,
+  HAIRS: HAIRS,
+  PANTS: PANTS
+};
+})();
+
+
+// Character drawing using Retro Antlitz Kartei
+var rakConfig = RAK.normalizeConfig({});
+var _rakCanvas = null;
+
+function getRAKConfig() {
+  var pi = avatar.partIndices || {};
+  var cfg = {};
+  // Map each part index to its string ID
+  var keys = ['hair','top','trousers','shoes','hat','accessory','build','mouth','nose','ears'];
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var parts = RAK.PARTS[k];
+    if (parts) {
+      cfg[k] = parts[(pi[k] || 0) % parts.length];
+    }
+  }
+  cfg.skin = RAK.SKIN[(avatar.skinIdx || 0) % RAK.SKIN.length];
+  cfg.hairColor = RAK.HAIRS[(avatar.hairColorIdx || 0) % RAK.HAIRS.length];
+  cfg.topColor = RAK.CLOTH[((pi.top || 0) * 2) % RAK.CLOTH.length];
+  cfg.trousersColor = RAK.PANTS[((pi.trousers || 0) * 2) % RAK.PANTS.length];
+  cfg.view = 'front';
+  cfg.background = 'transparent';
+  return RAK.normalizeConfig(cfg);
+}
 
 function drawChibiSprite(ctx, cx, cy, ps, options) {
-  // Draw the default character PNG sprite.
-  // ps was art-pixel size; old grid was 22x30 so total height = 30*ps
+  // Render RAK avatar to an offscreen canvas, then draw scaled
   var targetH = 30 * ps;
-  // Maintain aspect ratio: original is 487x1132
-  var aspect = 487 / 1132;
-  var targetW = targetH * aspect;
-  var dx = cx - targetW / 2;
-  var dy = cy - targetH / 2;
-
-  ctx.imageSmoothingEnabled = false;
-  if (defaultCharImg.complete && defaultCharImg.naturalWidth > 0) {
-    ctx.drawImage(defaultCharImg, dx, dy, targetW, targetH);
+  var targetW = 24 * ps; // 32:40 aspect -> 24:30
+  
+  if (!_rakCanvas) {
+    _rakCanvas = document.createElement('canvas');
+    _rakCanvas.width = 32;
+    _rakCanvas.height = 40;
   }
+  
+  var cfg = getRAKConfig();
+  // Override view if specified
+  if (options && options.view) cfg.view = options.view;
+  
+  RAK.renderAvatar(_rakCanvas, cfg, { background: false, floor: false });
+  
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(_rakCanvas, cx - targetW/2, cy - targetH/2, targetW, targetH);
 }
 
 
@@ -652,8 +1809,26 @@ function initCharCreator() {
   const el = document.getElementById('screenCharCreator');
   if (!el) return;
 
-  const maxOpts = {hair:6, top:6, bottom:5, shoes:4, acc:5};
-  const hairColorNames = ['Brown','Black','Blonde','Red','Blue','Pink','Silver'];
+  // RAK part categories for the UI
+  const partKeys = ['hair','top','trousers','shoes','hat','accessory','build','mouth'];
+  const partLabels = {hair:'Hair',top:'Top',trousers:'Bottom',shoes:'Shoes',hat:'Hat',accessory:'Accessory',build:'Build',mouth:'Mouth'};
+  const skinColors = RAK.SKIN;
+  const hairColors = RAK.HAIRS;
+  const clothColors = RAK.CLOTH;
+  const pantsColors = RAK.PANTS;
+
+  // Initialize avatar indices if not set
+  if (!avatar.partIndices) {
+    avatar.partIndices = {};
+    for (var pk = 0; pk < partKeys.length; pk++) {
+      avatar.partIndices[partKeys[pk]] = 0;
+    }
+    avatar.skinIdx = 0;
+    avatar.hairColorIdx = 0;
+    avatar.topColorIdx = 0;
+    avatar.pantsColorIdx = 0;
+  }
+
   let activeTab = 'hair';
 
   function renderCreator() {
@@ -701,19 +1876,26 @@ function initCharCreator() {
 
       const leftBtn = document.getElementById('ccLeft');
       const rightBtn = document.getElementById('ccRight');
-      const colorBtn = document.getElementById('ccColor');
       if (leftBtn) leftBtn.addEventListener('click', function() {
-        const key = activeTab;
-        avatar[key] = (avatar[key] - 1 + maxOpts[key]) % maxOpts[key];
+        if (activeTab === 'skin') {
+          avatar.skinIdx = ((avatar.skinIdx || 0) - 1 + skinColors.length) % skinColors.length;
+        } else if (activeTab === 'hairColor') {
+          avatar.hairColorIdx = ((avatar.hairColorIdx || 0) - 1 + hairColors.length) % hairColors.length;
+        } else {
+          var parts = RAK.PARTS[activeTab];
+          avatar.partIndices[activeTab] = ((avatar.partIndices[activeTab] || 0) - 1 + parts.length) % parts.length;
+        }
         renderCreator();
       });
       if (rightBtn) rightBtn.addEventListener('click', function() {
-        const key = activeTab;
-        avatar[key] = (avatar[key] + 1) % maxOpts[key];
-        renderCreator();
-      });
-      if (colorBtn) colorBtn.addEventListener('click', function() {
-        avatar.hairColor = (avatar.hairColor + 1) % hairColorNames.length;
+        if (activeTab === 'skin') {
+          avatar.skinIdx = ((avatar.skinIdx || 0) + 1) % skinColors.length;
+        } else if (activeTab === 'hairColor') {
+          avatar.hairColorIdx = ((avatar.hairColorIdx || 0) + 1) % hairColors.length;
+        } else {
+          var parts = RAK.PARTS[activeTab];
+          avatar.partIndices[activeTab] = ((avatar.partIndices[activeTab] || 0) + 1) % parts.length;
+        }
         renderCreator();
       });
 
@@ -730,34 +1912,50 @@ function initCharCreator() {
   }
 
   function buildTabs() {
-    const names = ['hair','top','bottom','shoes','acc'];
-    const labels = ['Hair','Top','Bottom','Shoes','Acc'];
     let html = '';
-    for (let i = 0; i < names.length; i++) {
-      const isActive = activeTab === names[i];
-      html += '<button class="cc-tab" data-tab="' + names[i] + '" style="font-size:13px;padding:5px 10px;' +
+    for (let i = 0; i < partKeys.length; i++) {
+      const k = partKeys[i];
+      const isActive = activeTab === k;
+      html += '<button class="cc-tab" data-tab="' + k + '" style="font-size:11px;padding:5px 8px;' +
         'border:2px solid ' + (isActive ? '#ffd700' : '#555') + ';border-radius:8px;' +
         'background:' + (isActive ? '#d4af37' : '#2a2a5e') + ';color:' + (isActive ? '#1a1a3e' : '#ccc') + ';' +
-        'cursor:pointer;font-weight:' + (isActive ? 'bold' : 'normal') + ';">' + labels[i] + '</button>';
+        'cursor:pointer;font-weight:' + (isActive ? 'bold' : 'normal') + ';">' + partLabels[k] + '</button>';
     }
+    // Add skin color tab
+    const skinActive = activeTab === 'skin';
+    html += '<button class="cc-tab" data-tab="skin" style="font-size:11px;padding:5px 8px;' +
+      'border:2px solid ' + (skinActive ? '#ffd700' : '#555') + ';border-radius:8px;' +
+      'background:' + (skinActive ? '#d4af37' : '#2a2a5e') + ';color:' + (skinActive ? '#1a1a3e' : '#ccc') + ';' +
+      'cursor:pointer;font-weight:' + (skinActive ? 'bold' : 'normal') + ';">Skin</button>';
+    // Hair color tab
+    const hcActive = activeTab === 'hairColor';
+    html += '<button class="cc-tab" data-tab="hairColor" style="font-size:11px;padding:5px 8px;' +
+      'border:2px solid ' + (hcActive ? '#ffd700' : '#555') + ';border-radius:8px;' +
+      'background:' + (hcActive ? '#d4af37' : '#2a2a5e') + ';color:' + (hcActive ? '#1a1a3e' : '#ccc') + ';' +
+      'cursor:pointer;font-weight:' + (hcActive ? 'bold' : 'normal') + ';">Hair Color</button>';
     return html;
   }
 
   function buildControls() {
-    const key = activeTab;
-    const val = avatar[key];
-    const mx = maxOpts[key];
-    let html = '<button id="ccLeft" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;' +
-      'background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">◀</button>' +
-      '<span style="font-size:16px;min-width:60px;display:inline-block;">' +
-        activeTab.charAt(0).toUpperCase() + activeTab.slice(1) + ' ' + (val + 1) + '/' + mx +
-      '</span>' +
-      '<button id="ccRight" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;' +
-      'background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">▶</button>';
-    if (key === 'hair') {
-      html += '<button id="ccColor" style="font-size:12px;padding:5px 8px;border:none;border-radius:8px;' +
-        'background:#6b3a8a;color:#fff;cursor:pointer;margin-left:4px;">' +
-        hairColorNames[avatar.hairColor] + '</button>';
+    let html = '';
+    if (activeTab === 'skin') {
+      const idx = avatar.skinIdx || 0;
+      html = '<button id="ccLeft" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">◀</button>' +
+        '<span style="font-size:14px;min-width:80px;display:inline-block;">Skin ' + (idx+1) + '/' + skinColors.length + '</span>' +
+        '<button id="ccRight" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">▶</button>';
+    } else if (activeTab === 'hairColor') {
+      const idx = avatar.hairColorIdx || 0;
+      html = '<button id="ccLeft" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">◀</button>' +
+        '<span style="font-size:14px;min-width:80px;display:inline-block;">Color ' + (idx+1) + '/' + hairColors.length + '</span>' +
+        '<button id="ccRight" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">▶</button>';
+    } else {
+      const key = activeTab;
+      const parts = RAK.PARTS[key];
+      const labels = RAK.PART_LABELS[key];
+      const idx = avatar.partIndices[key] || 0;
+      html = '<button id="ccLeft" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">◀</button>' +
+        '<span style="font-size:12px;min-width:100px;display:inline-block;">' + labels[idx] + '<br><span style="font-size:10px;opacity:0.7;">' + (idx+1) + '/' + parts.length + '</span></span>' +
+        '<button id="ccRight" style="font-size:24px;width:44px;height:44px;border:none;border-radius:50%;background:#d4af37;color:#1a1a3e;cursor:pointer;font-weight:bold;">▶</button>';
     }
     return html;
   }
@@ -765,17 +1963,11 @@ function initCharCreator() {
   function drawPreview() {
     const pc = document.getElementById('ccPreview');
     if (!pc) return;
-    const pCtx = pc.getContext('2d');
-    pCtx.clearRect(0, 0, 200, 240);
-    drawChibiSprite(pCtx, 100, 120, 6, {
-      hair: avatar.hair,
-      hairColor: avatar.hairColor,
-      top: avatar.top,
-      bottom: avatar.bottom,
-      shoes: avatar.shoes,
-      acc: avatar.acc,
-      frame: 0
-    });
+    pc.width = 128;
+    pc.height = 160;
+    var cfg = getRAKConfig();
+    cfg.background = '#1a1a3e';
+    RAK.renderAvatar(pc, cfg, { background: true, floor: false });
   }
 
   renderCreator();
