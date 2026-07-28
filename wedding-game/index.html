@@ -46,7 +46,7 @@ input[type="text"]:focus{border-color:var(--pink)}
 <div id="screenGame1" class="screen canvas-screen"></div>
 <div id="screenStormTransition" class="screen canvas-screen"></div>
 <div id="screenWitchIntro" class="screen canvas-screen"></div>
-<div id="screenGame2" class="screen" style="background:#1a1a2e;z-index:20"></div>
+<div id="screenGame2" class="screen canvas-screen" style="z-index:20"></div>
 <div id="screenClearSkies" class="screen canvas-screen"></div>
 <div id="screenGame3" class="screen canvas-screen"></div>
 <div id="screenFinale" class="screen" style="background:#1a1a2e;overflow-y:auto;z-index:20"></div>
@@ -2014,7 +2014,7 @@ function showScreen(name) {
   currentScreen = name;
   if (animId) { cancelAnimationFrame(animId); animId = null; }
   // Clear canvas when switching to DOM screens so it doesn't bleed through
-  const domScreens = ['charCreator', 'game2', 'finale'];
+  const domScreens = ['charCreator', 'finale'];
   if (domScreens.indexOf(name) !== -1) {
     ctx.clearRect(0, 0, C.width, C.height);
   }
