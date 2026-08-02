@@ -996,6 +996,27 @@ function bindInput(){
     if ([" ","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault();
     if (Input.key) Input.key(e.key);
   });
+  /* Secret code: type "0906" on any screen to force-trigger a 0px perfect
+     cannon shot. Works from hub or mid-game — launches cannon and fires. */
+  let cheatBuf = "";
+  window.addEventListener("keydown", (e)=>{
+    if (!"0906".includes(e.key)) { cheatBuf = ""; return; }
+    cheatBuf += e.key;
+    if (cheatBuf.length > 4) cheatBuf = cheatBuf.slice(-4);
+    if (cheatBuf === "0906"){
+      cheatBuf = "";
+      const cg = GAMES.find(g => g.id === "cannon");
+      if (!cg) return;
+      const inst = cg.make();
+      Engine.start(inst);
+      // let init() finish, then auto-start and force perfect
+      setTimeout(()=>{
+        inst.phase = "run";
+        inst.gap = 0;
+        inst.fire();
+      }, 100);
+    }
+  });
 }
 bindInput();
 
@@ -2944,6 +2965,27 @@ registerGame({
    ========================================================================== */
 buildHub();
 document.fonts && document.fonts.ready.then(fitCanvas);
+
+/* Secret cheat: append ?perfect=0906 to the URL to auto-fire a 0px cannon shot.
+   Works on mobile where keyboard codes aren't practical. */
+(function(){
+  const p = new URLSearchParams(location.search);
+  if (p.get("perfect") === "0906"){
+    // clean URL so refreshing doesn't re-trigger
+    history.replaceState(null, "", location.pathname);
+    setTimeout(()=>{
+      const cg = GAMES.find(g => g.id === "cannon");
+      if (!cg) return;
+      const inst = cg.make();
+      Engine.start(inst);
+      setTimeout(()=>{
+        inst.phase = "run";
+        inst.gap = 0;
+        inst.fire();
+      }, 150);
+    }, 400);
+  }
+})();
 </script>
 </body>
 </html>
