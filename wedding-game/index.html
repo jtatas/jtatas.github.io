@@ -85,7 +85,10 @@ body::before{
   overflow:hidden;
   box-shadow:0 0 0 3px var(--panel-2), 0 18px 50px rgba(150,32,60,.13), 0 2px 12px rgba(90,64,56,.10);
 }
-@media (min-width:520px){
+/* min-height too: a phone in landscape is 844x390, which matched on width
+   alone and shrank the cabinet to a ~210px sliver while every DOM font stayed
+   sized against the 844px viewport. */
+@media (min-width:520px) and (min-height:600px){
   #cabinet{
     height:min(100%, 880px);
     width:calc(min(100vh, 880px) * 0.5625);
@@ -121,7 +124,6 @@ canvas#game{
 }
 .screen.active{ display:flex; }
 .screen.overlay{ background:rgba(255,251,244,.96); z-index:40; }
-#scr-finale{ background:linear-gradient(180deg,#FFFDF8 0%, #FDF4E8 100%); }
 
 h1,h2,h3{margin:0; font-weight:400; line-height:1.5;}
 h1{font-size:calc((clamp(14px,4.6vw,20px)) * var(--font-scale)); letter-spacing:1px;}
@@ -129,7 +131,12 @@ h2{font-size:calc((clamp(11px,3.4vw,14px)) * var(--font-scale));}
 h3{font-size:calc((clamp(9px,2.8vw,11px)) * var(--font-scale));}
 p{font-size:calc((clamp(8px,2.5vw,10px)) * var(--font-scale)); line-height:1.9; color:var(--dim); margin:0;}
 
-.center{ align-items:center; justify-content:center; text-align:center; gap:18px; }
+/* `safe center` matters here. In a scrolling flex column, plain `center` puts
+   overflow past the START edge out of reach — scrollTop cannot go negative — so
+   a card taller than the phone loses its top, which on the results screen is
+   the SUCCESS banner. `safe` falls back to flex-start once it overflows. */
+.center{ align-items:center; justify-content:center; justify-content:safe center;
+         text-align:center; gap:18px; }
 .spacer{flex:1;}
 
 /* on cream, a glow reads as smudge — these are flat colour with a soft lift */
@@ -151,17 +158,6 @@ p{font-size:calc((clamp(8px,2.5vw,10px)) * var(--font-scale)); line-height:1.9; 
 .bob{ animation:bob 3.4s ease-in-out infinite; }
 @keyframes bob{ 50%{ transform:translateY(-6px); } }
 
-/* finale confetti */
-.confetti{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1; }
-.confetti i{
-  position:absolute; top:-14px; width:7px; height:11px; opacity:.9;
-  animation:fall linear infinite;
-}
-@keyframes fall{
-  0%{ transform:translateY(-20px) rotate(0deg); }
-  100%{ transform:translateY(760px) rotate(540deg); }
-}
-#scr-finale > *{ position:relative; z-index:2; }
 
 /* ---------- buttons ---------- */
 .btn{
@@ -178,6 +174,13 @@ p{font-size:calc((clamp(8px,2.5vw,10px)) * var(--font-scale)); line-height:1.9; 
 .btn.cyan{ background:var(--blue); color:#F4FAFF; box-shadow:0 4px 0 #4B79B6; }
 .btn.cyan:active{ box-shadow:0 0 0 #4B79B6; }
 .btn.ghost{ background:transparent; box-shadow:inset 0 0 0 2px var(--panel-2); color:var(--dim); padding:12px; }
+/* The album button before all three games are done. Still there — the point is
+   that guests can see there is something to unlock — but plainly not pressable. */
+.btn.locked{
+  background:var(--panel); color:var(--dim); cursor:default;
+  font-size:calc((9px) * var(--font-scale));
+}
+.btn.locked:active{ transform:none; box-shadow:0 4px 0 var(--panel-2), inset 0 0 0 2px rgba(90,64,56,.07); }
 .btn.ghost:active{ transform:translateY(2px); }
 
 .btn-row{ display:flex; gap:10px; width:100%; }
@@ -225,15 +228,51 @@ p{font-size:calc((clamp(8px,2.5vw,10px)) * var(--font-scale)); line-height:1.9; 
 }
 
 /* ---------- results ---------- */
-#results .score-big{ font-size:calc((clamp(26px,9vw,40px)) * var(--font-scale)); letter-spacing:2px; }
+/* This was #results .score-big, which matches nothing — the section is
+   #scr-results — so the headline number was quietly rendering at body size.
+   The clamp is tighter than the original because --font-scale multiplies it,
+   and 40px x 1.6 ran a six-figure Russian score off both edges. */
+/* Deliberately smaller than the verdict. It used to be the headline and dwarfed
+   everything; it's a number for the leaderboard, not the answer to the question
+   the screen is being asked. */
+.score-big{ font-size:calc((clamp(14px,4.4vw,18px)) * var(--font-scale)); letter-spacing:2px; line-height:1.6; }
+
+/* An explicit vertical rhythm rather than one uniform flex gap, so the verdict,
+   the number and the breakdown read as three separate beats instead of one
+   column of evenly spaced rows. */
+/* A base flex gap PLUS targeted extra, rather than margins carrying the whole
+   rhythm. If a margin rule is ever lost to the cascade the layout degrades to
+   "slightly tight" instead of "text sitting on text" — which is exactly how the
+   SUCCESS banner ended up touching the line below it, twice. */
+#scr-results{ gap:12px; }
+#resStats{ margin-bottom:10px; }
+
+/* Did I win? Answered before anything else on the card, in one word. The
+   weather line underneath tells the story; this just settles the question. */
+/* The biggest thing on the card. Did I win is the question everyone actually
+   came to the results screen with; the score is a detail underneath it.
+   Clamped rather than fixed because "MAYBE NEXT TIME" is twice the length of
+   "SUCCESS!" and Russian is twice the length again. */
+#resVerdict{
+  font-size:calc(clamp(17px,5.6vw,22px) * var(--font-scale)); letter-spacing:var(--track);
+  padding:14px 20px; line-height:1.5;
+  /* The 26px belongs in this shorthand, not in a separate margin-bottom rule
+     further up. Same specificity, and this rule is later, so `margin:0 auto`
+     silently reset it and the banner sat on the line below. */
+  margin:0 auto 20px;   /* on top of the 12px flex gap, so 32px of clearance */
+}
+#resVerdict.win{  background:rgba(127,163,106,.22); color:#456E36; box-shadow:0 4px 0 rgba(127,163,106,.30); }
+/* deeper than --dim, which only reached 4.0:1 against this panel */
+#resVerdict.lose{ background:var(--panel-2);        color:#6E5647; }
+#resVerdict:empty{ display:none; }
 
 /* one line per stat, label left and value right, instead of a run-on sentence
    that wrapped mid-phrase */
-.lead{ max-width:300px; margin:0 auto; color:var(--burgundy); }
-.stats{ display:flex; flex-direction:column; gap:5px; width:100%; max-width:300px; margin:0 auto; }
+.lead{ max-width:300px; margin:0 auto 8px; color:var(--burgundy); }
+.stats{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:300px; margin:0 auto; }
 .stat{
   display:flex; justify-content:space-between; align-items:baseline; gap:14px;
-  font-size:calc((9px) * var(--font-scale)); padding:9px 13px; background:var(--panel);
+  font-size:calc((9px) * var(--font-scale)); padding:13px 14px; background:var(--panel);
 }
 .stat .k{ color:var(--dim); letter-spacing:var(--track); }
 .stat .v{ color:var(--burgundy); }
@@ -290,7 +329,11 @@ input[type=text]::placeholder{ color:#D9C4B2; }
            style="width:58%; max-width:200px" onerror="this.style.display='none'">
       <h1 class="glow-pink" data-i18n="bootTitle"></h1>
       <p id="bootSub" data-i18n="bootSub"></p>
-      <div class="langs" id="langs"></div>
+      <p id="bootUnlock" style="font-size:calc(8px * var(--font-scale)); color:var(--dim); margin-top:-8px"
+         data-i18n="bootUnlock"></p>
+      <!-- swallows clicks: the gaps between the chips used to fall through to the
+             title card's tap-anywhere handler and enter the arcade -->
+        <div class="langs" id="langs" onclick="event.stopPropagation()"></div>
       <!-- no flex spacer here: this is a title card, so the whole group sits
            centred as one composition rather than pinning ENTER to the floor -->
       <button class="btn primary" id="bootBtn" style="margin-top:14px" data-i18n="enter"></button>
@@ -304,10 +347,16 @@ input[type=text]::placeholder{ color:#D9C4B2; }
       <input type="text" id="nameInput" maxlength="14" data-i18n-ph="namePlaceholder" autocomplete="off" autocorrect="off" spellcheck="false">
       <button class="btn primary" id="nameBtn" data-i18n="start"></button>
       <p style="font-size:calc(7px * var(--font-scale))" data-i18n="namePrivate"></p>
+      <!-- only shown when they arrived here via NEW PLAYER, so a first-time
+           guest isn't warned about wiping progress they don't have -->
+      <p id="newPlayerWhy" style="font-size:calc(7px * var(--font-scale)); color:var(--coral); display:none"
+         data-i18n="newPlayerWhy"></p>
     </section>
 
     <!-- HUB -->
     <section class="screen" id="scr-hub">
+      <img class="pixel-art" src="gamers.png" alt="Max and Julie playing games"
+           style="width:64%; max-width:250px; margin-bottom:4px" onerror="this.style.display='none'">
       <h2 class="glow-pink" style="text-align:center" data-i18n="selectGame"></h2>
       <p style="text-align:center; margin:10px 0 16px" id="hubGreeting">WELCOME BACK</p>
       <div class="cards" id="cards"></div>
@@ -315,9 +364,10 @@ input[type=text]::placeholder{ color:#D9C4B2; }
            secondary actions without stranding them at the bottom of the screen -->
       <div style="height:26px; flex:none"></div>
       <div class="btn-row" style="flex-direction:column; gap:8px">
-        <button class="btn primary" id="finaleBtn" style="display:none" data-i18n="finaleBtn"></button>
+        <!-- label, class and enabled state all set in buildHub(), so no data-i18n
+             here — two owners of the same text is how it ends up out of sync -->
+        <button class="btn primary" id="finaleBtn"></button>
         <button class="btn cyan" id="scoresBtn" data-i18n="leaderboard"></button>
-        <button class="btn ghost" id="galleryBtn" data-i18n="seePhotos"></button>
         <button class="btn ghost" id="renameBtn" style="font-size:calc(8px * var(--font-scale))" data-i18n="changeName"></button>
         <button class="btn ghost" id="homeBtn" style="font-size:calc(8px * var(--font-scale))" data-i18n="backHome"></button>
       </div>
@@ -325,6 +375,10 @@ input[type=text]::placeholder{ color:#D9C4B2; }
 
     <!-- LEADERBOARD -->
     <section class="screen" id="scr-scores">
+      <!-- was the finale screen's portrait at 78%; the leaderboard is a list, so
+           it only wants a header, not a hero image -->
+      <img class="pixel-art" src="couple-finale.png" alt="Max and Julie celebrating"
+           style="width:38%; max-width:130px; margin:0 auto 2px" onerror="this.style.display='none'">
       <h2 class="glow-gold" style="text-align:center" data-i18n="highScores"></h2>
       <div class="tabs" id="scoreTabs" style="margin:16px 0 12px"></div>
       <div class="list" id="scoreList"></div>
@@ -335,11 +389,11 @@ input[type=text]::placeholder{ color:#D9C4B2; }
 
     <!-- RESULTS -->
     <section class="screen center overlay" id="scr-results">
+      <div id="resVerdict"></div>
       <h3 id="resTitle" class="glow-cyan"></h3>
       <div class="score-big glow-gold" id="resScore">0</div>
       <p class="lead" id="resLead"></p>
       <div class="stats" id="resStats"></div>
-      <div class="list" id="resList" style="margin:2px 0"></div>
       <button class="btn primary" id="resAgain"></button>
       <div class="btn-row">
         <button class="btn ghost" id="resHub" data-i18n="hub"></button>
@@ -347,22 +401,6 @@ input[type=text]::placeholder{ color:#D9C4B2; }
       </div>
     </section>
 
-    <!-- FINALE — unlocked once all three games have been played -->
-    <section class="screen center overlay" id="scr-finale">
-      <div class="confetti" id="confetti"></div>
-      <h2 class="glow-pink" data-i18n="finaleTitle"></h2>
-      <img class="pixel-art bob" id="finaleArt" src="couple-finale.png" alt="Max and Julie celebrating"
-           style="width:78%; max-width:280px" onerror="this.style.display='none'">
-      <div class="score-big glow-gold" id="finaleTotal">0</div>
-      <p style="font-size:calc(8px * var(--font-scale))" data-i18n="finaleTotal"></p>
-      <div class="list" id="finaleList"></div>
-      <div class="spacer" style="min-height:8px"></div>
-      <p id="finaleThanks" style="font-size:calc(8px * var(--font-scale)); color:var(--burgundy); line-height:2">
-        THANK YOU FOR CELEBRATING WITH US
-      </p>
-      <button class="btn primary" id="finaleGallery" data-i18n="seePhotos"></button>
-      <button class="btn ghost" id="finaleBack" data-i18n="backToGames"></button>
-    </section>
 
     <div class="toast" id="toast"></div>
     <div id="crt"></div>
@@ -374,13 +412,13 @@ input[type=text]::placeholder{ color:#D9C4B2; }
 /* ============================================================================
    1. CONFIG  —  everything you'd want to change lives here
    ========================================================================== */
+/* coupleName and weddingYear used to live here and were read by nothing — the
+   title card is translated three ways, so a name can't be templated into it.
+   Edit STR.bootTitle instead. */
 const CONFIG = {
-  // Shown on the boot screen and around the arcade.
-  coupleName:   "MAX & JULIE",
-  weddingYear:  "",              // e.g. "2025"
-
-  // Where the "SEE THE PHOTOS" button sends people.
-  galleryUrl:   "",              // e.g. "https://yoursite.com/photos"
+  // Where the hub's SEE THE ALBUM button goes. Blank leaves it permanently
+  // locked, so leaving it empty hides the reward rather than breaking anything.
+  galleryUrl:   "https://photos.app.goo.gl/Qub8HBfypcJPgY7D9",   // the extended album
 
   // OPTIONAL shared leaderboard. Leave url blank for on-device scores only.
   // Setup instructions are in README.md.
@@ -408,8 +446,8 @@ const CONFIG = {
 const SYS = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 const FONT_STACK = {
   en: { family:"'Press Start 2P', ui-monospace, Menlo, monospace", weight:400, scale:1.00, track:"1px" },
-  vi: { family:"'Nunito', " + SYS,                                 weight:800, scale:1.25, track:"0" },
-  ru: { family:"'Nunito', " + SYS,                                 weight:800, scale:1.25, track:"0" }
+  vi: { family:"'Nunito', " + SYS,                                 weight:800, scale:1.60, track:"0" },
+  ru: { family:"'Nunito', " + SYS,                                 weight:800, scale:1.60, track:"0" }
 };
 function FONT(){ return FONT_STACK[LANG] || FONT_STACK.en; }                 // size. This one number scales BOTH the CSS and the canvas —
                    // raise it if the text still reads small, lower it if it crowds.
@@ -429,9 +467,12 @@ const STR = {
   bootTitle:   { en:"MAX & JULIE'S<br>WEDDING ARCADE",
                  vi:"SÂN CHƠI CƯỚI<br>CỦA MAX & JULIE",
                  ru:"СВАДЕБНЫЕ ИГРЫ<br>МАКСА И ДЖУЛИ" },
+  bootUnlock:  { en:"Play all 3 games to unlock the extended album",
+                 vi:"Chơi hết cả 3 trò để mở khoá album cưới đầy đủ",
+                 ru:"Пройдите все 3 игры, чтобы открыть полный альбом" },
   bootSub:     { en:"RELIVE THE MAGIC AND MEMORIES WITH US",
-                 vi:"Cùng tụi mình sống lại những kỷ niệm đẹp",
-                 ru:"Вспомните вместе с нами всё волшебство" },
+                 vi:"Cùng tụi mình sống lại phép màu và những kỷ niệm đẹp",
+                 ru:"Вспомните вместе с нами волшебство и счастливые моменты" },
   enter:       { en:"— ENTER —",        vi:"— VÀO CHƠI —",     ru:"— ВОЙТИ —" },
   tapToPlay:   { en:"▼ TAP TO PLAY ▼",  vi:"▼ CHẠM ĐỂ CHƠI ▼", ru:"▼ НАЖМИТЕ ▼" },
 
@@ -440,7 +481,7 @@ const STR = {
   nameWhy:     { en:"So we know who to be impressed by on the leaderboard",
                  vi:"Để tụi mình biết phải nể ai trên bảng xếp hạng",
                  ru:"Чтобы мы знали, кем восхищаться в таблице рекордов" },
-  namePlaceholder:{ en:"AUNT SUE",      vi:"DÌ HAI",           ru:"ТЁТЯ СВЕТА" },
+  namePlaceholder:{ en:"NAME HERE",     vi:"TÊN Ở ĐÂY",        ru:"ИМЯ ЗДЕСЬ" },
   start:       { en:"START",            vi:"BẮT ĐẦU",          ru:"НАЧАТЬ" },
   namePrivate: { en:"Stored on your phone only",
                  vi:"Chỉ lưu trên điện thoại của bạn",
@@ -450,16 +491,21 @@ const STR = {
                  ru:"НАМ НУЖНО КАК-ТО ВАС НАЗЫВАТЬ" },
 
   /* ---------- menu ---------- */
-  selectGame:  { en:"SELECT GAME",      vi:"CHỌN TRÒ CHƠI",    ru:"ВЫБЕРИТЕ ИГРУ" },
+  selectGame:  { en:"LET'S PLAY!",      vi:"CÙNG CHƠI NÀO!",   ru:"ДАВАЙТЕ ИГРАТЬ!" },
   hello:       { en:"HELLO, {name}",    vi:"CHÀO, {name}",     ru:"ПРИВЕТ, {name}" },
   pickOne:     { en:"PICK YOUR POISON", vi:"CHỌN ĐI NÀO",      ru:"ВЫБИРАЙТЕ" },
   yourBest:    { en:"YOUR BEST · {n} {unit}",
                  vi:"CAO NHẤT · {n} {unit}",
                  ru:"ВАШ РЕКОРД · {n} {unit}" },
-  finaleBtn:   { en:"💍 YOUR FINALE",   vi:"💍 MÀN KẾT",       ru:"💍 ВАШ ФИНАЛ" },
+  finaleBtn:   { en:"💍 SEE THE ALBUM", vi:"💍 XEM ALBUM CƯỚI",ru:"💍 СМОТРЕТЬ АЛЬБОМ" },
+  finaleLocked:{ en:"PLAY ALL GAMES TO UNLOCK",
+                 vi:"CHƠI HẾT BA TRÒ ĐỂ MỞ KHOÁ",
+                 ru:"ПРОЙДИТЕ ВСЕ ТРИ, ЧТОБЫ ОТКРЫТЬ" },
   leaderboard: { en:"🏆 LEADERBOARD",   vi:"🏆 BẢNG XẾP HẠNG", ru:"🏆 ТАБЛИЦА РЕКОРДОВ" },
-  seePhotos:   { en:"📸 SEE THE PHOTOS",vi:"📸 XEM ẢNH CƯỚI",  ru:"📸 СМОТРЕТЬ ФОТО" },
-  changeName:  { en:"CHANGE NAME",      vi:"ĐỔI TÊN",          ru:"ИЗМЕНИТЬ ИМЯ" },
+  changeName:  { en:"NEW PLAYER",       vi:"NGƯỜI CHƠI MỚI",   ru:"НОВЫЙ ИГРОК" },
+  newPlayerWhy:{ en:"Passing the phone on? This starts a fresh set of games.",
+                 vi:"Chuyền điện thoại cho người khác? Bắt đầu lại từ đầu nhé.",
+                 ru:"Передаёте телефон дальше? Игры начнутся заново." },
   backHome:    { en:"BACK TO HOMEPAGE", vi:"VỀ TRANG ĐẦU",     ru:"НА ГЛАВНУЮ" },
 
   /* ---------- leaderboard ---------- */
@@ -467,7 +513,6 @@ const STR = {
   back:        { en:"< BACK",           vi:"< QUAY LẠI",       ru:"< НАЗАД" },
   loading:     { en:"LOADING…",         vi:"ĐANG TẢI…",        ru:"ЗАГРУЗКА…" },
   noScores:    { en:"BE THE FIRST",     vi:"HÃY LÀ NGƯỜI ĐẦU TIÊN", ru:"БУДЬТЕ ПЕРВЫМ" },
-  noScoresYet: { en:"NO SCORES YET",    vi:"CHƯA CÓ ĐIỂM NÀO", ru:"ПОКА НЕТ РЕЗУЛЬТАТОВ" },
   lbLive:      { en:"LIVE · EVERYONE",  vi:"TRỰC TIẾP · MỌI NGƯỜI", ru:"ОНЛАЙН · ВСЕ" },
   lbLocal:     { en:"THIS DEVICE ONLY", vi:"CHỈ TRÊN MÁY NÀY", ru:"ТОЛЬКО НА ЭТОМ УСТРОЙСТВЕ" },
   anon:        { en:"ANON",             vi:"ẨN DANH",          ru:"АНОНИМ" },
@@ -475,23 +520,12 @@ const STR = {
   /* ---------- results & finale ---------- */
   gameOver:    { en:"GAME OVER",        vi:"KẾT THÚC",         ru:"ИГРА ОКОНЧЕНА" },
   newBest:     { en:"NEW PERSONAL BEST!",vi:"KỶ LỤC MỚI!",     ru:"НОВЫЙ РЕКОРД!" },
+  youWin:      { en:"SUCCESS!",         vi:"THÀNH CÔNG!",      ru:"УСПЕХ!" },
+  nextGame:    { en:"NEXT GAME ▶",     vi:"TRÒ TIẾP THEO ▶",  ru:"СЛЕДУЮЩАЯ ИГРА ▶" },
   playAgain:   { en:"PLAY AGAIN",       vi:"CHƠI LẠI",         ru:"ЕЩЁ РАЗ" },
-  unlockFinale:{ en:"✦ YOU PLAYED THEM ALL ✦",
-                 vi:"✦ BẠN ĐÃ CHƠI HẾT RỒI ✦",
-                 ru:"✦ ВЫ ПРОШЛИ ВСЕ ТРИ ✦" },
   hub:         { en:"HUB",              vi:"TRANG CHÍNH",      ru:"МЕНЮ" },
   scores:      { en:"SCORES",           vi:"ĐIỂM",             ru:"РЕКОРДЫ" },
   quit:        { en:"< QUIT",           vi:"< THOÁT",          ru:"< ВЫХОД" },
-  finaleTitle: { en:"YOU PLAYED<br>THEM ALL",
-                 vi:"BẠN ĐÃ CHƠI<br>HẾT CẢ BA",
-                 ru:"ВЫ ПРОШЛИ<br>ВСЕ ТРИ" },
-  finaleTotal: { en:"Your combined best across all three",
-                 vi:"Tổng điểm cao nhất của cả ba trò",
-                 ru:"Сумма ваших лучших результатов" },
-  finaleThanks:{ en:"THANK YOU FOR CELEBRATING WITH US",
-                 vi:"CẢM ƠN BẠN ĐÃ CHUNG VUI CÙNG TỤI MÌNH",
-                 ru:"СПАСИБО, ЧТО ПРАЗДНУЕТЕ ВМЕСТЕ С НАМИ" },
-  backToGames: { en:"BACK TO THE GAMES",vi:"QUAY LẠI TRÒ CHƠI",ru:"ВЕРНУТЬСЯ К ИГРАМ" },
   pts:         { en:"PTS",              vi:"ĐIỂM",             ru:"ОЧК." },
 
   /* ---------- shared in-game ---------- */
@@ -510,18 +544,17 @@ const STR = {
   spellBlurb:  { en:"HELP HER STOP THE RAIN",
                  vi:"GIÚP DÌ ẤY LÀM TẠNH MƯA",
                  ru:"ПОМОГИТЕ ОСТАНОВИТЬ ДОЖДЬ" },
-  spellIntro:  { en:"It rained all morning. She said don't worry — I'm a witch, I've got this.",
-                 vi:"Trời mưa suốt cả buổi sáng. Dì ấy bảo đừng lo — dì là phù thủy, để dì lo.",
-                 ru:"Всё утро лил дождь. Она сказала: не волнуйтесь — я ведьма, я всё улажу." },
-  spellGoal:   { en:"Help clear the rain away and bring out the sun for the wedding ceremony.",
-                 vi:"Hãy giúp dì xua tan cơn mưa và gọi nắng về cho lễ cưới.",
-                 ru:"Помогите разогнать дождь и вернуть солнце к церемонии." },
-  spellHowKeys:{ en:"Press the arrow keys as each arrow lands.",
-                 vi:"Bấm phím mũi tên tương ứng khi mũi tên tới vạch.",
-                 ru:"Нажимайте клавиши со стрелками, когда стрелка дойдёт до линии." },
-  spellHow:    { en:"Tap each column as its arrow lands.",
-                 vi:"Chạm vào cột tương ứng khi mũi tên tới vạch.",
-                 ru:"Нажимайте на дорожку, когда её стрелка дойдёт до линии." },
+  spellHowKeys:{ en:"Press the arrow keys as each arrow lands to help Aunt Lena's magic change the weather",
+                 vi:"Bấm phím mũi tên khi mũi tên tới vạch để giúp phép thuật của dì Lena đổi thời tiết",
+                 ru:"Нажимайте клавиши со стрелками, когда стрелка доходит до линии, — помогите магии тёти Лены изменить погоду" },
+  spellHow:    { en:"Tap each column as its arrow lands to help Aunt Lena's magic change the weather",
+                 vi:"Chạm vào cột khi mũi tên tới vạch để giúp phép thuật của dì Lena đổi thời tiết",
+                 ru:"Нажимайте на дорожку, когда её стрелка доходит до линии, — помогите магии тёти Лены изменить погоду" },
+  difficulty:  { en:"CHOOSE A LEVEL",   vi:"CHỌN ĐỘ KHÓ",      ru:"ВЫБЕРИТЕ УРОВЕНЬ" },
+  diff_easy:   { en:"EASY",             vi:"DỄ",               ru:"ЛЕГКО" },
+  diff_medium: { en:"MEDIUM",           vi:"VỪA",              ru:"СРЕДНЕ" },
+  diff_hard:   { en:"HARD",             vi:"KHÓ",              ru:"СЛОЖНО" },
+  statLevel:   { en:"LEVEL",            vi:"ĐỘ KHÓ",           ru:"УРОВЕНЬ" },
   sky:         { en:"SKY",              vi:"TRỜI",             ru:"НЕБО" },
   perfect:     { en:"PERFECT",          vi:"HOÀN HẢO",         ru:"ИДЕАЛЬНО" },
   great:       { en:"GREAT",            vi:"TUYỆT",            ru:"ОТЛИЧНО" },
@@ -536,8 +569,8 @@ const STR = {
   rainEasedL:  { en:"Enough blue sky to get married under",
                  vi:"Đủ trời xanh để làm đám cưới rồi",
                  ru:"Хватило синевы, чтобы сыграть свадьбу" },
-  stillSpit:   { en:"STILL SPITTING A BIT",vi:"VẪN CÒN LẤT PHẤT",ru:"ВСЁ ЕЩЁ КАПАЕТ" },
-  stillSpitL:  { en:"The clouds thinned, just not enough",
+  keptRaining: { en:"IT KEPT RAINING",   vi:"TRỜI VẪN MƯA",     ru:"ДОЖДЬ НЕ ПЕРЕСТАЛ" },
+  keptRainingL:{ en:"The clouds thinned, just not enough",
                  vi:"Mây có mỏng đi, nhưng chưa đủ",
                  ru:"Тучи поредели, но этого мало" },
   lenaAlone:   { en:"SHE FINISHED IT WITHOUT YOU",
@@ -549,33 +582,28 @@ const STR = {
   statAccuracy:{ en:"ACCURACY",         vi:"CHÍNH XÁC",        ru:"ТОЧНОСТЬ" },
   statCombo:   { en:"MAX COMBO",        vi:"CHUỖI DÀI NHẤT",   ru:"ЛУЧШЕЕ КОМБО" },
 
-  /* ---------- Catch the Petals ---------- */
-  petalsName:  { en:"PETALS & RINGS",   vi:"CÁNH HOA & NHẪN",  ru:"ЛЕПЕСТКИ И КОЛЬЦА" },
-  petalsShort: { en:"PETALS",           vi:"CÁNH HOA",         ru:"ЛЕПЕСТКИ" },
+  /* ---------- Catch the Flowers ---------- */
+  petalsName:  { en:"CATCH THE FLOWERS",vi:"HỨNG HOA",         ru:"ЛОВИТЕ ЦВЕТЫ" },
+  petalsShort: { en:"FLOWERS",          vi:"HOA",              ru:"ЦВЕТЫ" },
   petalsBlurb: { en:"HELP EVA & SORAYA CATCH",
                  vi:"GIÚP EVA & SORAYA HỨNG",
                  ru:"ПОМОГИТЕ ЕВЕ И СОРАЙЕ" },
-  petalsIntro: { en:"Maids of Honor Eva and Soraya are in charge of petals and rings. Help them catch as many as possible!",
-                 vi:"Hai phù dâu Eva và Soraya lo phần cánh hoa và nhẫn cưới. Giúp hai bạn ấy hứng được càng nhiều càng tốt!",
-                 ru:"Подружки невесты Ева и Сорайя отвечают за лепестки и кольца. Помогите им поймать как можно больше!" },
-  dragToMove:  { en:"Drag to move them",
-                 vi:"Kéo để di chuyển",
-                 ru:"Проведите пальцем, чтобы двигать их" },
-  keysToMove:  { en:"Use the ← and → keys to move them",
-                 vi:"Dùng phím ← và → để di chuyển",
-                 ru:"Двигайте их клавишами ← и →" },
-  dodgeCorks:  { en:"Dodge the corks",  vi:"Né nút chai",      ru:"Уворачивайтесь от пробок" },
+  dragToMove:  { en:"Drag to help Eva and Soraya catch flowers.\nLast {t} seconds without being hit by 3 corks and you win.\nMore flowers = higher score",
+                 vi:"Kéo để giúp Eva và Soraya hứng hoa.\nTrụ đủ {t} giây mà không bị nút chai trúng 3 lần là thắng.\nCàng nhiều hoa = càng nhiều điểm",
+                 ru:"Проведите пальцем, чтобы помочь Еве и Сорайе ловить цветы.\nПродержитесь {t} секунд, поймав не больше 2 пробок, — и вы победили.\nБольше цветов = больше очков" },
+  keysToMove:  { en:"Use the ← and → keys to help Eva and Soraya catch flowers.\nLast {t} seconds without being hit by 3 corks and you win.\nMore flowers = higher score",
+                 vi:"Dùng phím ← và → để giúp Eva và Soraya hứng hoa.\nTrụ đủ {t} giây mà không bị nút chai trúng 3 lần là thắng.\nCàng nhiều hoa = càng nhiều điểm",
+                 ru:"Клавишами ← и → помогите Еве и Сорайе ловить цветы.\nПродержитесь {t} секунд, поймав не больше 2 пробок, — и вы победили.\nБольше цветов = больше очков" },
   ow:          { en:"OW!",              vi:"ÁI!",              ru:"ОЙ!" },
-  lastedFull:  { en:"LASTED THE FULL 50 SECONDS",
-                 vi:"TRỤ ĐƯỢC TRỌN 50 GIÂY",
-                 ru:"ПРОДЕРЖАЛИСЬ ВСЕ 50 СЕКУНД" },
-  outAt:       { en:"OUT AT {t}s",      vi:"HẾT LƯỢT Ở GIÂY {t}", ru:"ВЫБЫЛИ НА {t} СЕК" },
-  statPetals:  { en:"PETALS FOR EVA",   vi:"CÁNH HOA CHO EVA", ru:"ЛЕПЕСТКИ ДЛЯ ЕВЫ" },
-  statRings:   { en:"RINGS FOR SORAYA", vi:"NHẪN CHO SORAYA",  ru:"КОЛЬЦА ДЛЯ СОРАЙИ" },
+  lastedFull:  { en:"LASTED THE FULL {t} SECONDS",
+                 vi:"TRỤ ĐƯỢC TRỌN {t} GIÂY",
+                 ru:"ПРОДЕРЖАЛИСЬ ВСЕ {t} СЕКУНД" },
+  outAt:       { en:"OUT AT {t}s",      vi:"HẾT LƯỢT Ở GIÂY {t}", ru:"ПРОДЕРЖАЛИСЬ {t} СЕК" },
+  statPetals:  { en:"FLOWERS CAUGHT",   vi:"HOA ĐÃ HỨNG",      ru:"ПОЙМАНО ЦВЕТОВ" },
   statMult:    { en:"BEST MULTIPLIER",  vi:"HỆ SỐ CAO NHẤT",   ru:"ЛУЧШИЙ МНОЖИТЕЛЬ" },
   notAScratch: { en:"NOT A SCRATCH",    vi:"KHÔNG SỨT MẺ GÌ",  ru:"НИ ЦАРАПИНЫ" },
   wentDistance:{ en:"WENT THE DISTANCE",vi:"TRỤ ĐẾN CÙNG",     ru:"ДОШЛИ ДО КОНЦА" },
-  safeHands:   { en:"SAFE HANDS",       vi:"TAY NGHỀ CỨNG",    ru:"НАДЁЖНЫЕ РУКИ" },
+  safeHands:   { en:"SAFE HANDS",       vi:"CHẮC TAY",    ru:"НАДЁЖНЫЕ РУКИ" },
 
   /* ---------- Confetti Cannon ---------- */
   cannonName:  { en:"CONFETTI CANNON",  vi:"PHÁO GIẤY",        ru:"ХЛОПУШКА" },
@@ -583,25 +611,19 @@ const STR = {
   cannonBlurb: { en:"FIRE ON THE KISS",
                  vi:"BẮN ĐÚNG LÚC HÔN",
                  ru:"В МОМЕНТ ПОЦЕЛУЯ" },
-  cannonIntro: { en:"Max and Julie are running down the aisle to each other. You get one shot — fire it the moment they kiss.",
-                 vi:"Max và Julie đang chạy dọc lối đi về phía nhau. Bạn chỉ có một phát — bắn đúng lúc hai người hôn nhau.",
-                 ru:"Макс и Джули бегут по проходу навстречу друг другу. У вас один выстрел — стреляйте в момент поцелуя." },
-  cannonHowTap:{ en:"Tap anywhere to fire the cannon.",
-                 vi:"Chạm vào đâu cũng được để bắn pháo.",
-                 ru:"Нажмите в любом месте, чтобы выстрелить." },
-  cannonHowKey:{ en:"Press the space bar to fire the cannon.",
-                 vi:"Bấm phím cách để bắn pháo.",
-                 ru:"Нажмите пробел, чтобы выстрелить." },
-  cannonWarn:  { en:"Too early and you shower an empty aisle.",
-                 vi:"Bắn sớm quá thì chỉ rắc giấy xuống lối đi trống.",
-                 ru:"Выстрелите рано — осыплете пустой проход." },
+  cannonHowTap:{ en:"Tap anywhere to shoot confetti when Max and Julie kiss",
+                 vi:"Chạm vào đâu cũng được để bắn hoa giấy khi Max và Julie hôn nhau",
+                 ru:"Коснитесь экрана, чтобы выпустить конфетти, когда Макс и Джули поцелуются" },
+  cannonHowKey:{ en:"Press the space bar to shoot confetti when Max and Julie kiss",
+                 vi:"Bấm phím cách để bắn hoa giấy khi Max và Julie hôn nhau",
+                 ru:"Нажмите пробел, чтобы выпустить конфетти, когда Макс и Джули поцелуются" },
   tapToFire:   { en:"TAP TO FIRE",      vi:"CHẠM ĐỂ BẮN",      ru:"НАЖМИТЕ, ЧТОБЫ ВЫСТРЕЛИТЬ" },
   clickToFire: { en:"PRESS SPACE",      vi:"BẤM PHÍM CÁCH",    ru:"НАЖМИТЕ ПРОБЕЛ" },
   now:         { en:"NOW!",             vi:"NGAY!",            ru:"СЕЙЧАС!" },
   oneShot:     { en:"ONE SHOT",         vi:"MỘT PHÁT",         ru:"ОДИН ВЫСТРЕЛ" },
   mazelTov:    { en:"MAZEL TOV!",       vi:"MAZEL TOV!",       ru:"MAZEL TOV!" },
   perfectScore:{ en:"YOU GOT A PERFECT SCORE",
-                 vi:"BẠN ĐƯỢC ĐIỂM TUYỆT ĐỐI",
+                 vi:"BẠN ĐẠT ĐIỂM TUYỆT ĐỐI",
                  ru:"У ВАС ИДЕАЛЬНЫЙ РЕЗУЛЬТАТ" },
   soNearly:    { en:"SO NEARLY!",       vi:"SUÝT NỮA RỒI!",    ru:"ПОЧТИ!" },
   notBad:      { en:"NOT BAD!",         vi:"CŨNG ĐƯỢC ĐẤY!",   ru:"НЕПЛОХО!" },
@@ -628,7 +650,17 @@ const DESKTOP = typeof window !== "undefined" && window.matchMedia
 /* pick the touch or desktop wording for the same instruction */
 function TK(touchKey, desktopKey){ return T(DESKTOP ? desktopKey : touchKey); }
 
-let LANG = localStorage.getItem("wg.lang") || "en";
+/* Safari with "Block All Cookies", and some in-app browsers, throw on any
+   localStorage access. Unguarded, that killed the inline script before a single
+   string was rendered — the couple portrait and an empty pink button, no error.
+   Everything degrades to "nothing is remembered" instead. */
+const Store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k, v); } catch(e){} },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} }
+};
+
+let LANG = Store.get("wg.lang") || "en";
 if (!STR.bootTitle[LANG]) LANG = "en";
 
 /* T("key", {name:"MAX"}) — falls back to English if a translation is missing,
@@ -743,12 +775,26 @@ const Sfx = {
    5. PLAYER STORE
    ========================================================================== */
 const Player = {
-  get name(){ return localStorage.getItem("wg.name") || ""; },
-  set name(v){ localStorage.setItem("wg.name", v); },
+  get name(){ return Store.get("wg.name") || ""; },
+  set name(v){ Store.set("wg.name", v); },
   get id(){
-    let i = localStorage.getItem("wg.id");
-    if (!i){ i = "p" + Math.random().toString(36).slice(2,10); localStorage.setItem("wg.id", i); }
+    let i = Store.get("wg.id");
+    if (!i){ i = "p" + Math.random().toString(36).slice(2,10); Store.set("wg.id", i); }
     return i;
+  },
+
+  /* One phone gets handed round a table all night. Without this, guest two
+     arrives with the album already unlocked, sees guest one's scores labelled
+     YOUR BEST, and — once Supabase is on — overwrites guest one's leaderboard
+     row, because the upsert is keyed on a player_id that never changed.
+
+     A fresh id and no progress. The device leaderboard (wg.lb.*) is deliberately
+     left alone: it is the record of everyone who has played on this phone, and
+     the new id means the next guest adds a row rather than replacing one. */
+  reset(){
+    Store.del("wg.id");
+    GAMES.forEach(g => { Store.del("wg.done." + g.id); Store.del("wg.best." + g.id); });
+    this.id;   // mint the new one now, so the first score of the night has it
   }
 };
 
@@ -759,16 +805,16 @@ const LB = {
   get live(){ return !!(CONFIG.supabase.url && CONFIG.supabase.anonKey); },
 
   _localKey(g){ return "wg.lb." + g; },
-  _localAll(g){ try { return JSON.parse(localStorage.getItem(this._localKey(g))) || []; } catch(e){ return []; } },
-  _localSave(g, rows){ localStorage.setItem(this._localKey(g), JSON.stringify(rows.slice(0,50))); },
+  _localAll(g){ try { return JSON.parse(Store.get(this._localKey(g))) || []; } catch(e){ return []; } },
+  _localSave(g, rows){ Store.set(this._localKey(g), JSON.stringify(rows.slice(0,50))); },
 
   // personal best, always tracked locally so the hub can show it offline
   best(g){
-    const b = Number(localStorage.getItem("wg.best."+g) || 0);
+    const b = Number(Store.get("wg.best."+g) || 0);
     return isNaN(b) ? 0 : b;
   },
   setBest(g, score){
-    if (score > this.best(g)) { localStorage.setItem("wg.best."+g, String(score)); return true; }
+    if (score > this.best(g)) { Store.set("wg.best."+g, String(score)); return true; }
     return false;
   },
 
@@ -868,7 +914,12 @@ const Engine = {
       ctx.fillRect(0,0,cv.width,cv.height);
       ctx.setTransform(this.scale,0,0,this.scale,this.ox,this.oy);
       try { game.update(dt); game.draw(ctx); }
-      catch(err){ console.error(err); this.stop(); }
+      catch(err){
+        // stop() leaves no screen active, so without this a thrown error is a
+        // blank cream dead end that only a reload escapes
+        console.error(err); this.stop();
+        try { goHub(); } catch(e){}
+      }
       this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
@@ -905,6 +956,11 @@ function bindInput(){
     const fn = Input[type];
     if (fn) fn(p.x, p.y);
   };
+  // capture, or a mouse released outside the canvas never sends pointerup and
+  // the basket stays stuck to a drag that has already finished
+  cv.addEventListener("pointerdown", (e)=>{
+    try { cv.setPointerCapture(e.pointerId); } catch(err){}
+  }, {passive:true});
   cv.addEventListener("pointerdown", handler("down"), {passive:false});
   cv.addEventListener("pointerup",   handler("up"),   {passive:false});
   cv.addEventListener("pointermove", handler("move"), {passive:false});
@@ -975,10 +1031,20 @@ function wrapLines(g, str, size, maxW){
 /* Draw a wrapped paragraph centred on x, starting at y. Returns the y below it,
    so callers can stack blocks without hard-coding positions per language. */
 function paragraph(g, str, x, y, size, color, maxW, lineGap){
-  const lines = wrapLines(g, str, size, maxW);
-  const step  = lineGap || size * 2.35;   // roomy: Vietnamese stacks diacritics above
-  lines.forEach((ln, i) => textShadow(g, ln, x, y + i*step, size, color));
-  return y + lines.length * step;
+  const step = lineGap || size * 2.35;   // roomy: Vietnamese stacks diacritics above
+  let yy = y;
+  /* A literal \n means "new paragraph", not "new line" — the blocks get a
+     half-step of air between them. Word wrap can't be trusted to land a break
+     where the meaning does, and "…catch flowers. Last 35 seconds…" ran the
+     story and the win condition together mid-line. */
+  String(str).split("\n").forEach((part, i) => {
+    if (i) yy += step * 0.6;
+    wrapLines(g, part, size, maxW).forEach(ln => {
+      textShadow(g, ln, x, yy, size, color);
+      yy += step;
+    });
+  });
+  return yy;
 }
 /* On cream, a hard drop shadow looks like a smudge. A thin cream outline keeps
    text readable over flowers and paving without darkening the palette. */
@@ -1034,7 +1100,7 @@ class Particles {
       p.rot += p.spin * dt;
     }
   }
-  /* A perfect cannon shot puts 750 pieces on screen. save/translate/rotate/restore
+  /* A perfect cannon shot puts ~2,080 pieces on screen over 3.6s. save/translate/rotate/restore
      is four calls per piece; composing the matrix by hand is one. Worth it at the
      exact moment you least want a dropped frame. */
   draw(g){
@@ -1064,12 +1130,9 @@ function gameById(id){ return GAMES.find(g => g.id === id); }
    8b. PROGRESS  —  which games this guest has finished
    ========================================================================== */
 const Progress = {
-  done(id){ return localStorage.getItem("wg.done." + id) === "1"; },
-  mark(id){ localStorage.setItem("wg.done." + id, "1"); },
+  done(id){ return Store.get("wg.done." + id) === "1"; },
+  mark(id){ Store.set("wg.done." + id, "1"); },
   allDone(){ return GAMES.every(g => this.done(g.id)); },
-  combined(){ return GAMES.reduce((s,g) => s + LB.best(g.id), 0); },
-  get finaleSeen(){ return localStorage.getItem("wg.finale") === "1"; },
-  set finaleSeen(v){ localStorage.setItem("wg.finale", v ? "1" : "0"); }
 };
 
 /* ============================================================================
@@ -1084,6 +1147,12 @@ async function showResults(gameId, score, opts={}){
   const def = gameById(gameId);
   const isPB = await LB.submit(gameId, score, opts.meta);
 
+  // opts.won is deliberately three-valued: true, false, or absent for the games
+  // that don't have a pass mark
+  const verdict = $("#resVerdict");
+  verdict.textContent = opts.won === undefined ? "" : T(opts.won ? "youWin" : "maybeNext");
+  verdict.className   = opts.won ? "win" : "lose";
+
   $("#resTitle").textContent = opts.title || T(isPB ? "newBest" : "gameOver");
   $("#resTitle").className = isPB ? "glow-gold" : "glow-cyan";
   $("#resScore").textContent = fmt(score) + " " + T("pts");
@@ -1092,29 +1161,28 @@ async function showResults(gameId, score, opts={}){
       '<div class="stat"><span class="k">' + escapeHtml(row[0]) + '</span>'
     + '<span class="v">' + escapeHtml(String(row[1])) + '</span></div>').join("");
 
-  const list = $("#resList");
-  list.innerHTML = '<div class="rank-line"><span class="who" style="color:var(--dim)">'+T("loading")+'</span></div>';
+  /* No leaderboard here. It used to fetch the top five and show them under the
+     stats, which turned a "did I win" card into a table and cost a network
+     round trip on every single finish. The SCORES button is one tap away. */
   Screens.hideAll();
   Screens.overlay("results", true);
-  isPB ? Sfx.fanfare() : Sfx.sad();
+  // winning sounds like winning even if it wasn't a personal best
+  (opts.won === true || (opts.won === undefined && isPB)) ? Sfx.fanfare() : Sfx.sad();
 
-  // finishing the third game turns "play again" into the finale unlock
-  const unlock = Progress.allDone() && !Progress.finaleSeen;
-  $("#resAgain").textContent = T(unlock ? "unlockFinale" : "playAgain");
-  $("#resAgain").onclick = unlock
-    ? ()=>{ Screens.overlay("results", false); goFinale(); }
-    : ()=>{ Screens.overlay("results", false); Sfx.select(); Engine.start(gameById(lastPlayed).make()); };
+  /* NEXT GAME if they won and something is still unplayed, otherwise PLAY AGAIN
+     on the game they just lost. A game that passes no `won` (the cannon) counts
+     as a win here: it has no lives to lose, and it has already said MAZEL TOV or
+     MAYBE NEXT TIME in letters twice this size.
 
-  const rows = await LB.top(gameId, 5);
-  list.innerHTML = rows.length
-    ? rows.map((r,i) => {
-        const me = r.player_id === Player.id;
-        return '<div class="rank-line'+(me?' me':'')+'">'
-             + '<span class="pos">'+(i+1)+'.</span>'
-             + '<span class="who">'+escapeHtml(r.name||T("anon"))+'</span>'
-             + '<span class="pts">'+fmt(r.score)+'</span></div>';
-      }).join("")
-    : '<div class="rank-line"><span class="who" style="color:var(--dim)">'+T("noScoresYet")+'</span></div>';
+     The album is deliberately not offered here. It lives on the hub and nowhere
+     else — a results screen that dangles it after every round makes the reward
+     feel like an advert. */
+  const next  = opts.won === false ? null : nextGameAfter(gameId);
+  const again = $("#resAgain");
+  again.textContent = T(next ? "nextGame" : "playAgain");
+  again.onclick = ()=>{ Screens.overlay("results", false); Sfx.select();
+                        Engine.start((next || gameById(lastPlayed)).make()); };
+
 }
 
 function escapeHtml(s){
@@ -1166,7 +1234,7 @@ function buildLangButtons(){
 function setLang(code){
   if (!STR.bootTitle[code]) return;
   LANG = code;
-  localStorage.setItem("wg.lang", code);
+  Store.set("wg.lang", code);
   Sfx.blip();
   applyLang();
 }
@@ -1195,43 +1263,49 @@ function buildHub(){
 
   const n = Player.name;
   $("#hubGreeting").textContent = n ? T("hello", { name:n }) : T("pickOne");
-  $("#galleryBtn").style.display = CONFIG.galleryUrl ? "" : "none";
-  // once unlocked, the finale stays reachable from the hub
-  $("#finaleBtn").style.display = Progress.allDone() ? "" : "none";
+  /* The album button is always on the hub. Hiding it until all three games were
+     done meant the reward only appeared once it had already been earned, and the
+     hub carried a separate photos button as well — two things doing one job. */
+  // no album configured means nothing to unlock, so the button stays locked
+  // rather than turning pink and doing nothing
+  const unlocked = Progress.allDone() && !!CONFIG.galleryUrl;
+  const album = $("#finaleBtn");
+  album.className   = "btn " + (unlocked ? "primary" : "locked");
+  album.textContent = T(unlocked ? "finaleBtn" : "finaleLocked");
+  album.disabled    = !unlocked;
 }
 
 /* ---------- the finale, shown after all three games are done ---------- */
-function sprinkleConfetti(){
-  const wrap = $("#confetti");
-  const cols = ["#E4568A","#EE7FA0","#F5A03C","#FBCB55","#6E9BD8","#7FA36A"];
-  wrap.innerHTML = "";
-  for (let i=0;i<44;i++){
-    const bit = document.createElement("i");
-    bit.style.left = (Math.random()*100) + "%";
-    bit.style.background = cols[i % cols.length];
-    bit.style.animationDuration = (2.6 + Math.random()*2.6) + "s";
-    bit.style.animationDelay = (-Math.random()*4) + "s";
-    bit.style.opacity = 0.55 + Math.random()*0.45;
-    wrap.appendChild(bit);
-  }
+/* One door to the album, used by the hub button and nothing else. New tab, so the arcade is still sitting there behind it. */
+function openAlbum(){
+  if (!CONFIG.galleryUrl) return;
+  Sfx.select();
+  /* Not window.open(url, "_blank", "noopener") — that returns null by spec
+     whenever noopener is in the features string, so a null check reads as
+     "popup blocked" every single time and the fallback navigated the arcade
+     away as well. An anchor gets a new tab and rel=noopener without lying. */
+  const a = document.createElement("a");
+  a.href = CONFIG.galleryUrl; a.target = "_blank"; a.rel = "noopener noreferrer";
+  document.body.appendChild(a); a.click(); a.remove();
 }
 
-function goFinale(){
-  Engine.stop();
-  Progress.finaleSeen = true;
-  $("#finaleTotal").textContent = fmt(Progress.combined()) + " " + T("pts");
-  $("#finaleList").innerHTML = GAMES.map(def =>
-      '<div class="rank-line"><span class="who">'+T(def.nameKey)+'</span>'
-    + '<span class="pts">'+fmt(LB.best(def.id))+' '+T("pts")+'</span></div>'
-  ).join("");
-  $("#finaleThanks").innerHTML = T("finaleThanks")
-    + (CONFIG.coupleName ? "<br>&#8212; " + escapeHtml(CONFIG.coupleName) : "");
-  $("#finaleGallery").style.display = CONFIG.galleryUrl ? "" : "none";
-  sprinkleConfetti();
-  Screens.hideAll();
-  Screens.overlay("finale", true);
-  Sfx.fanfare();
+/* Where NEXT GAME goes: forward through the list, preferring one they haven't
+   finished, otherwise just the next along.
+
+   Two things this deliberately does not do. It doesn't wrap — the last game in
+   GAMES is the end of the run, so the cannon offers PLAY AGAIN rather than
+   marching people back to the start. And it doesn't return null once everything
+   has been played, which it used to; that meant that from the moment a guest
+   had played all three, winning offered PLAY AGAIN forever. */
+function nextGameAfter(afterId){
+  const i = GAMES.findIndex(g => g.id === afterId);
+  if (i < 0 || i === GAMES.length - 1) return null;
+  for (let k = i + 1; k < GAMES.length; k++)
+    if (!Progress.done(GAMES[k].id)) return GAMES[k];
+  return GAMES[i + 1];
 }
+
+
 
 function goHub(){
   Engine.stop();
@@ -1284,31 +1358,46 @@ $("#bootBtn").onclick = ()=>{
 };
 $("#scr-boot").onclick = (e)=>{ if (!e.target || e.target.tagName !== "BUTTON") $("#bootBtn").click(); };
 
+/* Set when NEW PLAYER is tapped, acted on when a name is actually submitted —
+   so backing out of the name screen can't wipe anybody by accident. */
+let handingOver = false;
+
 $("#nameBtn").onclick = ()=>{
   const v = $("#nameInput").value.trim().toUpperCase().slice(0,14);
   if (!v){ toast(T("nameNeeded")); return; }
+  if (handingOver){ Player.reset(); handingOver = false; }
+  $("#newPlayerWhy").style.display = "none";
   Player.name = v; Sfx.select(); goHub();
 };
 $("#nameInput").addEventListener("keydown", e => { if (e.key === "Enter") $("#nameBtn").click(); });
 
-$("#renameBtn").onclick = ()=>{ $("#nameInput").value = Player.name; Screens.show("name"); };
+// NEW PLAYER, not CHANGE NAME: it clears progress and scores for whoever is
+// next, so the box starts empty rather than pre-filled with the last guest.
+$("#renameBtn").onclick = ()=>{
+  handingOver = true; $("#nameInput").value = "";
+  $("#newPlayerWhy").style.display = "";
+  Screens.show("name");
+};
 // back to the title card. Their name is kept, so ENTER brings them straight back.
 $("#homeBtn").onclick   = ()=>{ Sfx.blip(); Engine.stop(); Screens.show("boot"); };
 $("#scoresBtn").onclick = ()=>{ Sfx.blip(); goScores(); };
 $("#scoresBack").onclick = ()=>{ Sfx.blip(); goHub(); };
-$("#galleryBtn").onclick = ()=>{ if (CONFIG.galleryUrl) location.href = CONFIG.galleryUrl; };
 $("#backBtn").onclick = ()=>{ Sfx.blip(); goHub(); };
 
-$("#resAgain").onclick = ()=>{ Screens.overlay("results", false); Sfx.select(); Engine.start(gameById(lastPlayed).make()); };
-$("#finaleBtn").onclick     = ()=>{ Sfx.select(); goFinale(); };
-$("#finaleBack").onclick    = ()=>{ Screens.overlay("finale", false); goHub(); };
-$("#finaleGallery").onclick = ()=>{ if (CONFIG.galleryUrl) location.href = CONFIG.galleryUrl; };
+// straight to the album; there is no interstitial any more
+$("#finaleBtn").onclick     = ()=>{ if (Progress.allDone()) openAlbum(); };
 $("#resHub").onclick   = ()=>{ Screens.overlay("results", false); goHub(); };
 $("#resScores").onclick= ()=>{ Screens.overlay("results", false); scoreTab = lastPlayed; goScores(); };
 
 // pause the loop when the tab is hidden so nothing runs away
 document.addEventListener("visibilitychange", ()=>{
-  if (document.hidden && Engine.running && Engine.current && Engine.current.pause) Engine.current.pause();
+  /* The rhythm game's clock is the AudioContext clock. iOS suspends the context
+     on an app switch, which froze the round with QUIT as the only exit; Android
+     keeps it running, so coming back judged every pending arrow in one tick.
+     Resuming on return fixes the first; the miss cap in DanceGame the second.
+     (This used to call Engine.current.pause(), which only DanceGame defined and
+     which was an empty method — it had never paused anything.) */
+  if (!document.hidden) Sfx.resume();
 });
 
 applyLang();   // paints every data-i18n string and the language chips
@@ -1420,7 +1509,15 @@ if (typeof Image !== "undefined"){
    the sky about two thirds through, a scrappy one only manages a let-up, and a
    bad one leaves it raining. Misses cost less than hits earn, or 70% accuracy
    would end in a downpour and feel unfair. */
+/* These are per-arrow, and tuned against MEDIUM's 89 of them. EASY has 15, so
+   the rates are multiplied by the same factor as the score — otherwise the most
+   spell power an EASY round could possibly reach is 0.30 and the sky would never
+   clear no matter how perfectly it was played. */
 const D_POWER = { perfect:0.020, great:0.015, good:0.008, miss:-0.030 };
+/* The sky has to actually stop raining for the round to count as a win. That's
+   the same line the weather bands already draw between "eased off" and "still
+   spitting", so the verdict and the story can't contradict each other. */
+const D_WIN_SKY = 0.55;
 
 const SKY_WET  = { top:"#CBD6E2", bot:"#E8EDF2" };
 const SKY_CLEAR= { top:"#EAF2FB", bot:"#FFFBF4" };
@@ -1446,35 +1543,70 @@ function drawArrow(g, cx, cy, s, dir, fill, outlineOnly){
   g.restore();
 }
 
-function buildChart(bpm, seed){
+/* The song has one shape — calm, building, busiest, easing off — held here as
+   fractions of the chart rather than absolute beats, so a shorter difficulty
+   gets the same arc rather than just the opening of it. The five boundaries are
+   written as /79 because that is where MEDIUM's sections used to start, and
+   MEDIUM's chart has to come out identical to the one already tuned. */
+const D_SECTIONS = [
+  { at: 0/79, density:0.42, eighth:0.00, jump:0.00 },
+  { at:12/79, density:0.70, eighth:0.22, jump:0.03 },
+  { at:30/79, density:0.86, eighth:0.46, jump:0.07 },
+  { at:50/79, density:0.94, eighth:0.62, jump:0.13 },
+  { at:68/79, density:0.58, eighth:0.18, jump:0.05 }
+];
+
+/* Three ways to play the same song.
+   EASY is half-time: notes can only land on every other beat, never on the
+   off-beat, and never two at once — about a third of MEDIUM's arrows, over
+   40 beats (~25s) instead of 79 (~50s). Half-time matters more than it looks:
+   the music is in 4/4, so every other beat still falls on beat 1 and 3 of the
+   bar. Spacing notes every third beat would be a third as many too, but they'd
+   drift across the bar and stop feeling like the music.
+   HARD is MEDIUM with the doubles turned up, not sped up — same arrows in the
+   same places, more of them arriving together. */
+const D_DIFFS = ["easy", "medium", "hard"];
+const D_DIFF = {
+  easy:   { beats:40, step:2, eighthMul:0, jumpMul:0   },
+  medium: { beats:79, step:1, eighthMul:1, jumpMul:1   },
+  hard:   { beats:79, step:1, eighthMul:1, jumpMul:3.6 }
+};
+
+function sectionAt(f){
+  let s = D_SECTIONS[0];
+  for (const x of D_SECTIONS) if (f >= x.at) s = x;
+  return s;
+}
+
+function buildChart(bpm, seed, diff){
+  const d = D_DIFF[diff] || D_DIFF.medium;
   const rnd = mulberry32(seed), beat = 60/bpm, notes = [];
-  // ~79 beats ≈ 47s of notes, which lands the whole round just under 50s.
-  const sections = [
-    { from:0,  to:12, density:0.42, eighth:0.00, jump:0.00 },
-    { from:12, to:30, density:0.70, eighth:0.22, jump:0.03 },
-    { from:30, to:50, density:0.86, eighth:0.46, jump:0.07 },
-    { from:50, to:68, density:0.94, eighth:0.62, jump:0.13 },
-    { from:68, to:79, density:0.58, eighth:0.18, jump:0.05 }
-  ];
   let last = -1;
-  for (const s of sections){
-    for (let b = s.from; b < s.to; b++){
-      if (rnd() < s.density){
-        let lane = Math.floor(rnd()*4);
-        if (lane === last && rnd() < 0.65) lane = (lane + 1 + Math.floor(rnd()*3)) % 4;
-        notes.push({ t: b*beat, lane, judged:false }); last = lane;
-        if (rnd() < s.jump) notes.push({ t: b*beat, lane:(lane + 1 + Math.floor(rnd()*3)) % 4, judged:false });
-      }
-      if (rnd() < s.eighth){
-        let lane = Math.floor(rnd()*4);
-        if (lane === last) lane = (lane+1) % 4;
-        notes.push({ t: (b+0.5)*beat, lane, judged:false }); last = lane;
-      }
+  for (let b = 0; b < d.beats; b += d.step){
+    const s = sectionAt(b / d.beats);
+    if (rnd() < s.density){
+      let lane = Math.floor(rnd()*4);
+      if (lane === last && rnd() < 0.65) lane = (lane + 1 + Math.floor(rnd()*3)) % 4;
+      notes.push({ t: b*beat, lane, judged:false }); last = lane;
+      // capped: past about half, HARD stops being busy and becomes a wall
+      if (rnd() < Math.min(0.5, s.jump * d.jumpMul))
+        notes.push({ t: b*beat, lane:(lane + 1 + Math.floor(rnd()*3)) % 4, judged:false });
+    }
+    if (rnd() < s.eighth * d.eighthMul){
+      let lane = Math.floor(rnd()*4);
+      if (lane === last) lane = (lane+1) % 4;
+      notes.push({ t: (b+0.5)*beat, lane, judged:false }); last = lane;
     }
   }
   notes.sort((a,b)=> a.t - b.t);
   return notes;
 }
+
+/* EASY has roughly a third of MEDIUM's arrows and HARD has more, so raw points
+   aren't comparable — an easy round would sit at the bottom of the leaderboard
+   no matter how well it was played. Every difficulty is scaled to MEDIUM's
+   ceiling instead, so the choice costs nothing. */
+const D_REF_NOTES = buildChart(D_BPM, D_SEED, "medium").length;
 
 function buildMusic(bpm, seed, totalBeats){
   const rnd = mulberry32(seed ^ 0x9e37), beat = 60/bpm, ev = [];
@@ -1502,13 +1634,40 @@ function buildMusic(bpm, seed, totalBeats){
   return ev;
 }
 
+/* Difficulty chips on the intro screen. Three fixed rectangles so the tap test
+   and the drawing can't drift apart — both read from diffRects(). */
+const D_CHIP = { w:98, h:34, gap:5 };
+function diffRects(y){
+  const tot = D_DIFFS.length*D_CHIP.w + (D_DIFFS.length-1)*D_CHIP.gap;
+  const x0  = W/2 - tot/2;
+  return D_DIFFS.map((k,i)=> ({ k, x: x0 + i*(D_CHIP.w+D_CHIP.gap), y, w:D_CHIP.w, h:D_CHIP.h }));
+}
+function drawDiffChips(g, y, sel){
+  textShadow(g, T("difficulty"), W/2, y - 18, 9, "#836B5C");
+  for (const r of diffRects(y)){
+    const on = r.k === sel;
+    g.fillStyle = on ? "#B33368" : "rgba(90,64,56,.07)";
+    g.fillRect(r.x, r.y + 3, r.w, r.h);
+    g.fillStyle = on ? "#E4568A" : "#FFFBF4";
+    g.fillRect(r.x, r.y, r.w, r.h);
+    if (!on){
+      g.strokeStyle = "rgba(90,64,56,.30)"; g.lineWidth = 2;
+      g.strokeRect(r.x+1, r.y+1, r.w-2, r.h-2);
+    }
+    const label = T("diff_" + r.k);
+    text(g, label, r.x + r.w/2, r.y + r.h/2,
+         fitSize(g, label, 10, r.w - 12), on ? "#FFF8FA" : "#836B5C");
+  }
+}
+
 class DanceGame {
   init(){
-    this.notes = buildChart(D_BPM, D_SEED);
-    this.total = this.notes.length;
-    this.endT  = this.notes[this.notes.length-1].t + 2.6;
-    this.music = buildMusic(D_BPM, D_SEED, 84);
-    this.mi = 0;
+    // Always EASY. It used to remember the last pick, which meant one round of
+    // HARD and every round after it opened on HARD — including for the next
+    // person handed the phone.
+    this.diff  = "easy";
+    this.chipY = 372;
+    this.prepare();
 
     this.score = 0; this.combo = 0; this.maxCombo = 0;
     this.counts = { perfect:0, great:0, good:0, miss:0 };
@@ -1528,14 +1687,47 @@ class DanceGame {
     Sfx.init(); Sfx.resume();
 
     Input.down = (x,y) => {
-      if (!this.begun){ Sfx.blip(); this.roll(); return; }
+      if (!this.begun){
+        // a chip swallows the tap; anywhere else still starts the round
+        const hit = diffRects(this.chipY).find(r =>
+          x >= r.x && x <= r.x + r.w && y >= r.y - 8 && y <= r.y + r.h + 8);
+        if (hit){ this.setDiff(hit.k); return; }
+        Sfx.blip(); this.roll(); return;
+      }
       this.tap(clamp(Math.floor(x / (W/4)), 0, 3));
     };
     Input.key  = (k) => {
-      if (!this.begun){ if (k === " " || k === "Enter") this.roll(); return; }
+      if (!this.begun){
+        const i = D_DIFFS.indexOf(this.diff);
+        if (k === "ArrowLeft")  return this.setDiff(D_DIFFS[Math.max(0, i-1)]);
+        if (k === "ArrowRight") return this.setDiff(D_DIFFS[Math.min(D_DIFFS.length-1, i+1)]);
+        if (k >= "1" && k <= "3") return this.setDiff(D_DIFFS[+k - 1]);
+        if (k === " " || k === "Enter") this.roll();
+        return;
+      }
       const m = { ArrowLeft:0, ArrowDown:1, ArrowUp:2, ArrowRight:3 };
       if (m[k] !== undefined) this.tap(m[k]);
     };
+  }
+
+  /* Chart, music and scoring all depend on the difficulty, so they're rebuilt
+     together whenever it changes. */
+  prepare(){
+    const d = D_DIFF[this.diff];
+    this.notes = buildChart(D_BPM, D_SEED, this.diff);
+    this.total = this.notes.length;
+    this.endT  = this.notes[this.notes.length-1].t + 2.6;
+    // the music stops with the arrows rather than playing on over an empty screen
+    this.music = buildMusic(D_BPM, D_SEED, d.beats + 5);
+    this.mi    = 0;
+    this.scale = D_REF_NOTES / Math.max(1, this.total);
+  }
+
+  setDiff(k){
+    if (!D_DIFF[k] || k === this.diff) return;
+    this.diff = k;
+    this.prepare();
+    Sfx.blip();
   }
 
   /* PLAY pressed: 3s lead-in so the first notes fly in and she can wind up */
@@ -1570,8 +1762,8 @@ class DanceGame {
     this.counts[key]++;
     this.combo++;
     this.maxCombo = Math.max(this.maxCombo, this.combo);
-    this.score += base + Math.min(this.combo, 60) * 2;
-    this.power = clamp(this.power + D_POWER[key], 0, 1);
+    this.score += (base + Math.min(this.combo, 60) * 2) * this.scale;
+    this.power = clamp(this.power + D_POWER[key] * this.scale, 0, 1);
     this.judge = { label:T(key), color }; this.judgeAge = 0;
     this.parts.burst(cx, D_RECEPTOR, pn, { colors:[color,"#FBCB55"], grav:120, maxSpeed:150, minLife:.3, maxLife:.7, size:3 });
     // a matching flick of sparkle off the tip of her wand
@@ -1582,13 +1774,13 @@ class DanceGame {
     if (key === "perfect") Sfx.perfect(); else if (key === "great") Sfx.great(); else Sfx.good();
   }
 
-  missNote(){
+  missNote(audible = true){
     this.counts.miss++;
     this.combo = 0;
-    this.power = clamp(this.power + D_POWER.miss, 0, 1);
+    this.power = clamp(this.power + D_POWER.miss * this.scale, 0, 1);
     this.judge = { label:T("miss"), color:"#C33A4E" }; this.judgeAge = 0;
     this.shake = 0.18;
-    Sfx.miss();
+    if (audible) Sfx.miss();
   }
 
   tickMusic(){
@@ -1614,42 +1806,52 @@ class DanceGame {
     }
     if (!this.begun) return;
 
-    this.time = this.songTime;
+    // the audio clock is the authority — arrows are positioned from the same
+    // number the music is scheduled against, so they can't drift apart. Only if
+    // there is no audio at all does it fall back to wall time.
+    this.time = Sfx.ctx ? this.songTime : this.time + dt;
     this.tickMusic();
     this.judgeAge += dt;
     this.shake = Math.max(0, this.shake - dt);
     this.clear += (this.power - this.clear) * Math.min(1, dt*2.2);
     for (let i=0;i<4;i++) this.flash[i] = Math.max(0, this.flash[i] - dt);
 
+    /* Returning from a backgrounded tab can put dozens of arrows behind the
+       line at once. They all still count as missed, but only the first few make
+       a sound — otherwise it's ninety sawtooth blips in a single frame. */
+    let heard = 0;
     for (const n of this.notes){
-      if (!n.judged && n.t < this.time - D_WINDOW.good){ n.judged = true; this.missNote(); }
+      if (!n.judged && n.t < this.time - D_WINDOW.good){
+        n.judged = true; this.missNote(heard++ < 4);
+      }
     }
     if (this.time > this.endT) this.finish();
   }
 
+  get won(){ return this.clear > D_WIN_SKY; }
+
   get weather(){
     const c = this.clear;
     if (c > 0.85) return { title:T("sunCameOut"), line:T("sunCameOutL") };
-    if (c > 0.55) return { title:T("rainEased"),  line:T("rainEasedL")  };
-    if (c > 0.25) return { title:T("stillSpit"),  line:T("stillSpitL")  };
+    if (c > D_WIN_SKY) return { title:T("rainEased"), line:T("rainEasedL") };
+    if (c > 0.25) return { title:T("keptRaining"), line:T("keptRainingL") };
     return               { title:T("lenaAlone"),  line:T("lenaAloneL")  };
   }
 
   finish(){
     const acc = this.total ? (this.counts.perfect + this.counts.great*0.72 + this.counts.good*0.42) / this.total : 0;
     const w = this.weather;
-    showResults("spell", this.score, {
+    showResults("spell", Math.round(this.score), {
+      won:   this.won,
       title: w.title,
       lead:  w.line,
       stats: [
+        [T("statLevel"),    T("diff_" + this.diff)],
         [T("statAccuracy"), Math.round(acc*100) + "%"],
-        [T("statCombo"),    this.maxCombo],
-        [T("perfect"),      this.counts.perfect],
-        [T("great"),        this.counts.great],
-        [T("good"),         this.counts.good],
-        [T("miss"),         this.counts.miss]
+        [T("statCombo"),    this.maxCombo]
       ],
-      meta: { acc: Math.round(acc*100), combo: this.maxCombo, sky: Math.round(this.clear*100) }
+      meta: { level: this.diff, acc: Math.round(acc*100), combo: this.maxCombo,
+              sky: Math.round(this.clear*100), ...this.counts }
     });
   }
 
@@ -1771,7 +1973,7 @@ class DanceGame {
 
     // HUD
     g.fillStyle = "rgba(255,251,244,.86)"; g.fillRect(0,0,W,62);
-    textShadow(g, fmt(this.score), W/2, 24, 17, "#E2683A");
+    textShadow(g, fmt(Math.round(this.score)), W/2, 24, 17, "#E2683A");
     if (this.combo >= 3){
       const p = 1 + Math.max(0, 0.25 - this.judgeAge)*1.2;
       textShadow(g, T("combo", { n:this.combo }), W/2, 320, 15*p, "#96203C");
@@ -1794,12 +1996,14 @@ class DanceGame {
 
     if (!this.begun || this.time < 0){
       g.fillStyle = "rgba(255,251,244,.90)"; g.fillRect(0,0,W,H);
-      textShadow(g, T("spellName"), W/2, 118, 15, "#96203C");
-      let yy = paragraph(g, T("spellIntro"), W/2, 190, 9, "#5A4038", W-52);
-      yy = paragraph(g, T("spellGoal"), W/2, yy + 34, 9, "#96203C", W-52);
-      yy = paragraph(g, TK("spellHow","spellHowKeys"), W/2, yy + 34, 9, "#3A6AA8", W-52);
+      textShadow(g, T("spellName"), W/2, 150, 16, "#96203C");
+      let yy = paragraph(g, TK("spellHow","spellHowKeys"), W/2, 224, 13, "#3A6AA8", W-48);
       if (!this.begun){
-        playButton(g, yy, t);
+        // chips first, then the button below them — both follow the copy, which
+        // runs to different lengths in each language
+        this.chipY = clamp(yy + 26, 340, H - 168);
+        drawDiffChips(g, this.chipY, this.diff);
+        playButton(g, this.chipY + D_CHIP.h - 6, t);
       } else {
         const n = Math.ceil(-this.time);
         textShadow(g, n > 0 ? String(n) : T("go"), W/2, 436, 44, "#E2683A");
@@ -1816,7 +2020,7 @@ registerGame({
 });
 
 /* ============================================================================
-   13. GAME TWO  —  PETALS & RINGS (drag or arrow keys, corks are lava)
+   13. GAME TWO  —  CATCH THE FLOWERS (drag or arrow keys, corks are lava)
    ========================================================================== */
 /* Eva (flower girl) and Soraya (ring bearer) hold the basket between them.
    Everything below is measured from maids.png so the mouth you can see is
@@ -1847,6 +2051,68 @@ if (typeof Image !== "undefined"){
   im.src = "maids.png";
 }
 
+/* One flower, one colour. Seven colours were prettier but made the falling
+   items a puzzle — the marigold and coral ones sat close enough to the cork's
+   tan that guests were reading them at a glance instead of just seeing them.
+   Rose against a tan cork with a burgundy cap is unmistakable, and the shapes
+   differ too: a plus with a yellow middle versus a tall solid block.
+   p is the lit petals, d the shaded ones, c the middle. */
+const C_FLOWER = { p:"#EE7FA0", d:"#E4568A", c:"#FBCB55" };
+
+/* A different song from Aunt Lena's, and different on every axis the ear
+   notices: hers is a minor vi-IV-I-V at 100bpm that starts unsettled and
+   resolves; this is a bright D major I-vi-IV-V at 132 that is cheerful the
+   whole way through. Hers has a triangle bass under a square lead with hats on
+   every beat and half-beat, which marches. This has a plucky square bass under
+   a high triangle lead with hats only on the off-beat, which skips.
+
+   The melody is written out rather than generated. An arpeggio was what this
+   was first, and an arpeggio sounds like a chord being spelled out, not like a
+   tune — the notes below are an actual eight-bar phrase that rises, falls and
+   lands back on the tonic. Up in the fifth and sixth octave a triangle wave
+   reads as a music box, which is most of where "cute" comes from. */
+const C_BPM = 132;   // Aunt Lena's runs at 100, so even the pulse is different
+const C_SONG = {
+  // one bar each: D - Bm - G - A. Fifths are for the oom-pah, not for harmony.
+  chords: [
+    { root:146.83, fifth:220.00 },   // D
+    { root:123.47, fifth:185.00 },   // Bm
+    { root: 98.00, fifth:146.83 },   // G
+    { root:110.00, fifth:164.81 }    // A
+  ],
+  /* Four bars of eighth notes, two slots a beat, 0 for a rest. The rests
+     matter as much as the notes — a phrase that breathes sounds sung, and one
+     that never stops sounds like a machine. */
+  melody: [
+    739.99, 880.00, 987.77, 880.00,   739.99, 0, 880.00, 0,     // F# A B A  F# . A .
+    987.77,1174.66,1108.73, 987.77,   880.00, 0, 739.99, 0,     // B  D C# B  A  . F# .
+    783.99, 987.77, 880.00, 783.99,   739.99, 0, 659.25, 0,     // G  B A  G  F# . E  .
+    659.25, 739.99, 783.99, 880.00,   739.99, 0,      0, 0      // E  F# G  A  F# . . .
+  ]
+};
+
+function buildGarden(bpm, seed, totalBeats){
+  const rnd = mulberry32(seed ^ 0x5eed), beat = 60/bpm, ev = [];
+  const { chords, melody } = C_SONG;
+  for (let b = 0; b < totalBeats; b++){
+    const pos = b % 16;                       // where we are in the four-bar loop
+    const ch  = chords[Math.floor(pos/4)];
+    // oom-pah: root on the beat, fifth on the next one. Short and quiet, so it
+    // bounces underneath the tune instead of driving it.
+    ev.push({ t:b*beat, type:"bass", freq:(b % 2) ? ch.fifth : ch.root, dur:0.12, vol:0.24 });
+    ev.push({ t:(b+0.5)*beat, type:"hat" });
+    for (let h = 0; h < 2; h++){
+      const f = melody[pos*2 + h];
+      if (f) ev.push({ t:(b + h*0.5)*beat, type:"lead", freq:f,
+                       dur: h ? 0.11 : 0.15, vol: h ? 0.11 : 0.14 });
+    }
+    // a twinkle two octaves up, rarely, so four loops of four bars don't tick
+    if (rnd() < 0.13) ev.push({ t:(b+0.75)*beat, type:"bell", freq:1567.98, dur:0.09, vol:0.06 });
+  }
+  ev.sort((a,b)=> a.t - b.t);
+  return ev;
+}
+
 /* fallback if the sprite is missing — the plain wicker basket from before */
 const BASKET = {
   map:[
@@ -1869,22 +2135,28 @@ class CatchGame {
     this.score  = 0; this.lives = 3; this.streak = 0; this.mult = 1; this.maxMult = 1;
     this.begun = false;                 // read the brief in your own time first
     this.t = -2;                        // negative = countdown, once you've tapped
-    this.duration = 50;                 // fixed round, so every guest gets the same shot
+    /* Fixed round, so every guest gets the same shot. This number is the only
+       place the length is written down — the intro copy and the results line
+       both read it through {t}. */
+    this.duration = 35;
+    // enough bars to cover the countdown and the round with a little spare
+    this.music = buildGarden(C_BPM, 20250614, Math.ceil((this.duration + 4) / (60/C_BPM)));
+    this.mi = 0; this.musicAt = null;
     this.spawn = 0;
     this.shake = 0; this.hurtFlash = 0; this.invuln = 0; this.popups = [];
-    this.caught = 0; this.rings = 0;
+    this.caught = 0;
 
     // --- control mode ---
     this.dragX = null; this.keyDir = 0;
 
     Input.down = (x,y)=>{
-      if (!this.begun){ this.begun = true; Sfx.blip(); return; }
+      if (!this.begun){ this.start(); return; }
       this.dragX = x;
     };
     Input.move = (x,y)=>{ if (this.dragX !== null) this.dragX = x; };
     Input.up   = ()=>{ this.dragX = null; };
     Input.key  = (k)=>{
-      if (!this.begun && (k === " " || k === "Enter")){ this.begun = true; return; }
+      if (!this.begun && (k === " " || k === "Enter")){ this.start(); return; }
       if (k === "ArrowLeft")  this.keyDir = -1;
       if (k === "ArrowRight") this.keyDir =  1;
     };
@@ -1892,39 +2164,75 @@ class CatchGame {
     window.addEventListener("keyup", this._keyUp);
   }
 
+  /* PLAY pressed. The music is anchored here rather than at t=0 so it plays
+     under the 2s countdown too. */
+  start(){
+    this.begun = true;
+    Sfx.blip();
+    if (Sfx.ctx) this.musicAt = Sfx.ctx.currentTime + 0.12;
+  }
+
+  tickMusic(){
+    if (!Sfx.ctx || this.musicAt === null) return;
+    const now = Sfx.ctx.currentTime, horizon = now + 0.28;
+    while (this.mi < this.music.length && this.musicAt + this.music[this.mi].t < horizon){
+      const e = this.music[this.mi++];
+      const when = this.musicAt + e.t;
+      if (when < now) continue;
+      if (e.type === "hat"){ Sfx.noise(0.022, 0.030, when); continue; }
+      // square plucks the bass, triangle sings the tune, sine is the twinkle
+      const wave = e.type === "bass" ? "square" : e.type === "bell" ? "sine" : "triangle";
+      Sfx.tone(e.freq, e.dur, wave, e.vol, when);
+    }
+  }
+
   spawnItem(){
     const diff = this.difficulty;
-    // Independent shares, so rings never get squeezed out as corks ramp up.
     const corkP = Math.min(0.22, 0.10 + diff*0.035);
-    const ringP = 0.11;
-    const r = Math.random();
-    let type = r < corkP ? "cork" : r < corkP + ringP ? "ring" : "petal";
+    let type = Math.random() < corkP ? "cork" : "flower";
 
-    // Fairness rail: never more than three corks in the air at once, so a bad
+    // Fairness rail: never more than two corks in the air at once, so a bad
     // cluster can't be unsurvivable. Spawn position is deliberately NOT biased
     // away from the basket — corks take 2+ seconds to fall, which is all the
     // reaction time anyone needs, and a safe zone would make camping immortal.
     // No corks for the first 5 seconds either — everyone gets a moment to work
     // work out the controls before anything can hurt them.
     const corks = this.items.reduce((n,i)=> n + (i.type === "cork" ? 1 : 0), 0);
-    if (type === "cork" && (this.t < 5 || corks >= 2)) type = "petal";
+    if (type === "cork" && (this.t < 5 || corks >= 2)) type = "flower";
     const x = rand(24, W-24);
 
-    const speed = { petal:112, ring:150, cork:132 }[type] * (0.85 + diff*0.30);
+    const speed = { flower:112, cork:132 }[type] * (0.85 + diff*0.30);
     this.items.push({
-      x, y: -20, vy: speed, vx: type === "petal" ? rand(-26,26) : 0,
+      x, y: -20, vy: speed, vx: type === "flower" ? rand(-26,26) : 0,
       type, rot: rand(0,6.3), spin: rand(-3,3),
-      r: type === "ring" ? 9 : type === "cork" ? 8 : 7
+      r: type === "cork" ? 8 : 7
     });
   }
 
-  // Ramp compressed to the 50s round, so it still peaks where the 90s one did.
-  get difficulty(){ return 1 + Math.max(0, this.t) / 18; }
+  // Compressed again for the 35s round, so it still peaks where the 50s one did
+  // rather than stopping halfway up the ramp.
+  get difficulty(){ return 1 + Math.max(0, this.t) / 13; }
 
   pop(txt, x, y, color){ this.popups.push({ txt, x, y, color, age:0 }); }
 
+  /* x5 at a streak of 24. Nothing about the multiplier is shown in the HUD any
+     more — it was a number and a progress bar competing with the score, the
+     clock and the lives for a strip 62px tall. It announces itself over the
+     basket when it goes up, which is the moment worth knowing about, and the
+     results card reports the best one reached. */
+  setMult(){
+    const was = this.mult;
+    this.mult = Math.min(5, 1 + Math.floor(this.streak/6));
+    this.maxMult = Math.max(this.maxMult, this.mult);
+    if (this.mult > was){
+      this.pop("x" + this.mult, this.basket.x, this.basket.y - 44, "#96203C");
+      Sfx.great();
+    }
+  }
+
   update(dt){
     if (!this.begun) return;            // holding on the brief until they tap
+    this.tickMusic();
     this.t += dt;
     this.parts.update(dt);
     this.shake = Math.max(0, this.shake - dt);
@@ -1969,46 +2277,50 @@ class CatchGame {
       if (inX && inY && !(it.type === "cork" && this.invuln > 0)){
         this.items.splice(i,1);
         if (it.type === "cork"){
-          this.lives--; this.streak = 0; this.mult = 1;
+          this.lives--; this.streak = 0; this.setMult();
           this.shake = 0.3; this.hurtFlash = 1; this.invuln = 0.9;
           this.parts.burst(it.x, b.y, 16, { colors:["#C33A4E","#D9A86A"], grav:400, maxSpeed:190 });
           this.pop(T("ow"), it.x, b.y-20, "#C33A4E");
           Sfx.boom();
           if (this.lives <= 0){ this.finish(); return; }
         } else {
-          const base = it.type === "ring" ? 50 : 10;
+          const base = 10;
           this.score += base * this.mult;
           this.streak++; this.caught++;
-          if (it.type === "ring") this.rings++;
-          this.mult = Math.min(5, 1 + Math.floor(this.streak/8));
-          this.maxMult = Math.max(this.maxMult, this.mult);
-          this.parts.burst(it.x, b.y, it.type === "ring" ? 18 : 9, {
-            colors: it.type === "ring" ? ["#F5A03C","#FBCB55"] : ["#E4568A","#EE7FA0","#FBCB55"],
+          this.setMult();
+          this.parts.burst(it.x, b.y, 9, {
+            colors: [C_FLOWER.p, C_FLOWER.d, C_FLOWER.c],
             grav:180, maxSpeed:170, minLife:.35, maxLife:.8
           });
-          this.pop("+" + (base*this.mult), it.x, b.y-18, it.type === "ring" ? "#E2683A" : "#EE7FA0");
-          it.type === "ring" ? Sfx.great() : Sfx.good();
+          this.pop("+" + (base*this.mult), it.x, b.y-18, C_FLOWER.d);
+          Sfx.good();
         }
         continue;
       }
 
+      /* A dropped flower costs a third of the streak, not all of it. Wiping it
+         made the multiplier unreachable — several flowers fall at once and
+         nobody can be in two places. But forgiving drops entirely was worse:
+         with rings gone, nothing else held the multiplier down and every
+         competent run pinned itself at x5, which flattened the leaderboard to
+         a 20% spread. A third costs enough to matter and little enough to
+         recover from. */
       if (it.y - it.r > H){
         this.items.splice(i,1);
-        // Dropping a petal is forgiven — several fall at once and you can't be
-        // everywhere. Dropping a RING breaks the streak; rings are rare and slow.
-        if (it.type === "ring" && this.streak > 0){ this.streak = 0; this.mult = 1; }
+        if (it.type === "flower"){ this.streak = Math.floor(this.streak*2/3); this.setMult(); }
       }
     }
   }
 
   finish(timeUp){
+    // surviving the whole 50s is the win; losing all three lives to corks isn't
     showResults("petals", this.score, {
+      won:   !!timeUp,
       title: timeUp && this.lives === 3 ? T("notAScratch") : timeUp ? T("wentDistance")
            : this.score > 2500 ? T("safeHands") : null,
-      lead:  timeUp ? T("lastedFull") : T("outAt", { t:Math.round(this.t) }),
+      lead:  timeUp ? T("lastedFull", { t:this.duration }) : T("outAt", { t:Math.round(this.t) }),
       stats: [
-        [T("statPetals"), this.caught - this.rings],
-        [T("statRings"),  this.rings],
+        [T("statPetals"), this.caught],
         [T("statMult"),   "x" + this.maxMult]
       ],
       meta: { time: Math.round(this.t), caught: this.caught, lives: this.lives }
@@ -2053,16 +2365,12 @@ class CatchGame {
     // items
     for (const it of this.items){
       g.save(); g.translate(it.x, it.y); g.rotate(it.rot);
-      if (it.type === "petal"){
-        g.fillStyle = "#EE7FA0"; g.fillRect(-6,-4,12,8);
-        g.fillStyle = "#E4568A"; g.fillRect(-6,-4,6,8);
-        g.fillStyle = "#FBCB55"; g.fillRect(2,-1,3,3);
-      } else if (it.type === "ring"){
-        g.strokeStyle = "#F5A03C"; g.lineWidth = 3.5;
-        g.beginPath(); g.arc(0,0,7.5,0,6.3); g.stroke();
-        g.fillStyle = "#FFFDF4"; g.fillRect(-1.5,-11,3,4);
-        g.globalAlpha = .3; g.beginPath(); g.arc(0,0,13,0,6.3);
-        g.strokeStyle = "#F5A03C"; g.lineWidth = 2; g.stroke(); g.globalAlpha = 1;
+      if (it.type === "flower"){
+        // four square petals and a middle — chunky enough to read at 16px, and
+        // the two tones stop it flattening into a blob as it spins
+        g.fillStyle = C_FLOWER.p; g.fillRect(-2.5,-8,5,5); g.fillRect(3,-2.5,5,5);
+        g.fillStyle = C_FLOWER.d; g.fillRect(-8,-2.5,5,5); g.fillRect(-2.5,3,5,5);
+        g.fillStyle = C_FLOWER.c; g.fillRect(-2.5,-2.5,5,5);
       } else {
         g.fillStyle = "#D9A86A"; g.fillRect(-6,-9,12,18);
         g.fillStyle = "#96203C"; g.fillRect(-6,-9,12,5);
@@ -2094,13 +2402,14 @@ class CatchGame {
     // HUD
     g.fillStyle = "rgba(255,251,244,.86)"; g.fillRect(0,0,W,62);
     textShadow(g, fmt(this.score), 128, 24, 16, "#E2683A", "right");
-    if (this.mult > 1) textShadow(g, "x" + this.mult, 148, 25, 12, "#E4568A", "left");
     // countdown bar
     const left = clamp(1 - Math.max(0,this.t)/this.duration, 0, 1);
     g.fillStyle = "rgba(90,64,56,.12)"; g.fillRect(24, 52, W-48, 4);
     g.fillStyle = left < 0.17 ? "#C33A4E" : "#6E9BD8"; g.fillRect(24, 52, (W-48)*left, 4);
-    if (this.t > 0 && this.t > this.duration - 10.5)
-      textShadow(g, String(Math.ceil(this.duration - this.t)), W/2, 24, 16,
+    // below the HUD band, not inside it: the multiplier now sits at x148 all the
+    // time and a two-digit countdown centred at 180 overlapped it
+    if (this.t > 0 && this.t > this.duration - 8)
+      textShadow(g, String(Math.ceil(this.duration - this.t)), W/2, 86, 16,
                  Math.sin(this.t*9) > 0 ? "#C33A4E" : "#5A4038");
     for (let i=0;i<3;i++){
       g.globalAlpha = i < this.lives ? 1 : 0.18;
@@ -2116,10 +2425,11 @@ class CatchGame {
 
     if (!this.begun || this.t < 0){
       g.fillStyle = "rgba(255,251,244,.90)"; g.fillRect(0,0,W,H);
-      textShadow(g, T("petalsName"), W/2, 118, 15, "#96203C");
-      let yy = paragraph(g, T("petalsIntro"), W/2, 190, 9, "#BB3D67", W-52);
-      yy = paragraph(g, TK("dragToMove","keysToMove"), W/2, yy + 34, 9, "#3A6AA8", W-52);
-      yy = paragraph(g, T("dodgeCorks"),   W/2, yy + 20, 9, "#C33A4E", W-52);
+      textShadow(g, T("petalsName"), W/2, 150, 16, "#96203C");
+      // one line, same shape and size as Aunt Lena's. The old opening paragraph
+      // is gone: it named Eva and Soraya, and so does this.
+      let yy = paragraph(g, T(DESKTOP ? "keysToMove" : "dragToMove", { t:this.duration }),
+                         W/2, 216, 12, "#3A6AA8", W-48);
 
       if (!this.begun){
         playButton(g, yy, t);
@@ -2167,7 +2477,8 @@ if (typeof Image !== "undefined"){
   off.src = "officiant.png";
 }
 
-/* puff = how much confetti actually leaves the tube. A perfect shot empties it;
+/* puff = the budget; the wave table below spends about 1.04x of it, so a
+   perfect shot is ~2,080 pieces rather than 2,000. A perfect shot empties it;
    a bad one manages a sad little cough. */
 /* The kiss sprite swaps in at exactly the top of the perfect band, so the whole
    1,000-point window has the kiss on screen. If you can see it, you can score it. */
@@ -2237,6 +2548,11 @@ class CannonGame {
     // out in waves. It also spreads the drawing cost over ~a quarter second.
     const big = band.pts >= 750;
     this.bigShot = big;
+    /* Colour is reserved for the perfect shot. SO NEARLY still gets a big spray
+       — that's the physics — but in plain white, so the difference between
+       nearly and MAZEL TOV is visible from across the room rather than being a
+       number you have to read. */
+    this.perfectShot = band.pts === 1000;
     // a perfect shot keeps topping itself up so the screen stays full for the
     // whole six seconds instead of raining out after two
     this.waves = band.pts === 1000
@@ -2262,8 +2578,14 @@ class CannonGame {
     this.emitted += n;
     this.parts.burst(P_TUBE.x, P_TUBE.base - P_TUBE.h, n, {
       angle: -Math.PI/2,
-      colors: big ? ["#FFF6EC","#F7EDE4","#EE7FA0","#FBCB55","#6E9BD8","#7FA36A","#E4568A"]
-                  : ["#FFF6EC","#F7EDE4","#E7D8C4"],
+      /* White paper, lit and shaded. The shade has to be this dark — the old
+         near-white trio measured 1.0-1.4:1 against a cream and pale-blue sky,
+         which is not low contrast so much as invisible. #AC9B86 is 2.4:1 at
+         worst, enough for a moving mass of paper to read without any of it
+         looking like a colour. */
+      colors: this.perfectShot
+        ? ["#FFF6EC","#F7EDE4","#EE7FA0","#FBCB55","#6E9BD8","#7FA36A","#E4568A"]
+        : ["#FFFFFF","#FFFFFF","#EDE6DA","#AC9B86"],
       minSpeed: big ? 200 :  70,
       maxSpeed: big ? 540 : 190,
       grav: 300,
@@ -2460,10 +2782,9 @@ class CannonGame {
 
     if (this.phase === "intro"){
       g.fillStyle = "rgba(255,251,244,.92)"; g.fillRect(0,0,W,H);
-      textShadow(g, T("cannonName"), W/2, 140, 15, "#96203C");
-      let yy = paragraph(g, T("cannonIntro"), W/2, 200, 9, "#5A4038", W-52);
-      yy = paragraph(g, TK("cannonHowTap","cannonHowKey"), W/2, yy + 30, 9, "#3A6AA8", W-52);
-      yy = paragraph(g, T("cannonWarn"), W/2, yy + 22, 8, "#836B5C", W-52);
+      textShadow(g, T("cannonName"), W/2, 150, 16, "#96203C");
+      // one line at 13px, matching the other two games
+      const yy = paragraph(g, TK("cannonHowTap","cannonHowKey"), W/2, 240, 13, "#3A6AA8", W-48);
       playButton(g, yy, t);   // same button as the other two games
     } else if (this.phase === "run"){
       textShadow(g, met ? T("now") : TK("tapToFire","clickToFire"), W/2, 116, met ? 13 : 10,
