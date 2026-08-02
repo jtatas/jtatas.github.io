@@ -176,11 +176,18 @@ p{font-size:calc((clamp(10px,3vw,13px)) * var(--font-scale)); line-height:1.9; c
 .btn.ghost{ background:transparent; box-shadow:inset 0 0 0 2px var(--panel-2); color:var(--dim); padding:12px; }
 /* The album button before all three games are done. Still there — the point is
    that guests can see there is something to unlock — but plainly not pressable. */
-.btn.locked{
+.btn.locked{ border:2px dashed var(--dim); box-shadow:none;
   background:var(--panel); color:var(--dim); cursor:default;
   font-size:calc((9px) * var(--font-scale));
 }
 .btn.locked:active{ transform:none; box-shadow:0 4px 0 var(--panel-2), inset 0 0 0 2px rgba(90,64,56,.07); }
+/* unlock popup */
+.unlock-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:999; display:flex; align-items:center; justify-content:center; animation:fadeIn .3s; }
+.unlock-box{ background:var(--cream); padding:28px 24px; border-radius:12px; text-align:center; max-width:88%; width:320px; box-shadow:0 8px 32px rgba(0,0,0,.25); }
+.unlock-box h2{ margin:0 0 8px; }
+.unlock-box p{ margin:0 0 18px; }
+.unlock-box .btn{ margin-top:8px; }
+@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
 .btn.ghost:active{ transform:translateY(2px); }
 
 .btn-row{ display:flex; gap:10px; width:100%; }
@@ -402,6 +409,15 @@ input[type=text]::placeholder{ color:#D9C4B2; }
     </section>
 
 
+    <!-- unlock popup -->
+    <div class="unlock-overlay" id="unlockPopup" style="display:none">
+      <div class="unlock-box">
+        <h2 id="unlockTitle"></h2>
+        <p id="unlockMsg"></p>
+        <button class="btn primary" id="unlockAlbumBtn"></button>
+        <button class="btn ghost" id="unlockLaterBtn"></button>
+      </div>
+    </div>
     <div class="toast" id="toast"></div>
     <div id="crt"></div>
   </div>
@@ -498,9 +514,17 @@ const STR = {
                  vi:"CAO NHẤT · {n} {unit}",
                  ru:"ВАШ РЕКОРД · {n} {unit}" },
   finaleBtn:   { en:"💍 SEE THE ALBUM", vi:"💍 XEM ALBUM CƯỚI",ru:"💍 СМОТРЕТЬ АЛЬБОМ" },
-  finaleLocked:{ en:"PLAY ALL GAMES TO UNLOCK",
-                 vi:"CHƠI HẾT BA TRÒ ĐỂ MỞ KHOÁ",
-                 ru:"ПРОЙДИТЕ ВСЕ ТРИ, ЧТОБЫ ОТКРЫТЬ" },
+  finaleLocked:{ en:"PLAY ALL GAMES TO UNLOCK ALBUM",
+                 vi:"CHƠI HẾT CẢ 3 TRÒ ĐỂ MỞ KHOÁ ALBUM",
+                 ru:"ПРОЙДИТЕ ВСЕ 3 ИГРЫ, ЧТОБЫ ОТКРЫТЬ АЛЬБОМ" },
+  unlockTitle: { en:"🎉 YOU UNLOCKED IT!",
+                 vi:"🎉 BẠN ĐÃ MỞ KHOÁ!",
+                 ru:"🎉 ВЫ ОТКРЫЛИ!" },
+  unlockMsg:   { en:"You've unlocked the extended wedding album!",
+                 vi:"Bạn đã mở khoá album cưới đầy đủ!",
+                 ru:"Вы открыли полный свадебный альбом!" },
+  unlockBtn:   { en:"📸 VIEW THE ALBUM", vi:"📸 XEM ALBUM", ru:"📸 СМОТРЕТЬ АЛЬБОМ" },
+  unlockLater: { en:"MAYBE LATER", vi:"ĐỂ SAU", ru:"ПОТОМ" },
   leaderboard: { en:"🏆 LEADERBOARD",   vi:"🏆 BẢNG XẾP HẠNG", ru:"🏆 ТАБЛИЦА РЕКОРДОВ" },
   changeName:  { en:"NEW PLAYER",       vi:"NGƯỜI CHƠI MỚI",   ru:"НОВЫЙ ИГРОК" },
   newPlayerWhy:{ en:"Passing the phone on? This starts a fresh set of games.",
@@ -794,6 +818,7 @@ const Player = {
   reset(){
     Store.del("wg.id");
     GAMES.forEach(g => { Store.del("wg.done." + g.id); Store.del("wg.best." + g.id); });
+    localStorage.removeItem("arcade_album_unlocked");
     this.id;   // mint the new one now, so the first score of the night has it
   }
 };
@@ -1164,7 +1189,6 @@ async function showResults(gameId, score, opts={}){
   /* No leaderboard here. It used to fetch the top five and show them under the
      stats, which turned a "did I win" card into a table and cost a network
      round trip on every single finish. The SCORES button is one tap away. */
-  Screens.hideAll();
   Screens.overlay("results", true);
   // winning sounds like winning even if it wasn't a personal best
   (opts.won === true || (opts.won === undefined && isPB)) ? Sfx.fanfare() : Sfx.sad();
@@ -1273,6 +1297,21 @@ function buildHub(){
   album.className   = "btn " + (unlocked ? "primary" : "locked");
   album.textContent = T(unlocked ? "finaleBtn" : "finaleLocked");
   album.disabled    = !unlocked;
+
+  // first-time unlock popup
+  if (unlocked && !localStorage.getItem("arcade_album_unlocked")) {
+    localStorage.setItem("arcade_album_unlocked", "1");
+    const popup = $("#unlockPopup");
+    $("#unlockTitle").textContent = T("unlockTitle");
+    $("#unlockMsg").textContent   = T("unlockMsg");
+    const albumBtn = $("#unlockAlbumBtn");
+    albumBtn.textContent = T("unlockBtn");
+    albumBtn.onclick = ()=>{ popup.style.display = "none"; openAlbum(); };
+    const laterBtn = $("#unlockLaterBtn");
+    laterBtn.textContent = T("unlockLater");
+    laterBtn.onclick = ()=>{ popup.style.display = "none"; };
+    popup.style.display = "flex";
+  }
 }
 
 /* ---------- the finale, shown after all three games are done ---------- */
