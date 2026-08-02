@@ -550,6 +550,7 @@ const STR = {
   playAgain:   { en:"PLAY AGAIN",       vi:"CHƠI LẠI",         ru:"ЕЩЁ РАЗ" },
   hub:         { en:"HUB",              vi:"TRANG CHÍNH",      ru:"МЕНЮ" },
   scores:      { en:"SCORES",           vi:"ĐIỂM",             ru:"РЕКОРДЫ" },
+  totalTab:    { en:"TOTAL",            vi:"TỔNG",             ru:"ИТОГО" },
   quit:        { en:"< QUIT",           vi:"< THOÁT",          ru:"< ВЫХОД" },
   pts:         { en:"PTS",              vi:"ĐIỂM",             ru:"ОЧК." },
 
@@ -1358,6 +1359,12 @@ let scoreTab = null;
 function buildScoreTabs(){
   const tabs = $("#scoreTabs");
   tabs.innerHTML = "";
+  // TOTAL tab first (default)
+  const tb = document.createElement("button");
+  tb.className = "tab" + (scoreTab === "total" ? " on" : "");
+  tb.textContent = T("totalTab");
+  tb.onclick = ()=>{ Sfx.blip(); scoreTab = "total"; buildScoreTabs(); loadScores(); };
+  tabs.appendChild(tb);
   GAMES.forEach(def => {
     const b = document.createElement("button");
     b.className = "tab" + (scoreTab === def.id ? " on" : "");
@@ -1369,6 +1376,33 @@ function buildScoreTabs(){
 async function loadScores(){
   const list = $("#scoreList");
   list.innerHTML = '<div class="rank-line"><span class="who" style="color:var(--dim)">'+T("loading")+'</span></div>';
+
+  if (scoreTab === "total") {
+    // Aggregate best score per player across all games
+    let byPlayer = {};
+    for (const def of GAMES) {
+      const rows = await LB.top(def.id, 50);
+      for (const r of rows) {
+        if (!byPlayer[r.player_id]) byPlayer[r.player_id] = { name: r.name, player_id: r.player_id, score: 0 };
+        byPlayer[r.player_id].score += r.score;
+        // Use most recent name
+        if (r.name) byPlayer[r.player_id].name = r.name;
+      }
+    }
+    const rows = Object.values(byPlayer).sort((a,b) => b.score - a.score).slice(0, 10);
+    list.innerHTML = rows.length
+      ? rows.map((r,i)=>{
+          const me = r.player_id === Player.id;
+          const medal = i===0?"&#129351;":i===1?"&#129352;":i===2?"&#129353;":(i+1)+".";
+          return '<div class="rank-line'+(me?' me':'')+'">'
+               + '<span class="pos">'+medal+'</span>'
+               + '<span class="who">'+escapeHtml(r.name||T("anon"))+'</span>'
+               + '<span class="pts">'+fmt(r.score)+' '+T("pts")+'</span></div>';
+        }).join("")
+      : '<div class="rank-line"><span class="who" style="color:var(--dim)">'+T("noScores")+'</span></div>';
+    return;
+  }
+
   const def = gameById(scoreTab);
   const rows = await LB.top(scoreTab, 10);
   list.innerHTML = rows.length
@@ -1384,7 +1418,7 @@ async function loadScores(){
 }
 function goScores(){
   Engine.stop();
-  if (!scoreTab) scoreTab = GAMES[0].id;
+  if (!scoreTab) scoreTab = "total";
   $("#lbMode").textContent = T(LB.live ? "lbLive" : "lbLocal");
   $("#lbMode").className = "badge" + (LB.live ? " live" : "");
   buildScoreTabs(); loadScores();
