@@ -2324,7 +2324,7 @@ class CatchGame {
           Sfx.boom();
           if (this.lives <= 0){ this.finish(); return; }
         } else {
-          const base = 10;
+          const base = 80;
           this.score += base * this.mult;
           this.streak++; this.caught++;
           this.setMult();
@@ -2357,7 +2357,7 @@ class CatchGame {
     showResults("petals", this.score, {
       won:   !!timeUp,
       title: timeUp && this.lives === 3 ? T("notAScratch") : timeUp ? T("wentDistance")
-           : this.score > 2500 ? T("safeHands") : null,
+           : this.score > 20000 ? T("safeHands") : null,
       lead:  timeUp ? T("lastedFull", { t:this.duration }) : T("outAt", { t:Math.round(this.t) }),
       stats: [
         [T("statPetals"), this.caught],
@@ -2575,27 +2575,31 @@ class CannonGame {
   fire(){
     const dist = Math.abs(this.gap);
     const band = P_BANDS.find(b => dist <= b.px);
+    /* Continuous score: 25000 at 0px, decaying to 50 at P_LATE.
+       Only 0px earns a perfect 25000. The bands still drive visuals/labels/confetti. */
+    const pts = dist === 0 ? 25000
+              : Math.max(50, Math.round(25000 * Math.pow(Math.max(0, 1 - dist / P_LATE), 1.8)));
     this.result = {
-      label: T(band.key), pts: band.pts, color: band.color, dist,
+      label: T(band.key), pts, color: band.color, dist,
       when: dist <= P_KISS_AT ? ""
           : T(this.gap > 0 ? "notKissedYet" : "momentPassed")
     };
     this.pop = 1;
     this.phase = "result";
-    this.timer = band.pts === 1000 ? 6.0 : 2.4;   // a perfect shot earns a proper party
+    this.timer = dist <= P_KISS_AT ? 6.0 : 2.4;   // mazel tov threshold for the big party
 
     // A real cannon doesn't dump everything in one frame, so the big shot goes
     // out in waves. It also spreads the drawing cost over ~a quarter second.
-    const big = band.pts >= 750;
+    const big = dist <= 18;
     this.bigShot = big;
     /* Colour is reserved for the perfect shot. SO NEARLY still gets a big spray
        — that's the physics — but in plain white, so the difference between
        nearly and MAZEL TOV is visible from across the room rather than being a
        number you have to read. */
-    this.perfectShot = band.pts === 1000;
+    this.perfectShot = dist <= P_KISS_AT;
     // a perfect shot keeps topping itself up so the screen stays full for the
     // whole six seconds instead of raining out after two
-    this.waves = band.pts === 1000
+    this.waves = dist <= P_KISS_AT
       ? [ { at:0,    n: Math.round(band.puff*0.30) },
           { at:0.10, n: Math.round(band.puff*0.16) },
           { at:0.22, n: Math.round(band.puff*0.12) },
@@ -2610,7 +2614,7 @@ class CannonGame {
       : [ { at:0, n: band.puff } ];
     this.waveT = 0;
 
-    band.pts >= 750 ? Sfx.fanfare() : band.pts >= 250 ? Sfx.good() : Sfx.sad();
+    dist <= 18 ? Sfx.fanfare() : dist <= 62 ? Sfx.good() : Sfx.sad();
   }
 
   emit(n){
@@ -2664,7 +2668,7 @@ class CannonGame {
   finish(){
     const r = this.result;
     showResults("cannon", r.pts, {
-      title: r.pts === 1000 ? T("perfectTiming") : r.pts >= 750 ? T("almostPerfect") : null,
+      title: r.dist !== null && r.dist <= P_KISS_AT ? T("perfectTiming") : r.dist !== null && r.dist <= 18 ? T("almostPerfect") : null,
       lead:  r.when || r.label,
       stats: r.dist == null ? [] : [[T("statOffBy"), Math.round(r.dist) + "px"]],
       meta: { off: r.dist == null ? null : Math.round(r.dist) }
@@ -2814,7 +2818,7 @@ class CannonGame {
     }
 
     this.drawTube(g);
-    if (this.result && this.result.pts === 1000) this.drawOfficiant(g);
+    if (this.result && this.result.dist !== null && this.result.dist <= P_KISS_AT) this.drawOfficiant(g);
     this.parts.draw(g);
 
     g.fillStyle = "rgba(255,251,244,.86)"; g.fillRect(0,0,W,50);
@@ -2830,7 +2834,7 @@ class CannonGame {
       textShadow(g, met ? T("now") : TK("tapToFire","clickToFire"), W/2, 116, met ? 13 : 10,
                  met ? "#96203C" : "#C75126");
     } else if (this.result){
-      const perfect = this.result.pts === 1000;
+      const perfect = this.result.dist !== null && this.result.dist <= P_KISS_AT;
       if (perfect){
         // a bigger, airier layout for the moment worth celebrating
         const pop = 1 + 0.06 * Math.max(0, Math.sin((6 - this.timer) * 3.2));
