@@ -2702,7 +2702,7 @@ class CannonGame {
   finish(){
     const r = this.result;
     showResults("cannon", r.pts, {
-      title: r.dist !== null && r.dist <= P_KISS_AT ? T("perfectTiming") : r.dist !== null && r.dist <= 18 ? T("almostPerfect") : null,
+      title: r.dist !== null && r.dist === 0 ? T("perfectTiming") : r.dist !== null && r.dist <= 18 ? T("almostPerfect") : null,
       lead:  r.when || r.label,
       stats: r.dist == null ? [] : [[T("statOffBy"), Math.round(r.dist) + "px"]],
       meta: { off: r.dist == null ? null : Math.round(r.dist) }
@@ -2868,7 +2868,7 @@ class CannonGame {
       textShadow(g, met ? T("now") : TK("tapToFire","clickToFire"), W/2, 116, met ? 13 : 10,
                  met ? "#96203C" : "#C75126");
     } else if (this.result){
-      const perfect = this.result.dist !== null && this.result.dist <= P_KISS_AT;
+      const perfect = this.result.dist !== null && this.result.dist === 0;
       if (perfect){
         // a bigger, airier layout for the moment worth celebrating
         const pop = 1 + 0.06 * Math.max(0, Math.sin((6 - this.timer) * 3.2));
