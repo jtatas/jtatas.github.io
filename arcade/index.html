@@ -2824,19 +2824,34 @@ class CannonGame {
      bobbing and spinning, only on a true 0px perfect shot. */
   initOfficiantSwarm(){
     this.swarm = [];
-    const count = 12 + Math.floor(Math.random()*6);       // 12-17 sprites
-    for (let i = 0; i < count; i++){
-      this.swarm.push({
-        x:      Math.random() * W,
-        y:      60 + Math.random() * (H - 120),
-        scale:  0.25 + Math.random() * 0.55,              // 25-80% of base size
-        rot0:   (Math.random() - 0.5) * 0.6,              // initial tilt
-        rotSpd: (Math.random() - 0.5) * 3,                // wobble speed
-        bobSpd: 2 + Math.random() * 4,                    // vertical bounce freq
-        bobAmp: 3 + Math.random() * 8,                    // bounce height
-        delay:  0.3 + Math.random() * 2.5                 // staggered pop-in
-      });
+    /* Place officiants on a jittered grid so they never overlap and
+       cover the whole screen evenly. */
+    const cols = 4, rows = 4;
+    const cellW = W / cols, cellH = (H - 80) / rows;  // 80px margin top+bottom
+    const baseSize = 120;                              // reference sprite height
+    const candidates = [];
+    for (let r = 0; r < rows; r++){
+      for (let c = 0; c < cols; c++){
+        const scale = 0.28 + Math.random() * 0.42;    // 28-70%
+        const sprH  = baseSize * scale;
+        const pad   = sprH * 0.5;                      // keep inside cell
+        candidates.push({
+          x:     cellW * c + pad + Math.random() * (cellW - 2*pad),
+          y:     50 + cellH * r + pad + Math.random() * (cellH - 2*pad),
+          scale,
+          rot0:   (Math.random() - 0.5) * 0.6,
+          rotSpd: (Math.random() - 0.5) * 3,
+          bobSpd: 2 + Math.random() * 4,
+          bobAmp: 3 + Math.random() * 6,
+          delay:  0.3 + Math.random() * 2.5
+        });
+      }
     }
+    // randomly drop a few so it doesn't look like a perfect grid (keep 11-14)
+    while (candidates.length > 14) candidates.splice(Math.floor(Math.random()*candidates.length), 1);
+    const keep = 11 + Math.floor(Math.random()*4);
+    while (candidates.length > keep) candidates.splice(Math.floor(Math.random()*candidates.length), 1);
+    this.swarm = candidates;
   }
   drawOfficiantSwarm(g){
     const im = ART.officiant;
