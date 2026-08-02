@@ -2631,6 +2631,7 @@ class CannonGame {
        nearly and MAZEL TOV is visible from across the room rather than being a
        number you have to read. */
     this.perfectShot = dist <= P_KISS_AT;
+    if (dist === 0) this.initOfficiantSwarm();
     // a perfect shot keeps topping itself up so the screen stays full for the
     // whole six seconds instead of raining out after two
     this.waves = dist <= P_KISS_AT
@@ -2798,6 +2799,53 @@ class CannonGame {
     g.restore();
   }
 
+  /* Easter-egg swarm: a bunch of mini officiants pop up at random spots,
+     bobbing and spinning, only on a true 0px perfect shot. */
+  initOfficiantSwarm(){
+    this.swarm = [];
+    const count = 12 + Math.floor(Math.random()*6);       // 12-17 sprites
+    for (let i = 0; i < count; i++){
+      this.swarm.push({
+        x:      Math.random() * W,
+        y:      60 + Math.random() * (H - 120),
+        scale:  0.25 + Math.random() * 0.55,              // 25-80% of base size
+        rot0:   (Math.random() - 0.5) * 0.6,              // initial tilt
+        rotSpd: (Math.random() - 0.5) * 3,                // wobble speed
+        bobSpd: 2 + Math.random() * 4,                    // vertical bounce freq
+        bobAmp: 3 + Math.random() * 8,                    // bounce height
+        delay:  0.3 + Math.random() * 2.5                 // staggered pop-in
+      });
+    }
+  }
+  drawOfficiantSwarm(g){
+    const im = ART.officiant;
+    if (!im || !this.swarm) return;
+    const elapsed = 6 - this.timer;                        // seconds since result
+    const fadeStart = 4.8;                                 // start fading at 4.8s
+    for (const s of this.swarm){
+      const age = elapsed - s.delay;
+      if (age <= 0) continue;
+      // pop-in: quick elastic overshoot
+      const popT = Math.min(age / 0.3, 1);
+      const pop  = popT < 1 ? popT * (2 - popT) * 1.15 : 1;  // overshoot then settle
+      // fade-out near end
+      const alpha = elapsed > fadeStart ? clamp((5.2 - elapsed) / 0.4, 0, 1) : 1;
+      if (alpha <= 0) continue;
+      const baseH = 120 * s.scale;
+      const baseW = baseH * (im.width / im.height);
+      const h = baseH * pop, w = baseW * pop;
+      const bx = s.x;
+      const by = s.y + Math.sin(this.t * s.bobSpd) * s.bobAmp;
+      g.save();
+      g.globalAlpha = alpha * clamp(pop, 0, 1);
+      g.translate(bx, by);
+      g.rotate(s.rot0 + Math.sin(this.t * s.rotSpd) * 0.18);
+      g.drawImage(im, -w/2, -h/2, w, h);
+      g.restore();
+    }
+    g.globalAlpha = 1;
+  }
+
   drawHearts(g){
     const n = 3;
     for (let i=0;i<n;i++){
@@ -2853,6 +2901,7 @@ class CannonGame {
 
     this.drawTube(g);
     if (this.result && this.result.dist !== null && this.result.dist <= P_KISS_AT) this.drawOfficiant(g);
+    if (this.swarm) this.drawOfficiantSwarm(g);
     this.parts.draw(g);
 
     g.fillStyle = "rgba(255,251,244,.86)"; g.fillRect(0,0,W,50);
