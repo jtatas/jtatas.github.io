@@ -409,17 +409,18 @@ input[type=text]::placeholder{ color:#D9C4B2; }
     </section>
 
 
-    <!-- unlock popup -->
-    <div class="unlock-overlay" id="unlockPopup" style="display:none">
-      <div class="unlock-box">
-        <h2 id="unlockTitle"></h2>
-        <p id="unlockMsg"></p>
-        <button class="btn primary" id="unlockAlbumBtn"></button>
-        <button class="btn ghost" id="unlockLaterBtn"></button>
-      </div>
-    </div>
     <div class="toast" id="toast"></div>
     <div id="crt"></div>
+  </div>
+</div>
+
+<!-- unlock popup — outside cabinet so it covers the full viewport -->
+<div class="unlock-overlay" id="unlockPopup" style="display:none">
+  <div class="unlock-box">
+    <h2 id="unlockTitle"></h2>
+    <p id="unlockMsg"></p>
+    <button class="btn primary" id="unlockAlbumBtn"></button>
+    <button class="btn ghost" id="unlockLaterBtn"></button>
   </div>
 </div>
 
