@@ -1607,9 +1607,9 @@ const D_SECTIONS = [
    same places, more of them arriving together. */
 const D_DIFFS = ["easy", "medium", "hard"];
 const D_DIFF = {
-  easy:   { beats:40, step:2, eighthMul:0, jumpMul:0   },
-  medium: { beats:79, step:1, eighthMul:1, jumpMul:1   },
-  hard:   { beats:79, step:1, eighthMul:1, jumpMul:3.6 }
+  easy:   { beats:40, step:2, eighthMul:0, jumpMul:0,   scoreMul:1.0 },
+  medium: { beats:79, step:1, eighthMul:1, jumpMul:1,   scoreMul:1.0 },
+  hard:   { beats:79, step:1, eighthMul:1, jumpMul:3.6, scoreMul:1.17 }
 };
 
 function sectionAt(f){
@@ -1760,7 +1760,7 @@ class DanceGame {
     // the music stops with the arrows rather than playing on over an empty screen
     this.music = buildMusic(D_BPM, D_SEED, d.beats + 5);
     this.mi    = 0;
-    this.scale = D_REF_NOTES / Math.max(1, this.total);
+    this.scale = (D_REF_NOTES / Math.max(1, this.total)) * (d.scoreMul || 1);
   }
 
   setDiff(k){
