@@ -344,6 +344,8 @@ input[type=text]::placeholder{ color:#D9C4B2; }
       <!-- no flex spacer here: this is a title card, so the whole group sits
            centred as one composition rather than pinning ENTER to the floor -->
       <button class="btn primary" id="bootBtn" style="margin-top:14px" data-i18n="enter"></button>
+      <p style="font-size:calc(8px * var(--font-scale)); color:var(--dim); margin-top:6px; opacity:.7"
+         data-i18n="soundHint"></p>
       <p class="blink" style="font-size:calc(8px * var(--font-scale))" data-i18n="tapToPlay"></p>
     </section>
 
@@ -492,6 +494,9 @@ const STR = {
                  ru:"Вспомните вместе с нами волшебство и счастливые моменты" },
   enter:       { en:"— ENTER —",        vi:"— VÀO CHƠI —",     ru:"— ВОЙТИ —" },
   tapToPlay:   { en:"▼ TAP TO PLAY ▼",  vi:"▼ CHẠM ĐỂ CHƠI ▼", ru:"▼ НАЖМИТЕ ▼" },
+  soundHint:   { en:"🔊 Turn off silent mode for sound effects!",
+                 vi:"🔊 Tắt chế độ im lặng để nghe âm thanh!",
+                 ru:"🔊 Выключите беззвучный режим для звуков!" },
 
   /* ---------- name entry ---------- */
   nameTitle:   { en:"ENTER YOUR NAME",  vi:"NHẬP TÊN CỦA BẠN", ru:"ВВЕДИТЕ ИМЯ" },
@@ -927,6 +932,11 @@ const Engine = {
     Screens.hideAll();
     $("#hud").classList.add("active");
     Sfx.init(); Sfx.resume();
+    // one-time sound reminder on first game launch
+    if (!this._soundToastShown){
+      this._soundToastShown = true;
+      toast(T("soundHint"), 3000);
+    }
     Input.down = Input.up = Input.move = Input.key = null;
     game.init();
     this.running = true;
