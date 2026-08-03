@@ -1193,6 +1193,16 @@ async function showResults(gameId, score, opts={}){
   Progress.mark(gameId);
   Engine.stop();
   const def = gameById(gameId);
+
+  // Show overlay IMMEDIATELY so nothing ghosts through while we await the network
+  $("#resTitle").textContent = "";
+  $("#resTitle").className = "";
+  $("#resVerdict").textContent = "";
+  $("#resScore").textContent = "";
+  $("#resLead").innerHTML = "";
+  $("#resStats").innerHTML = "";
+  Screens.overlay("results", true);
+
   const isPB = await LB.submit(gameId, score, opts.meta);
 
   // opts.won is deliberately three-valued: true, false, or absent for the games
@@ -1212,7 +1222,6 @@ async function showResults(gameId, score, opts={}){
   /* No leaderboard here. It used to fetch the top five and show them under the
      stats, which turned a "did I win" card into a table and cost a network
      round trip on every single finish. The SCORES button is one tap away. */
-  Screens.overlay("results", true);
   // winning sounds like winning even if it wasn't a personal best
   (opts.won === true || (opts.won === undefined && isPB)) ? Sfx.fanfare() : Sfx.sad();
 
