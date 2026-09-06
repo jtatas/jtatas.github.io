@@ -3007,7 +3007,6 @@ document.fonts && document.fonts.ready.then(fitCanvas);
 (function(){
   const p = new URLSearchParams(location.search);
   if (p.get("perfect") === "0906"){
-    // clean URL so refreshing doesn't re-trigger
     history.replaceState(null, "", location.pathname);
     setTimeout(()=>{
       const cg = GAMES.find(g => g.id === "cannon");
@@ -3020,6 +3019,14 @@ document.fonts && document.fonts.ready.then(fitCanvas);
         inst.fire();
       }, 150);
     }, 400);
+  }
+  /* Secret cheat: ?unlock=0906 marks all games done and resets the unlock flag,
+     then rebuilds the hub so the unlock popup fires immediately. */
+  if (p.get("unlock") === "0906"){
+    history.replaceState(null, "", location.pathname);
+    GAMES.forEach(g => Progress.mark(g.id));
+    Store.del("arcade_album_unlocked");
+    buildHub();
   }
 })();
 </script>
