@@ -574,12 +574,15 @@ const STR = {
   spellBlurb:  { en:"HELP HER STOP THE RAIN",
                  vi:"GIÚP DÌ ẤY LÀM TẠNH MƯA",
                  ru:"ПОМОГИТЕ ОСТАНОВИТЬ ДОЖДЬ" },
-  spellHowKeys:{ en:"Press the arrow keys as each arrow lands to help Aunt Lena's magic change the weather",
-                 vi:"Bấm phím mũi tên khi mũi tên tới vạch để giúp phép thuật của dì Lena đổi thời tiết",
-                 ru:"Нажимайте клавиши со стрелками, когда стрелка доходит до линии, — помогите магии тёти Лены изменить погоду" },
-  spellHow:    { en:"Tap each column as its arrow lands to help Aunt Lena's magic change the weather",
-                 vi:"Chạm vào cột khi mũi tên tới vạch để giúp phép thuật của dì Lena đổi thời tiết",
-                 ru:"Нажимайте на дорожку, когда её стрелка доходит до линии, — помогите магии тёти Лены изменить погоду" },
+  spellStory:  { en:"Oh no, it's raining on the wedding day!\nHelp Aunt Lena change the weather!",
+                 vi:"Trời ơi, trời mưa trong ngày cưới!\nHãy giúp dì Lena đổi thời tiết!",
+                 ru:"О нет, в день свадьбы идёт дождь!\nПомогите тёте Лене изменить погоду!" },
+  spellHowKeys:{ en:"Press the arrow keys as each arrow lands",
+                 vi:"Bấm phím mũi tên khi mũi tên tới vạch",
+                 ru:"Нажимайте клавиши со стрелками, когда стрелка доходит до линии" },
+  spellHow:    { en:"Tap each column as its arrow lands",
+                 vi:"Chạm vào cột khi mũi tên tới vạch",
+                 ru:"Нажимайте на дорожку, когда её стрелка доходит до линии" },
   difficulty:  { en:"CHOOSE A LEVEL",   vi:"CHỌN ĐỘ KHÓ",      ru:"ВЫБЕРИТЕ УРОВЕНЬ" },
   diff_easy:   { en:"EASY",             vi:"DỄ",               ru:"ЛЕГКО" },
   diff_medium: { en:"MEDIUM",           vi:"VỪA",              ru:"СРЕДНЕ" },
@@ -2110,7 +2113,8 @@ class DanceGame {
     if (!this.begun || this.time < 0){
       g.fillStyle = "rgba(255,251,244,.90)"; g.fillRect(0,0,W,H);
       textShadow(g, T("spellName"), W/2, 150, 16, "#96203C");
-      let yy = paragraph(g, TK("spellHow","spellHowKeys"), W/2, 224, 13, "#3A6AA8", W-48);
+      let yy = paragraph(g, T("spellStory"), W/2, 214, 11, "#96203C", W-48);
+      yy = paragraph(g, TK("spellHow","spellHowKeys"), W/2, yy + 18, 11, "#3A6AA8", W-48);
       if (!this.begun){
         // chips first, then the button below them — both follow the copy, which
         // runs to different lengths in each language
