@@ -1342,19 +1342,11 @@ function buildHub(){
   album.textContent = T(unlocked ? "finaleBtn" : "finaleLocked");
   album.disabled    = !unlocked;
 
-  // first-time unlock popup
+  // first-time unlock: go straight to the album — no extra clicks
   if (unlocked && !Store.get("arcade_album_unlocked")) {
     Store.set("arcade_album_unlocked", "1");
-    const popup = $("#unlockPopup");
-    $("#unlockTitle").textContent = T("unlockTitle");
-    $("#unlockMsg").textContent   = T("unlockMsg");
-    const albumBtn = $("#unlockAlbumBtn");
-    albumBtn.textContent = T("unlockBtn");
-    albumBtn.onclick = ()=>{ popup.style.display = "none"; openAlbum(); };
-    const laterBtn = $("#unlockLaterBtn");
-    laterBtn.textContent = T("unlockLater");
-    laterBtn.onclick = ()=>{ popup.style.display = "none"; };
-    popup.style.display = "flex";
+    // small delay so the hub finishes rendering before we open a new tab
+    setTimeout(()=> openAlbum(), 400);
   }
 }
 
