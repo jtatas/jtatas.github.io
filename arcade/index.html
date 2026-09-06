@@ -110,7 +110,7 @@ body::before{
 
 canvas#game{
   position:absolute; inset:0; width:100%; height:100%;
-  display:block; image-rendering:pixelated; z-index:1;
+  display:block; image-rendering:crisp-edges; image-rendering:pixelated; z-index:1;
   touch-action:none;                     /* drags steer the basket, not the page */
 }
 
@@ -824,7 +824,7 @@ const Player = {
   reset(){
     Store.del("wg.id");
     GAMES.forEach(g => { Store.del("wg.done." + g.id); Store.del("wg.best." + g.id); });
-    localStorage.removeItem("arcade_album_unlocked");
+    Store.del("arcade_album_unlocked");
     this.id;   // mint the new one now, so the first score of the night has it
   }
 };
@@ -1340,8 +1340,8 @@ function buildHub(){
   album.disabled    = !unlocked;
 
   // first-time unlock popup
-  if (unlocked && !localStorage.getItem("arcade_album_unlocked")) {
-    localStorage.setItem("arcade_album_unlocked", "1");
+  if (unlocked && !Store.get("arcade_album_unlocked")) {
+    Store.set("arcade_album_unlocked", "1");
     const popup = $("#unlockPopup");
     $("#unlockTitle").textContent = T("unlockTitle");
     $("#unlockMsg").textContent   = T("unlockMsg");
