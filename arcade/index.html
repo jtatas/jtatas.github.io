@@ -494,9 +494,9 @@ const STR = {
                  ru:"Вспомните вместе с нами волшебство и счастливые моменты" },
   enter:       { en:"— ENTER —",        vi:"— VÀO CHƠI —",     ru:"— ВОЙТИ —" },
   tapToPlay:   { en:"▼ TAP TO PLAY ▼",  vi:"▼ CHẠM ĐỂ CHƠI ▼", ru:"▼ НАЖМИТЕ ▼" },
-  soundHint:   { en:"🔊 Turn off silent mode for sound effects!",
-                 vi:"🔊 Tắt chế độ im lặng để nghe âm thanh!",
-                 ru:"🔊 Выключите беззвучный режим для звуков!" },
+  soundHint:   { en:"🔊 Turn off silent mode & tap to hear the music!",
+                 vi:"🔊 Tắt im lặng & chạm để nghe nhạc!",
+                 ru:"🔊 Выключите беззвучный режим и нажмите!" },
 
   /* ---------- name entry ---------- */
   nameTitle:   { en:"ENTER YOUR NAME",  vi:"NHẬP TÊN CỦA BẠN", ru:"ВВЕДИТЕ ИМЯ" },
@@ -1591,7 +1591,18 @@ $("#bootBtn").onclick = ()=>{
   Bgm.start();
   Player.name ? goHub() : Screens.show("name");
 };
-$("#scr-boot").onclick = (e)=>{ if (!e.target || e.target.tagName !== "BUTTON") $("#bootBtn").click(); };
+/* First tap anywhere on the welcome screen unlocks audio and starts the BGM
+   so guests can hear it while still reading the title card. Only the second
+   tap (or direct ENTER hit) navigates forward. */
+$("#scr-boot").onclick = (e)=>{
+  if (e.target && e.target.tagName === "BUTTON") return;
+  if (!Bgm.playing){
+    Sfx.init(); Sfx.resume();
+    Bgm.start();
+    return;           // stay on welcome screen — music is the reward
+  }
+  $("#bootBtn").click();
+};
 
 /* Set when NEW PLAYER is tapped, acted on when a name is actually submitted —
    so backing out of the name screen can't wipe anybody by accident. */
