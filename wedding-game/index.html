@@ -935,10 +935,39 @@ const Engine = {
     Screens.hideAll();
     $("#hud").classList.add("active");
     Sfx.init(); Sfx.resume();
-    // one-time sound reminder on first game launch
-    if (!this._soundToastShown){
-      this._soundToastShown = true;
-      toast(T("soundHint"), 3000);
+    // Detect silent mode: play a tiny inaudible test tone and check if output
+    // is muted. iOS Safari silences Web Audio when the hardware switch is on,
+    // so an AnalyserNode reads all zeros. Show the warning only when silent.
+    if (!this._soundChecked){
+      this._soundChecked = true;
+      const ctx = Sfx.ctx;
+      if (ctx && ctx.state === "running"){
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const analyser = ctx.createAnalyser();
+          gain.gain.value = 0.001;  // inaudible
+          osc.connect(gain);
+          gain.connect(analyser);
+          analyser.connect(ctx.destination);
+          analyser.fftSize = 256;
+          osc.start();
+          // check after a brief moment
+          setTimeout(()=>{
+            const buf = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(buf);
+            osc.stop();
+            const hasSignal = buf.some(v => v > 0);
+            if (!hasSignal) toast(T("soundHint"), 4000);
+          }, 200);
+        } catch(e){
+          // can't detect — show warning to be safe
+          toast(T("soundHint"), 3000);
+        }
+      } else {
+        // AudioContext not running — show warning
+        toast(T("soundHint"), 3000);
+      }
     }
     Input.down = Input.up = Input.move = Input.key = null;
     game.init();
