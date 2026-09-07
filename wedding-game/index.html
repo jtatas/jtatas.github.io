@@ -806,6 +806,89 @@ const Sfx = {
 };
 
 /* ============================================================================
+   4b. WELCOME BGM — gentle music-box loop for the hub / name screens
+   ========================================================================== */
+const Bgm = {
+  playing: false, _raf: null, _startAt: 0, _mi: 0, _events: null,
+
+  /* Eight-bar waltz in C major, music-box register (octaves 5-6).
+     Triangle waves up high sound like a celesta / music box.
+     The phrase breathes: quarter-note melody over a gentle oom-pah-pah. */
+  _bpm: 108,
+  _chords: [
+    { root: 130.81, third: 164.81, fifth: 196.00 },
+    { root: 110.00, third: 130.81, fifth: 164.81 },
+    { root:  87.31, third: 110.00, fifth: 130.81 },
+    { root:  98.00, third: 123.47, fifth: 146.83 }
+  ],
+  _melody: [
+    1046.50, 1174.66, 1318.51, 1174.66,  1046.50, 0, 987.77, 0,
+    880.00, 987.77, 1046.50, 987.77,  880.00, 0, 783.99, 0,
+    698.46, 783.99, 880.00, 1046.50,  987.77, 0, 880.00, 0,
+    783.99, 880.00, 987.77, 783.99,  698.46, 0, 0, 0,
+    1046.50, 0, 1318.51, 1174.66,  1046.50, 987.77, 880.00, 0,
+    783.99, 880.00, 987.77, 1046.50,  880.00, 0, 783.99, 0,
+    698.46, 880.00, 783.99, 698.46,  659.25, 0, 698.46, 0,
+    783.99, 880.00, 987.77, 1046.50,  1046.50, 0, 0, 0
+  ],
+
+  _build(){
+    const beat = 60 / this._bpm, ev = [];
+    const bars = 8, beatsPerBar = 4, total = bars * beatsPerBar;
+    for (let b = 0; b < total; b++){
+      const ch = this._chords[Math.floor(b / 4) % 4];
+      if (b % 4 === 0)
+        ev.push({ t: b*beat, type:"bass", freq: ch.root, dur: 0.22, vol: 0.14 });
+      else if (b % 4 !== 3)
+        ev.push({ t: b*beat, type:"bass", freq: ch.fifth*0.5, dur: 0.10, vol: 0.08 });
+      if (b % 2 === 0) ev.push({ t: b*beat, type:"hat" });
+      for (let h = 0; h < 2; h++){
+        const idx = (b % total) * 2 + h;
+        const f = this._melody[idx];
+        if (f) ev.push({ t: (b + h*0.5)*beat, type:"lead", freq: f,
+                         dur: h ? 0.10 : 0.16, vol: h ? 0.07 : 0.09 });
+      }
+    }
+    ev.sort((a,b)=> a.t - b.t);
+    this._events = ev;
+    this._loopLen = total * beat;
+  },
+
+  start(){
+    if (this.playing) return;
+    if (!Sfx.ctx || Sfx.muted) return;
+    if (!this._events) this._build();
+    this.playing = true;
+    this._startAt = Sfx.ctx.currentTime + 0.15;
+    this._mi = 0;
+    this._tick();
+  },
+
+  _tick(){
+    if (!this.playing || !Sfx.ctx) return;
+    const now = Sfx.ctx.currentTime, horizon = now + 0.30;
+    while (true){
+      const loop = Math.floor(this._mi / this._events.length);
+      const idx  = this._mi % this._events.length;
+      const e    = this._events[idx];
+      const when = this._startAt + loop * this._loopLen + e.t;
+      if (when > horizon) break;
+      if (when >= now - 0.02){
+        if (e.type === "hat") Sfx.noise(0.015, 0.015, when);
+        else Sfx.tone(e.freq, e.dur, "triangle", e.vol, when);
+      }
+      this._mi++;
+    }
+    this._raf = requestAnimationFrame(()=> this._tick());
+  },
+
+  stop(){
+    this.playing = false;
+    if (this._raf){ cancelAnimationFrame(this._raf); this._raf = null; }
+  }
+};
+
+/* ============================================================================
    5. PLAYER STORE
    ========================================================================== */
 const Player = {
@@ -930,6 +1013,7 @@ const Engine = {
 
   start(game){
     this.stop();
+    Bgm.stop();
     fitCanvas();
     this.current = game;
     Screens.hideAll();
@@ -1427,6 +1511,7 @@ function goHub(){
   Engine.stop();
   buildHub();
   Screens.show("hub");
+  Bgm.start();
 }
 
 // leaderboard screen
@@ -1503,6 +1588,7 @@ function goScores(){
 // boot
 $("#bootBtn").onclick = ()=>{
   Sfx.init(); Sfx.resume(); Sfx.select();
+  Bgm.start();
   Player.name ? goHub() : Screens.show("name");
 };
 $("#scr-boot").onclick = (e)=>{ if (!e.target || e.target.tagName !== "BUTTON") $("#bootBtn").click(); };
@@ -1528,7 +1614,7 @@ $("#renameBtn").onclick = ()=>{
   Screens.show("name");
 };
 // back to the title card. Their name is kept, so ENTER brings them straight back.
-$("#homeBtn").onclick   = ()=>{ Sfx.blip(); Engine.stop(); Screens.show("boot"); };
+$("#homeBtn").onclick   = ()=>{ Sfx.blip(); Engine.stop(); Bgm.stop(); Screens.show("boot"); };
 $("#scoresBtn").onclick = ()=>{ Sfx.blip(); goScores(); };
 $("#scoresBack").onclick = ()=>{ Sfx.blip(); goHub(); };
 $("#backBtn").onclick = ()=>{ Sfx.blip(); goHub(); };
