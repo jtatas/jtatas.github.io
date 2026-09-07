@@ -338,14 +338,19 @@ input[type=text]::placeholder{ color:#D9C4B2; }
       <p id="bootSub" data-i18n="bootSub"></p>
       <p id="bootUnlock" style="font-size:calc(10px * var(--font-scale)); color:var(--dim); margin-top:-8px"
          data-i18n="bootUnlock"></p>
-      <!-- swallows clicks: the gaps between the chips used to fall through to the
-             title card's tap-anywhere handler and enter the arcade -->
-        <div class="langs" id="langs" onclick="event.stopPropagation()"></div>
-      <!-- no flex spacer here: this is a title card, so the whole group sits
-           centred as one composition rather than pinning ENTER to the floor -->
       <button class="btn primary" id="bootBtn" style="margin-top:14px" data-i18n="enter"></button>
-      <p class="blink" style="font-size:calc(8px * var(--font-scale)); margin-top:6px"
-         data-i18n="soundHint"></p>
+      <p class="blink" style="font-size:calc(8px * var(--font-scale)); margin-top:6px">▼ ▼ ▼</p>
+    </section>
+
+    <!-- SETUP: sound + language -->
+    <section class="screen center" id="scr-setup">
+      <img class="pixel-art bob" src="couple.png" alt=""
+           style="width:42%; max-width:150px" onerror="this.style.display='none'">
+      <h2 class="glow-pink" data-i18n="bootTitle"></h2>
+      <p style="font-size:calc(11px * var(--font-scale)); margin:12px 0 4px" data-i18n="setupSound"></p>
+      <p style="font-size:calc(11px * var(--font-scale)); margin:4px 0 10px" data-i18n="setupLang"></p>
+      <div class="langs" id="langs" onclick="event.stopPropagation()"></div>
+      <button class="btn primary" id="setupBtn" style="margin-top:16px" data-i18n="setupContinue"></button>
     </section>
 
     <!-- NAME -->
@@ -492,10 +497,13 @@ const STR = {
                  vi:"Cùng tụi mình sống lại phép màu và những kỷ niệm đẹp",
                  ru:"Вспомните вместе с нами волшебство и счастливые моменты" },
   enter:       { en:"— ENTER —",        vi:"— VÀO CHƠI —",     ru:"— ВОЙТИ —" },
-  tapToPlay:   { en:"▼ TAP TO PLAY ▼",  vi:"▼ CHẠM ĐỂ CHƠI ▼", ru:"▼ НАЖМИТЕ ▼" },
-  soundHint:   { en:"🔊 Turn off silent mode & tap anywhere for music!",
-                 vi:"🔊 Tắt im lặng & chạm để nghe nhạc!",
-                 ru:"🔊 Выключите беззвучный режим и нажмите!" },
+  setupSound:  { en:"🔊 Turn off silent mode for game music!",
+                 vi:"🔊 Tắt chế độ im lặng để nghe nhạc!",
+                 ru:"🔊 Выключите беззвучный режим для музыки!" },
+  setupLang:   { en:"🌐 Select your language:",
+                 vi:"🌐 Chọn ngôn ngữ:",
+                 ru:"🌐 Выберите язык:" },
+  setupContinue: { en:"— CONTINUE —", vi:"— TIẾP TỤC —", ru:"— ПРОДОЛЖИТЬ —" },
 
   /* ---------- name entry ---------- */
   nameTitle:   { en:"ENTER YOUR NAME",  vi:"NHẬP TÊN CỦA BẠN", ru:"ВВЕДИТЕ ИМЯ" },
@@ -1041,15 +1049,15 @@ const Engine = {
             analyser.getByteFrequencyData(buf);
             osc.stop();
             const hasSignal = buf.some(v => v > 0);
-            if (!hasSignal) toast(T("soundHint"), 4000);
+            if (!hasSignal) toast(T("setupSound"), 4000);
           }, 200);
         } catch(e){
           // can't detect — show warning to be safe
-          toast(T("soundHint"), 3000);
+          toast(T("setupSound"), 3000);
         }
       } else {
         // AudioContext not running — show warning
-        toast(T("soundHint"), 3000);
+        toast(T("setupSound"), 3000);
       }
     }
     Input.down = Input.up = Input.move = Input.key = null;
@@ -1584,23 +1592,21 @@ function goScores(){
   Screens.show("scores");
 }
 
-// boot
+// boot → setup screen
 $("#bootBtn").onclick = ()=>{
   Sfx.init(); Sfx.resume(); Sfx.select();
   Bgm.start();
-  Player.name ? goHub() : Screens.show("name");
+  Screens.show("setup");
 };
-/* First tap anywhere on the welcome screen unlocks audio and starts the BGM
-   so guests can hear it while still reading the title card. Only the second
-   tap (or direct ENTER hit) navigates forward. */
 $("#scr-boot").onclick = (e)=>{
   if (e.target && e.target.tagName === "BUTTON") return;
-  if (!Bgm.playing){
-    Sfx.init(); Sfx.resume();
-    Bgm.start();
-    return;           // stay on welcome screen — music is the reward
-  }
   $("#bootBtn").click();
+};
+
+// setup → name or hub
+$("#setupBtn").onclick = ()=>{
+  Sfx.select();
+  Player.name ? goHub() : Screens.show("name");
 };
 
 /* Set when NEW PLAYER is tapped, acted on when a name is actually submitted —
