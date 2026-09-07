@@ -838,15 +838,15 @@ const Bgm = {
     for (let b = 0; b < total; b++){
       const ch = this._chords[Math.floor(b / 4) % 4];
       if (b % 4 === 0)
-        ev.push({ t: b*beat, type:"bass", freq: ch.root, dur: 0.22, vol: 0.14 });
+        ev.push({ t: b*beat, type:"bass", freq: ch.root, dur: 0.22, vol: 0.32 });
       else if (b % 4 !== 3)
-        ev.push({ t: b*beat, type:"bass", freq: ch.fifth*0.5, dur: 0.10, vol: 0.08 });
+        ev.push({ t: b*beat, type:"bass", freq: ch.fifth*0.5, dur: 0.10, vol: 0.18 });
       if (b % 2 === 0) ev.push({ t: b*beat, type:"hat" });
       for (let h = 0; h < 2; h++){
         const idx = (b % total) * 2 + h;
         const f = this._melody[idx];
         if (f) ev.push({ t: (b + h*0.5)*beat, type:"lead", freq: f,
-                         dur: h ? 0.10 : 0.16, vol: h ? 0.07 : 0.09 });
+                         dur: h ? 0.10 : 0.16, vol: h ? 0.18 : 0.22 });
       }
     }
     ev.sort((a,b)=> a.t - b.t);
@@ -874,7 +874,7 @@ const Bgm = {
       const when = this._startAt + loop * this._loopLen + e.t;
       if (when > horizon) break;
       if (when >= now - 0.02){
-        if (e.type === "hat") Sfx.noise(0.015, 0.015, when);
+        if (e.type === "hat") Sfx.noise(0.018, 0.03, when);
         else Sfx.tone(e.freq, e.dur, "triangle", e.vol, when);
       }
       this._mi++;
