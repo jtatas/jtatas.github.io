@@ -1252,6 +1252,22 @@ async function showResults(gameId, score, opts={}){
   again.onclick = ()=>{ Screens.overlay("results", false); Sfx.select();
                         Engine.start((next || gameById(lastPlayed)).make()); };
 
+  // First-time unlock: all 3 games just completed — show popup on the results screen
+  if (Progress.allDone() && !!CONFIG.galleryUrl && !Store.get("arcade_album_unlocked")) {
+    Store.set("arcade_album_unlocked", "1");
+    // brief delay so the player sees their score first
+    setTimeout(()=>{
+      const popup = $("#unlockPopup");
+      $("#unlockTitle").textContent = T("unlockTitle");
+      $("#unlockMsg").textContent   = T("unlockMsg");
+      const albumBtn = $("#unlockAlbumBtn");
+      albumBtn.textContent = T("unlockBtn");
+      albumBtn.onclick = ()=>{ popup.style.display = "none"; openAlbum(); };
+      $("#unlockLaterBtn").style.display = "none";
+      popup.style.display = "flex";
+    }, 1200);
+  }
+
 }
 
 function escapeHtml(s){
@@ -1343,19 +1359,7 @@ function buildHub(){
   album.textContent = T(unlocked ? "finaleBtn" : "finaleLocked");
   album.disabled    = !unlocked;
 
-  // first-time unlock popup
-  if (unlocked && !Store.get("arcade_album_unlocked")) {
-    Store.set("arcade_album_unlocked", "1");
-    const popup = $("#unlockPopup");
-    $("#unlockTitle").textContent = T("unlockTitle");
-    $("#unlockMsg").textContent   = T("unlockMsg");
-    const albumBtn = $("#unlockAlbumBtn");
-    albumBtn.textContent = T("unlockBtn");
-    albumBtn.onclick = ()=>{ popup.style.display = "none"; openAlbum(); };
-    // hide the "maybe later" button — one tap to the album, no extra clutter
-    $("#unlockLaterBtn").style.display = "none";
-    popup.style.display = "flex";
-  }
+  // first-time unlock popup — now triggered from showResults instead
 }
 
 /* ---------- the finale, shown after all three games are done ---------- */
@@ -3021,13 +3025,16 @@ document.fonts && document.fonts.ready.then(fitCanvas);
       }, 150);
     }, 400);
   }
-  /* Secret cheat: ?unlock=0906 marks all games done and resets the unlock flag,
-     then rebuilds the hub so the unlock popup fires immediately. */
+  /* Secret cheat: ?unlock=0906 marks all games done, resets the unlock flag,
+     then fakes a results screen so the unlock popup fires like it would in real play. */
   if (p.get("unlock") === "0906"){
     history.replaceState(null, "", location.pathname);
+    // mark first 2 games done silently
     GAMES.forEach(g => Progress.mark(g.id));
     Store.del("arcade_album_unlocked");
-    buildHub();
+    // trigger showResults for the last game to get the popup
+    const last = GAMES[GAMES.length - 1];
+    setTimeout(()=> showResults(last.id, 25000, {}), 400);
   }
 })();
 </script>
