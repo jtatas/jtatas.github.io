@@ -518,6 +518,9 @@ const STR = {
   nameNeeded:  { en:"WE NEED SOMETHING TO CALL YOU",
                  vi:"TỤI MÌNH CẦN BIẾT GỌI BẠN LÀ GÌ",
                  ru:"НАМ НУЖНО КАК-ТО ВАС НАЗЫВАТЬ" },
+  nameTaken:   { en:"THAT NAME IS TAKEN — TRY ANOTHER!",
+                 vi:"TÊN NÀY ĐÃ CÓ NGƯỜI DÙNG — THỬ TÊN KHÁC!",
+                 ru:"ЭТО ИМЯ ЗАНЯТО — ПОПРОБУЙТЕ ДРУГОЕ!" },
 
   /* ---------- menu ---------- */
   selectGame:  { en:"LET'S PLAY!",      vi:"CÙNG CHƠI NÀO!",   ru:"ДАВАЙТЕ ИГРАТЬ!" },
@@ -1613,9 +1616,24 @@ $("#setupBtn").onclick = ()=>{
    so backing out of the name screen can't wipe anybody by accident. */
 let handingOver = false;
 
-$("#nameBtn").onclick = ()=>{
+$("#nameBtn").onclick = async ()=>{
   const v = $("#nameInput").value.trim().toUpperCase().slice(0,14);
   if (!v){ toast(T("nameNeeded")); return; }
+  // Check if name is already taken by another player
+  if (LB.live){
+    try {
+      const url = CONFIG.supabase.url.replace(/\/$/,"")
+        + "/rest/v1/scores?name=eq." + encodeURIComponent(v)
+        + "&select=player_id&limit=1";
+      const r = await fetch(url, { headers:{ "apikey": CONFIG.supabase.anonKey, "Authorization":"Bearer "+CONFIG.supabase.anonKey }});
+      if (r.ok){
+        const rows = await r.json();
+        if (rows.length && rows[0].player_id !== Player.id){
+          toast(T("nameTaken"), 3000); return;
+        }
+      }
+    } catch(e){ /* offline — allow it, will check again on submit */ }
+  }
   if (handingOver){ Player.reset(); handingOver = false; }
   $("#newPlayerWhy").style.display = "none";
   Player.name = v; Sfx.select(); goHub();
